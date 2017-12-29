@@ -1,0 +1,15 @@
+
+{
+	"folders":
+	[
+		{
+			"folder_exclude_patterns":
+			[
+				"lib",
+				"build",
+				"node_modules"
+			],
+			"path": "."
+		}
+	]
+}
