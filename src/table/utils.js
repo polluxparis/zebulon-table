@@ -8,7 +8,7 @@ export const getFunction = (functions, object, type, value) => {
       ? functions
           .filter(
             f =>
-              f.caption === value &&
+              f.id === value &&
               f.tp === type &&
               (f.visibility === "global" || f.visibility === object)
           )
@@ -43,7 +43,7 @@ export const computeMeta = (meta, functions) => {
       functions,
       meta.table.object,
       "accessor",
-      column.accessor
+      column.valueAccessor
     );
     column.defaultFunction =
       getFunction(functions, meta.table.object, "default", column.default) ||
@@ -121,19 +121,14 @@ export const computeMetaFromData = (data, meta, functions) => {
   }
 };
 // compute new description
-export const computeData = ({ data, meta, updatedRows, params, functions }) => {
-  // let { data, meta, updatedRows } = this.state;
-  // const { params, functions } = this.props;
-  const f = functions.filter(f => f.tp === "accessor").reduce((acc, f) => {
-    acc[f.id] = f.functionJS;
-    return acc;
-  }, {});
-  const metaFormula = meta.properties.filter(
-    column => column.tp === "Computed"
+export const computeData = ({ data, meta, updatedRows, params }) => {
+  const columns = meta.properties.filter(
+    column =>
+      column.tp === "Computed" && typeof column.accessorFunction === "function"
   );
-  metaFormula.forEach(column => {
-    column.f = f[column.valueAccessor];
-    column.dataType = typeof column.f({
+  columns.forEach(column => {
+    // column.f = f[column.valueAccessor];
+    column.dataType = typeof column.accessorFunction({
       row: data[0],
       status: updatedRows[data[0].index_],
       data,
@@ -141,9 +136,9 @@ export const computeData = ({ data, meta, updatedRows, params, functions }) => {
     });
   });
   data.forEach(row =>
-    metaFormula.forEach(
+    columns.forEach(
       column =>
-        (row[column.id] = column.f({
+        (row[column.id] = column.accessorFunction({
           row,
           status: updatedRows[row.index_],
           data,
@@ -151,7 +146,7 @@ export const computeData = ({ data, meta, updatedRows, params, functions }) => {
         }))
     )
   );
-  computeMeta(meta, f);
+  // computeMeta(meta, f);
   // this.setState({
   //   data,
   //   meta: computeMeta(meta, f)

@@ -1,5 +1,6 @@
 import React, { Component } from "react";
-import { Input } from "zebulon-controls";
+// import { Input } from "zebulon-controls";
+import { Input } from "./Input";
 import classnames from "classnames";
 export const editCell = (
   style,
@@ -46,7 +47,6 @@ export const editCell = (
   );
 };
 const filter = (column, position, width, filterTo, onChange, openFilter) => {
-  // const className = "zebulon-table-header zebulon-table-filter";
   const className = classnames({
     "zebulon-table-cell": true,
     "zebulon-table-header": true,
@@ -60,20 +60,16 @@ const filter = (column, position, width, filterTo, onChange, openFilter) => {
   }
   return (
     <Input
+      column={column}
       key={column.id}
-      id={column.index_}
       className={className}
       style={{
         position: "absolute",
         left: position,
         width,
         textAlign
-        // border: "0.02em solid rgba(0, 0, 0, 0.3) "
       }}
-      // hasFocus={hasFocus}
       editable={true}
-      dataType={column.dataType || "string"}
-      format={column.format}
       inputType="filter"
       value={
         column.filterType === "values" ? column.v ? (
@@ -86,11 +82,8 @@ const filter = (column, position, width, filterTo, onChange, openFilter) => {
           column.v
         )
       }
-      onChange={e => {
-        onChange(e, column, filterTo);
-      }}
+      onChange={onChange}
       onFocus={e => openFilter(e, column)}
-      // isEditable={true}
     />
   );
   // }
@@ -132,8 +125,8 @@ const filterEmpty = (id, position, width) => {
       style={{
         position: "absolute",
         left: position,
-        width
-        // border: "0.02em solid rgba(0, 0, 0, 0.2) "
+        width,
+        border: "0.02em solid rgba(0, 0, 0, 0.2) "
       }}
     />
   );
@@ -257,6 +250,7 @@ export class Status extends Component {
       data,
       scroll,
       updatedRows,
+      selectedIndex,
       handleErrors
     } = this.props;
     let index = 0;
@@ -273,11 +267,16 @@ export class Status extends Component {
       const updatedRow = updatedRows[
         data[index + scroll.startIndex].index_
       ] || { errors: {} };
+      const className = classnames({
+        "zebulon-table-status": true,
+        "zebulon-table-status-selected":
+          selectedIndex === index + scroll.startIndex
+      });
       const ix = index;
       cells.push(
         editCell(
           style,
-          "zebulon-table-status",
+          className,
           index + scroll.startIndex,
           updatedRow,
           this.onClick,

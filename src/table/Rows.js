@@ -1,7 +1,7 @@
 import React from "react";
 import classnames from "classnames";
-import { Input, ScrollableGrid, utils, constants } from "zebulon-controls";
-// import { Input } from "./controls-o/Input";
+import { ScrollableGrid, utils, constants } from "zebulon-controls";
+import { Input } from "./Input";
 export class Rows extends ScrollableGrid {
   getRatios = () => {
     const { height, width, meta, rowHeight, scroll, data } = this.props;
@@ -57,6 +57,7 @@ export class Rows extends ScrollableGrid {
     updatedRows,
     style,
     focused,
+    hasFocus,
     selected,
     onClick,
     onMouseOver,
@@ -104,21 +105,20 @@ export class Rows extends ScrollableGrid {
     // }
     return (
       <Input
+        row={row}
+        column={column}
         style={style}
         className={className}
-        id={column.id}
         value={value}
-        dataType={column.dataType || "string"}
-        format={column.format}
         editable={editable}
         focused={focused}
+        hasFocus={hasFocus}
         select={select}
         key={`cell-${row.index_}-${column.id}`}
-        onChange={e => onChange(e, row, column)}
-        row={row}
+        onChange={onChange} //{e => onChange(e, row, column)}
         onClick={onClick}
         onMouseOver={onMouseOver}
-        onFocus={e => onFocus(e, row, column, rowIndex)}
+        onFocus={onFocus} //e => onFocus(e, row, column, rowIndex)}
       />
     );
   };
@@ -130,7 +130,8 @@ export class Rows extends ScrollableGrid {
     shift,
     visibleWidth,
     rowHeight,
-    rowIndex
+    rowIndex,
+    hasFocus
     // selectedCell,
     // selectCell
   ) => {
@@ -187,6 +188,7 @@ export class Rows extends ScrollableGrid {
               textAlign
             },
             focused,
+            hasFocus && focused,
             selected,
             onClick,
             onMouseOver,
@@ -219,7 +221,8 @@ export class Rows extends ScrollableGrid {
       width,
       selectedCell,
       selectCell,
-      updatedRows
+      updatedRows,
+      hasFocus
     } = this.props;
     const visibleWidth = width - this.scrollbars.vertical.width;
     while (index < data.length && i < height / rowHeight) {
@@ -233,6 +236,7 @@ export class Rows extends ScrollableGrid {
           visibleWidth,
           rowHeight,
           index,
+          hasFocus,
           selectedCell,
           selectCell
         )

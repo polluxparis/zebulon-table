@@ -129,8 +129,10 @@ const functionToString = row => {
 const stringToFunction = (row, status) => {
 	let f;
 	try {
-		f = eval(row.functionJS);
+		eval("f = " + row.functionJS);
+		console.log("function", f);
 	} catch (e) {
+		console.log("function error", e);
 		const error = status.errors.functionJS || {};
 		error.JS = e.message;
 		status.errors.functionJS = error;
@@ -212,8 +214,10 @@ export const functions = {
 				}
 			}
 		},
-		row: () => {},
-		table: () => {}
+		actions: {
+			saveDataAndConfig: a => {},
+			computeData
+		}
 	},
 	functions: {
 		accessors: {
@@ -221,12 +225,10 @@ export const functions = {
 		},
 		validators: {
 			stringToFunction: ({ row, status }) => stringToFunction(row, status)
-		},
-		row: () => {},
-		table: () => {}
+		}
 	},
 	globals_: {
-		editables: { isSelected: ({ row }) => row.index_ !== undefined }
+		editables: { isNotSelected: ({ row }) => row.index_ === undefined }
 	}
 };
 
@@ -245,7 +247,7 @@ export const metaDescriptions = (object, functions, properties) => {
 							(f.visibility === "global" || f.visibility === obj)
 					)
 					.reduce((acc, f) => {
-						acc[f.id] = f.caption || f.id;
+						acc[f.id] = { id: f.id, caption: f.caption || f.id };
 						return acc;
 					}, {})
 			)
@@ -278,19 +280,38 @@ export const metaDescriptions = (object, functions, properties) => {
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: ({ row }) => row.index_ === undefined
+						disable: getFunction(
+							f,
+							object,
+							"editable",
+							"isNotSelected"
+						)
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: ({ row }) => row.index_ === undefined
+						disable: getFunction(
+							f,
+							object,
+							"editable",
+							"isNotSelected"
+						)
 					},
 					{
 						type: "action",
 						caption: "Compute",
-						action: computeData
+						action: getFunction(f, object, "action", "computeData")
 					},
-					{ type: "save", caption: "Save" }
+					{
+						type: "save",
+						caption: "Save",
+						action: getFunction(
+							f,
+							object,
+							"action",
+							"saveDataAndConfig"
+						)
+					}
 				]
 			},
 			row: {},
@@ -298,7 +319,6 @@ export const metaDescriptions = (object, functions, properties) => {
 		};
 	}
 	if (object === "properties") {
-		// const fo = functions.properties;
 		return {
 			table: {
 				object,
@@ -312,7 +332,7 @@ export const metaDescriptions = (object, functions, properties) => {
 							f,
 							object,
 							"editable",
-							"isSelected"
+							"isNotSelected"
 						)
 					},
 					{
@@ -322,7 +342,7 @@ export const metaDescriptions = (object, functions, properties) => {
 							f,
 							object,
 							"editable",
-							"isSelected"
+							"isNotSelected"
 						)
 					}
 				]
@@ -513,7 +533,7 @@ export const metaDescriptions = (object, functions, properties) => {
 							f,
 							object,
 							"editable",
-							"isSelected"
+							"isNotSelected"
 						)
 					},
 					{
@@ -523,7 +543,7 @@ export const metaDescriptions = (object, functions, properties) => {
 							f,
 							object,
 							"editable",
-							"isSelected"
+							"isNotSelected"
 						)
 					}
 				]

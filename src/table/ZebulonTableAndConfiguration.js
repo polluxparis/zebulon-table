@@ -113,7 +113,7 @@ export default class ZebulonTableAndConfiguration extends Component {
 	// componentDidMount() {
 	// 	this.props.getRef(this);
 	// }
-	onChangeProperties = (e, row, column) => {
+	onChangeProperties = ({ column }) => {
 		if (
 			column.id === "width" ||
 			column.id === "format" ||
@@ -122,7 +122,7 @@ export default class ZebulonTableAndConfiguration extends Component {
 			computeMeta(this.state.meta, this.state.functions);
 		}
 	};
-	onRowNew = row => {
+	onRowNew = ({ row }) => {
 		computeMeta(this.state.meta, this.state.functions);
 	};
 	render() {

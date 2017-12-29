@@ -139,8 +139,7 @@ export class Table extends Component {
       } else if (button.type === "duplicate") {
         return this.handleDuplicate(rowIndex || 0);
       } else if (button.type === "save") {
-        const ok = this.handleSave();
-        return ok;
+        return this.handleSave() || true;
       } else if (button.type === "detail" && button.content) {
         this.setState({ detail: button });
       } else {
@@ -151,7 +150,13 @@ export class Table extends Component {
   handleAction = button => {
     if (button.action) {
       const { selectedRange, updatedRows, data, meta } = this.state;
-      button.action({ selectedRange, updatedRows, data, meta });
+      button.action({
+        selectedRange,
+        updatedRows,
+        data,
+        meta,
+        params: this.props.params
+      });
     }
   };
   handleDelete = row => {
@@ -166,6 +171,8 @@ export class Table extends Component {
     });
   };
   handleNew = index => {
+    const range = this.state.selectedRange;
+    if (this.selectRange(range, this.row, "quit") === false) return false;
     let filteredData = [...this.state.filteredData];
     const status = { new_: true, errors: {} };
     // const updatedRows = {
@@ -185,17 +192,32 @@ export class Table extends Component {
       .concat(row)
       .concat(filteredData.slice(index));
     this.setState({ filteredData });
-    this.onRowNew(row);
-    this.selectRange(
-      {
-        end: { rows: index, columns: 0 },
-        start: { rows: index, columns: this.state.meta.properties.length - 1 }
-      },
-      row
-    );
+    if (this.onRowNew(row)) {
+      this.selectRange(
+        {
+          end: { rows: range.end.rows, columns: 0 },
+          start: {
+            rows: range.end.rows,
+            columns: this.state.meta.properties.length - 1
+          }
+        },
+        undefined,
+        "enter"
+      );
+    }
+    // this.selectRange(
+    //   {
+    //     end: { rows: index, columns: 0 },
+    //     start: { rows: index, columns: this.state.meta.properties.length - 1 }
+    //   },
+    //   row
+    // );
   };
   handleDuplicate = index => {
     if (this.row) {
+      const range = this.state.selectedRange;
+      if (this.selectRange(range, this.row, "quit") === false) return false;
+
       let filteredData = [...this.state.filteredData];
       const status = { new_: true, errors: {} };
       this.state.updatedRows[this.state.data.length] = status;
@@ -213,14 +235,19 @@ export class Table extends Component {
         .concat(row)
         .concat(filteredData.slice(index));
       this.setState({ filteredData });
-      this.onRowNew(row);
-      this.selectRange(
-        {
-          end: { rows: index, columns: 0 },
-          start: { rows: index, columns: this.state.meta.properties.length - 1 }
-        },
-        row
-      );
+      if (this.onRowNew(row)) {
+        this.selectRange(
+          {
+            end: { rows: range.end.rows, columns: 0 },
+            start: {
+              rows: range.end.rows,
+              columns: this.state.meta.properties.length - 1
+            }
+          },
+          undefined,
+          "enter"
+        );
+      }
     }
   };
   // ----------------------------------------
@@ -228,13 +255,13 @@ export class Table extends Component {
   // ----------------------------------------
   filters = (data, filters) => {
     const f = Object.values(filters).filter(filter => filter.v !== null);
-    if (!f.length) {
-      return data;
-    }
+    if (!f.length) return data;
     const filter = row => f.reduce((acc, filter) => acc && filter.f(row), true);
     return data.filter(filter);
   };
   openFilter = (e, column) => {
+    if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
+      return false;
     let filter = this.state.filters[column.id];
     if (!filter) {
       const items = {};
@@ -253,9 +280,12 @@ export class Table extends Component {
     });
   };
 
-  onChangeFilter = (e, column, filterTo) => {
+  onChangeFilter = (e, row, column, filterTo) => {
     // console.log("filter", e, column);
+    const range = this.state.selectedRange;
+    if (this.selectRange(range, this.row, "quit") === false) return false;
     this.closeOpenedWindows();
+    // if (this.selectRange(this.range, this.row) === false) return false;
     if (e !== column.v) {
       if (column.filterType === "=") {
         column.f = row => row[column.id] === e;
@@ -275,14 +305,17 @@ export class Table extends Component {
         column.f = row =>
           String(row[column.id] || "").startsWith(String(e || ""));
       }
-      if (column.filterType === "between" && filterTo) {
-        column.vTo = e;
-      } else {
-        column.v = e;
-      }
+      if (column.filterType === "between" && filterTo) column.vTo = e;
+      else column.v = e;
       const filters = { ...this.state.filters, [column.id]: column };
       const filteredData = this.filters(this.state.data, filters);
+      // if (filteredData === false) return false;
+
       this.sorts(filteredData, this.state.sorts);
+      if (range.end.rows > filteredData.length - 1) {
+        this.selectRange({ end: {}, start: {} }, undefined, "enter");
+        this.hasFocus = false;
+      } else this.selectRange(range, undefined, "enter");
       this.setState({
         filters,
         filteredData
@@ -290,7 +323,6 @@ export class Table extends Component {
     }
   };
   onChangeFilterValues = filter => {
-    // console.log("filter", e, column);
     const id = this.state.openedFilter;
     const column = this.state.filters[this.state.openedFilter];
     column.f = row => filter[row[id]] !== undefined;
@@ -298,7 +330,10 @@ export class Table extends Component {
     const filters = { ...this.state.filters, [column.id]: column };
     const filteredData = this.filters(this.state.data, filters);
     this.sorts(filteredData, this.state.sorts);
-
+    const range = this.state.selectedRange;
+    if (range.end.rows > filteredData.length - 1)
+      this.selectRange({ end: {}, start: {} }, undefined, "enter");
+    else this.selectRange(range, undefined, "enter");
     this.setState({
       filters,
       filteredData,
@@ -342,6 +377,9 @@ export class Table extends Component {
   };
   onSort = (column, doubleClick) => {
     this.closeOpenedWindows();
+    if (this.selectRange(this.range, this.row) === false) {
+      return false;
+    }
     // if (this.state.filteredData===this.state.data)
     let sorts = { ...this.state.sorts };
     if (doubleClick) {
@@ -413,82 +451,153 @@ export class Table extends Component {
   // ------------------------------------------------------
   // selection and validations
   // ------------------------------------------------------
-  selectRange = (range, row) => {
-    const prevFocus = this.state.selectedRange.end;
-    if (
-      prevFocus.rows !== range.end.rows ||
-      prevFocus.columns !== range.end.columns ||
-      row
-    ) {
+  selectRange = (range, row, type) => {
+    // avoid focus on cell when changing filters (set to false on changed filter ok)
+    this.hasFocus = true;
+
+    const prevEnd = this.state.selectedRange.end;
+    const prevStart = this.state.selectedRange.start;
+    const endChanged =
+      prevEnd.rows !== range.end.rows || prevEnd.columns !== range.end.columns;
+    if (endChanged || type) {
       this.closeOpenedWindows();
-      if (this.row) {
-        this.onCellQuit(this.row, this.column);
-        if (prevFocus.rows !== range.end.rows || row) {
-          this.onRowQuit(this.row, this.state.updatedRows[this.row.index_]);
+      if (this.row && type !== "enter") {
+        if (
+          this.onCellQuit(
+            this.row[this.column.id],
+            this.previousValue,
+            this.row,
+            this.column
+          ) === false
+        )
+          return false;
+        if (prevEnd.rows !== range.end.rows || row) {
+          if (
+            this.onRowQuit(
+              this.row,
+              this.previousRow,
+              this.state.updatedRows[this.row.index_]
+            ) === false
+          )
+            return false;
         }
       }
-      if (prevFocus.rows !== range.end.rows || row) {
-        this.rowUpdated = !!row;
+      if (type === "quit") return true;
+      if (prevEnd.rows !== range.end.rows || type === "enter") {
+        this.rowUpdated = false;
+        if (range.end.rows !== undefined) {
+          this.row = row || this.state.filteredData[range.end.rows];
+          this.previousRow = { ...this.row };
+        } else {
+          this.row = undefined;
+          this.previousRow = undefined;
+        }
       }
-      this.row = row || this.state.filteredData[range.end.rows];
-      this.column = this.state.meta.properties[range.end.columns];
       this.updated = false;
-      if (prevFocus.rows !== range.end.rows || row) {
-        this.onRowEnter(this.row);
-      }
-      this.onCellEnter(this.row, this.column);
-      if (this.state.meta.properties[range.end.columns].dataType === "text") {
-        this.handleText(range.end, this.row, this.column);
+      if (range.end.rows !== undefined) {
+        this.column = this.state.meta.properties[range.end.columns];
+        this.previousValue = this.row[this.column.id];
+        if (prevEnd.rows !== range.end.rows || type === "enter")
+          this.onRowEnter(this.row);
+        this.onCellEnter(this.previousValue, this.row, this.column);
+        if (this.state.meta.properties[range.end.columns].dataType === "text")
+          this.handleText(range.end, this.row, this.column);
+      } else {
+        this.column = undefined;
+        this.previousValue = undefined;
       }
     }
-    this.setState({ selectedRange: range });
-    this.range = range;
+    if (
+      endChanged ||
+      prevStart.rows !== range.start.rows ||
+      prevStart.columns !== range.start.columns
+    ) {
+      this.setState({ selectedRange: range });
+      this.range = range;
+    }
+    return true;
   };
-  rowCheck = row => true;
-  onChange = (e, row, column) => {
+  onChange = (value, row, column) => {
     this.updated = true;
     this.rowUpdated = true;
     let updatedRow = this.state.updatedRows[row.index_];
     if (!updatedRow) {
-      updatedRow = { row: { ...row }, errors: {} }; // a voir pour rollback ->valeur initial
-    }
-    if (!updatedRow.updated_) {
+      updatedRow = {
+        row: { ...row, [column.id]: this.previousValue },
+        errors: {},
+        updated_: true
+      };
+      this.state.updatedRows[row.index_] = updatedRow;
+    } else if (!updatedRow.updated_) {
       updatedRow.updated_ = true;
-      this.setState({
-        updatedRows: { ...this.state.updatedRows, [row.index_]: updatedRow }
-      });
     }
-    row[column.id] = e;
+    row[column.id] = value;
+    const message = {
+      value,
+      previousValue: this.previousValue,
+      row,
+      status: updatedRow,
+      column,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
     if (column.onChange) {
-      column.onChange(row);
+      if (column.onChange(message) === false) return false;
     }
     if (this.props.onChange) {
-      this.props.onChange(e, row, column);
+      if (this.props.onChange(message) === false) return false;
     }
+    console.log("onChange", message);
+    return true;
   };
-  onCellQuit = (row, column) => {
-    if (column.onQuit && this.updated) {
-      const status = this.state.updatedRows[row.index_];
-      if (status !== undefined)
-        column.onQuit({
-          row,
-          status,
-          data: this.state.data,
-          params: this.props.params
-        });
-    }
-    if (this.props.onCellQuit) {
-      this.props.onCellQuit(row, column);
-    }
+  onCellQuit = (value, previousValue, row, column) => {
+    const status = this.state.updatedRows[row.index_];
+    const message = {
+      updated: this.updated,
+      value,
+      previousValue,
+      row,
+      status,
+      column,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (column.onQuit && this.updated)
+      if (column.onQuit(message) === false) return false;
+    if (this.props.onCellQuit)
+      if (this.props.onCellQuit(message) === false) return false;
+    console.log("onCellQuit", message);
+    return true;
   };
-  onCellEnter = (row, column) => {
-    if (this.props.onCellEnter) {
-      this.props.onCellEnter(row, column);
-    }
+  onCellEnter = (value, row, column) => {
+    const status = this.state.updatedRows[row.index_];
+    const message = {
+      value,
+      row,
+      status,
+      column,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.props.onCellEnter) this.props.onCellEnter(row, column);
+    console.log("onCellEnter", message);
   };
-  onRowQuit = (row, status) => {
+  onRowQuit = (row, previousRow, status) => {
+    const message = {
+      updated: this.rowUpdated,
+      row,
+      previousRow,
+      status,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
     // mandatory data
     if (this.rowUpdated) {
+      // return false;
       this.state.meta.properties
         .filter(property => property.mandatory)
         .forEach(property => {
@@ -503,17 +612,38 @@ export class Table extends Component {
           }
           status.errors[property.id] = error;
         });
+      if (this.state.meta.row.onQuit) {
+        if (this.state.meta.row.onQuit(message) === false) return false;
+      }
     }
+
+    if (this.props.onRowQuit)
+      if (this.props.onRowQuit(message) === false) return false;
+    console.log("onRowQuit", message);
+    return true;
   };
   onRowEnter = row => {
-    if (this.props.onRowEnter) {
-      this.props.onRowEnter(row);
-    }
+    const message = {
+      row,
+      status: this.state.updatedRows[row.index_],
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.props.onRowEnter) this.props.onRowEnter(message);
+    console.log("onRowEnter", message);
   };
   onRowNew = row => {
-    if (this.props.onRowNew) {
-      this.props.onRowNew(row);
-    }
+    const message = {
+      row,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.props.onRowNew)
+      if (this.props.onRowNew(message) === false) return false;
+    console.log("onRowNew", message);
+    return true;
   };
   handleErrors = (e, rowIndex, errors) => {
     if (errors.length || this.state.toolTip) {
@@ -801,6 +931,7 @@ export class Table extends Component {
             scroll={this.state.scroll.rows}
             updatedRows={this.state.updatedRows}
             selectRange={this.selectRange}
+            selectedIndex={this.state.selectedRange.end.rows}
             meta={this.state.meta.properties}
             handleErrors={this.handleErrors}
           />
@@ -822,6 +953,7 @@ export class Table extends Component {
             onChange={this.onChange}
             // onFocus={this.onFocus}
             onFocus={() => {}}
+            hasFocus={this.hasFocus}
             updatedRows={this.state.updatedRows}
             // functions={this.props.functions}
             params={this.props.params}

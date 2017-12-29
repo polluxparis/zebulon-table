@@ -81,6 +81,10 @@
   padding: 0.2em;
   overflow: hidden;
 }
+.zebulon-table-status-selected {
+  border: solid blue 0.05em;
+  background-color: #eef8fb;
+}
 .zebulon-table-corner {
   outline: none;
   background-color: #eef8fb;
