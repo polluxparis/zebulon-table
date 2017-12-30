@@ -49,7 +49,7 @@ export class Table extends Component {
     // }
     this.rowHeight = this.props.rowHeight || 25;
     this.range = { start: {}, end: {} };
-    // this.meta = this.getMeta(props.meta, props.data);
+    this.onTableEnter();
   }
   componentWillReceiveProps(nextProps) {
     if (
@@ -62,6 +62,11 @@ export class Table extends Component {
         meta: nextProps.meta
       });
     }
+    if (nextProps.visible && !this.props.visible) this.onTableEnter();
+    else if (!nextProps.visible && this.props.visible) this.onTableQuit();
+  }
+  componentWillUnmount() {
+    this.onTableClose();
   }
   // ------------------------------------
   // Navigation
@@ -201,7 +206,7 @@ export class Table extends Component {
             columns: this.state.meta.properties.length - 1
           }
         },
-        undefined,
+        row,
         "enter"
       );
     }
@@ -244,7 +249,7 @@ export class Table extends Component {
               columns: this.state.meta.properties.length - 1
             }
           },
-          undefined,
+          row,
           "enter"
         );
       }
@@ -520,6 +525,7 @@ export class Table extends Component {
   onChange = (value, row, column) => {
     this.updated = true;
     this.rowUpdated = true;
+    this.tableUpdated = true;
     let updatedRow = this.state.updatedRows[row.index_];
     if (!updatedRow) {
       updatedRow = {
@@ -645,6 +651,37 @@ export class Table extends Component {
     console.log("onRowNew", message);
     return true;
   };
+  onTableEnter = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    this.tableUpdated = false;
+    if (this.props.onTableEnter) this.props.onTableEnter(message);
+    console.log("onTableEnter", message);
+  };
+  onTableQuit = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.props.onTableQuit) this.props.onTableQuit(message);
+    console.log("onTableQuit", message);
+  };
+  onTableClose = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.props.onTableQuit) this.props.onTableQuit(message);
+    console.log("onTableQuit", message);
+  };
   handleErrors = (e, rowIndex, errors) => {
     if (errors.length || this.state.toolTip) {
       const toolTip = errors.length
@@ -679,7 +716,7 @@ export class Table extends Component {
         this.state.scroll.rows.shift,
       left:
         column.position + this.rowHeight - this.state.scroll.columns.position,
-      v: (column.accessor || (({ row }) => row[column.id]))({ row }),
+      v: (column.accessorFunction || (({ row }) => row[column.id]))({ row }),
       label,
       editable: column.editable,
       row,

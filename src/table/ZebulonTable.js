@@ -119,6 +119,14 @@ class ZebulonTable extends Component {
           ref={ref => (this.table = ref)}
           getActions={this.props.getActions}
           onChange={this.props.onChange}
+          onCellEnter={this.props.onCellEnter}
+          onCellQuit={this.props.onCellQuit}
+          onRowNew={this.props.onRowNew}
+          onRowEnter={this.props.onRowEnter}
+          onRowQuit={this.props.onRowQuit}
+          onTableEnter={this.props.onTableEnter}
+          onTableQuit={this.props.onTableQuit}
+          onTableClose={this.props.onTableClose}
           onRowNew={this.props.onRowNew}
           callbacks={this.props.callbacks}
         />

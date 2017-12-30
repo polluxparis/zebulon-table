@@ -33,17 +33,39 @@ export const computeMeta = (meta, functions) => {
       "format",
       column.format
     );
-    column.selectFunction = getFunction(
+    const selectFunction = getFunction(
       functions,
       meta.table.object,
       "select",
       column.select
     );
+    // select items can be defined as
+    // - an array
+    // - an object {id:caption...}
+    // - an object {items:[select items],filter:[function to filter items with parameters as row,data...
+    let select = column.select;
+    if (selectFunction) {
+      select = selectFunction({ column }); //a voir
+      if (!Array.isArray(select) && typeof select === "object") {
+        if (typeof select.filter === "function") {
+          column.selectFilter = select.filter;
+          column.selectItems = select.items || [""];
+        } else column.selectItems = select || [""];
+      } else column.selectItems = select || [""];
+    }
+    // if(Array.isArray(select)column.selectData=select
+    //   else if(typeof
+    // column.selectFunction = getFunction(
+    //   functions,
+    //   meta.table.object,
+    //   "select",
+    //   column.select
+    // );
     column.accessorFunction = getFunction(
       functions,
       meta.table.object,
       "accessor",
-      column.valueAccessor
+      column.accessor
     );
     column.defaultFunction =
       getFunction(functions, meta.table.object, "default", column.default) ||

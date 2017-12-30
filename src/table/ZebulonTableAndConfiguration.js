@@ -23,7 +23,8 @@ export default class ZebulonTableAndConfiguration extends Component {
 
 		this.state.metaProperties = metaDescriptions(
 			"properties",
-			this.state.functions
+			this.state.functions,
+			this.state.meta.properties
 		);
 		computeMeta(this.state.metaProperties, this.state.functions);
 		this.state.metaFunctions = metaDescriptions(
@@ -69,6 +70,7 @@ export default class ZebulonTableAndConfiguration extends Component {
 						sizes={sizes}
 						functions={this.state.functions}
 						params={props.params}
+						onTableEnter={this.onTableEnter}
 						ref={ref => (this.Dataset = ref)}
 					/>
 				)
@@ -85,6 +87,7 @@ export default class ZebulonTableAndConfiguration extends Component {
 						sizes={sizes}
 						onChange={this.onChangeProperties}
 						onRowNew={this.onRowNew}
+						onTableEnter={this.onTableEnter}
 						functions={this.state.functions}
 						params={props.params}
 						ref={ref => (this.Properties = ref)}
@@ -113,18 +116,19 @@ export default class ZebulonTableAndConfiguration extends Component {
 	// componentDidMount() {
 	// 	this.props.getRef(this);
 	// }
-	onChangeProperties = ({ column }) => {
-		if (
-			column.id === "width" ||
-			column.id === "format" ||
-			column.id === "select"
-		) {
-			computeMeta(this.state.meta, this.state.functions);
-		}
-	};
-	onRowNew = ({ row }) => {
-		computeMeta(this.state.meta, this.state.functions);
-	};
+	// onChangeProperties = ({ column }) => {
+	// 	if (
+	// 		column.id === "width" ||
+	// 		column.id === "format" ||
+	// 		column.id === "select"
+	// 	) {
+	// 		computeMeta(this.state.meta, this.state.functions);
+	// 	}
+	// };
+	onTableEnter = ({ meta }) => computeMeta(meta, this.state.functions);
+	// onRowNew = ({ row }) => {
+	// 	computeMeta(this.state.meta, this.state.functions);
+	// };
 	render() {
 		if (this.props.status.loading || this.props.status.loadingConfig) {
 			return <div>Loading data...</div>;

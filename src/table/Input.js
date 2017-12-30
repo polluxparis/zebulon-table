@@ -21,7 +21,14 @@ export class Input extends Component {
       formatedValue: formatValue(value, props.column)
     };
   }
-
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.value !== this.state.value) {
+      this.setState({
+        value: nextProps.value,
+        formatedValue: formatValue(nextProps.value, nextProps.column)
+      });
+    }
+  }
   validateInput = value => {
     let v = value;
     const dataType = this.props.column.dataType;
@@ -62,7 +69,6 @@ export class Input extends Component {
       if (onChange)
         if (onChange(validatedValue, row, column, filterTo) === false) return;
       if (row) row[column.id] = validatedValue;
-
       this.setState({ formatedValue: value, value: validatedValue });
     }
   };
@@ -146,6 +152,7 @@ export class Input extends Component {
           checked={this.state.value || false}
           disabled={false}
           onChange={this.handleChange}
+          onFocus={onClick}
         />
       );
     } else {

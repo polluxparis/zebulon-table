@@ -136,19 +136,19 @@ const stringToFunction = (row, status) => {
 		const error = status.errors.functionJS || {};
 		error.JS = e.message;
 		status.errors.functionJS = error;
-		return false;
+		return;
 	}
 	if (typeof f === "function") {
 		row.functionJS = f;
 		if (status.errors.functionJS) {
 			delete status.errors.functionJS.JS;
 		}
-		return true;
+		return;
 	} else {
 		const error = status.errors.functionJS || {};
 		error.JS = "function not evaluated";
 		status.errors.functionJS = error;
-		return false;
+		return;
 	}
 	// console.log("stringToFunction", f);
 };
@@ -238,34 +238,44 @@ export const metaDescriptions = (object, functions, properties) => {
 	// const f={functions.global,...functions[object]};
 
 	const getFunctions = (type, obj = object) => {
-		return [""].concat(
-			Object.values(
-				f
-					.filter(
-						f =>
-							f.tp === type &&
-							(f.visibility === "global" || f.visibility === obj)
-					)
-					.reduce((acc, f) => {
-						acc[f.id] = { id: f.id, caption: f.caption || f.id };
-						return acc;
-					}, {})
+		// return [""].concat(
+		// Object.values(
+		return f
+			.filter(
+				f =>
+					f.tp === type &&
+					(f.visibility === "global" || f.visibility === obj)
 			)
-		);
+			.reduce(
+				(acc, f) => {
+					acc[f.id] = { id: f.id, caption: f.caption || f.id };
+					return acc;
+				},
+				{ undefined: "" }
+			);
+		// )
+		// );
 	};
 	const getAccessors = obj => () => getFunctions("accessor", obj);
-	const getAccessorsAndProperties = () =>
-		getAccessors().concat(
-			properties.map(property => property.caption || property.id)
+	const getAccessorsAndProperties = obj => () => {
+		const accessors = getFunctions("accessor", obj);
+		properties.forEach(
+			property =>
+				(accessors[property.id] = {
+					id: property.id,
+					caption: property.caption
+				})
 		);
-	const getAggregations = () => getFunctions("aggregation");
-	const getFormats = obj => getFunctions("format", obj);
-	const getSorts = () => getFunctions("sort");
-	const getWindowFunctions = () => getFunctions("window");
+		return accessors;
+	};
+	const getAggregations = obj => () => getFunctions("aggregation");
+	const getFormats = obj => () => getFunctions("format", obj);
+	const getSorts = obj => () => getFunctions("sort");
+	const getWindowFunctions = obj => () => getFunctions("window");
 	const getSelects = obj => () => getFunctions("select", obj);
-	const getValidators = () => getFunctions("validator");
-	const getEditables = () => getFunctions("editable");
-	const getDefaults = obj => getFunctions("default", obj);
+	const getValidators = obj => () => getFunctions("validator");
+	const getEditables = obj => () => getFunctions("editable");
+	const getDefaults = obj => () => getFunctions("default", obj);
 	// // const availableAccessors = [""].concat(
 	// // 	Object.keys(accessors).concat(props.meta.map(column => column.id))
 	// // );
@@ -428,7 +438,7 @@ export const metaDescriptions = (object, functions, properties) => {
 
 				// only for new properties
 				{
-					id: "valueAccessor",
+					id: "accessor",
 					caption: "Accessor",
 					width: 100,
 					dataType: "string",
@@ -603,12 +613,13 @@ export const metaDescriptions = (object, functions, properties) => {
 				{
 					id: "functionJS",
 					caption: "Function",
-					accessor: getFunction(
-						f,
-						object,
-						"accessor",
-						"functionToString"
-					),
+					// accessor: getFunction(
+					// 	f,
+					// 	object,
+					// 	"accessor",
+					// 	"functionToString"
+					// ),
+					accessor: "functionToString",
 					onQuit: getFunction(
 						f,
 						object,

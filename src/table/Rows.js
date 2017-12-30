@@ -26,31 +26,7 @@ export class Rows extends ScrollableGrid {
       }
     };
   };
-  // onFocus = (e, row, column) => {
-  //   let label;
-  //   if (row.tp === "accessor") {
-  //     label = "Parameters: (row)";
-  //   } else if (row.tp === "format") {
-  //     label = "Parameters: (value)";
-  //   } else if (row.tp === "aggregation") {
-  //     label = "Parameters: ([values])";
-  //   } else if (row.tp === "sort") {
-  //     label = "Parameters: (rowA, rowB)";
-  //   }
-  //   const text = {
-  //     top:
-  //       (0 + this.range.end.rows) * this.rowHeight +
-  //       this.state.scroll.rows.shift,
-  //     left:
-  //       column.position + this.rowHeight - this.state.scroll.columns.position,
-  //     v: (column.accessorFunction || (row => row[column.id]))(row),
-  //     label,
-  //     editable: column.editable,
-  //     row,
-  //     column
-  //   };
-  //   this.setState({ text });
-  // };
+
   cell = (
     row,
     column,
@@ -88,21 +64,28 @@ export class Rows extends ScrollableGrid {
         params: this.props.params
       });
     }
-    let select = column.select;
-    if (editable && focused && column.selectFunction) {
-      select = column.selectFunction({
+    let select = column.selectItems || column.select;
+    if (
+      editable &&
+      focused &&
+      column.selectFilter &&
+      typeof column.selectFilter === "function"
+    ) {
+      select = column.selectFilter({
         row,
         status: this.props.updatedRows[row.index_],
         data: this.props.data,
         params: this.props.params
       });
     }
-    // if(typeof select ==="string"){select =this.props.function.find(f=>f.code===select&&(f.visibility==="global"||f.visibility===this.props.meta.table.object)).functionJS }
-    // if(typeof select ==="function"){select=select()}
+    //  map the data
+    if (select && !Array.isArray(select) && typeof select === "object") {
+      if (!(editable && focused)) {
+        value = select[value].caption;
+        select = null;
+      } else select = Object.values(select);
+    }
 
-    // if (!editable && column.dataType === "date" && utils.isDate(value)) {
-    //   value = utils.dateToString(value);
-    // }
     return (
       <Input
         row={row}
@@ -147,7 +130,6 @@ export class Rows extends ScrollableGrid {
           else if (column.dataType === "date" || column.dataType === "boolean")
             textAlign = "center";
         }
-
         const columnIndex = index;
         const selectedRange = this.selectedRange();
         const selected = utils.isInRange(
