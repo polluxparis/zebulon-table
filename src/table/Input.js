@@ -163,7 +163,7 @@ export class Input extends Component {
           className={className || "zebulon-input"}
           autoFocus={hasFocus && inputType !== "filter"}
           style={innerStyle}
-          value={this.state.formatedValue || ""}
+          value={this.state.formatedValue}
           disabled={disabled}
           onChange={this.handleChange}
           tabIndex={0}

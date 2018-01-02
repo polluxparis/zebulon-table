@@ -6,15 +6,24 @@ import { computeMetaFromData, functionsTable } from "./utils";
 
 // import { utils.isPromise, isDate } from "./utils/generic";
 
-class ZebulonTable extends Component {
+export class ZebulonTable extends Component {
   constructor(props) {
     super(props);
+    let data = props.data;
+    if (
+      !Array.isArray(data) &&
+      typeof data === "object" &&
+      data.from &&
+      (props.select || props.meta.table.selectFunction)
+    ) {
+    }
     this.state = {
-      data: props.data,
+      data: data,
       meta: props.meta,
       sizes: props.sizes,
       keyEvent: props.keyEvent
     };
+
     if (Array.isArray(props.functions)) {
       this.state.functions = props.functions;
     } else {
@@ -71,10 +80,6 @@ class ZebulonTable extends Component {
   init = (data, meta) => {
     data.forEach((row, index) => (row.index_ = index));
     computeMetaFromData(data, meta, this.props.functions);
-    // this.setState({
-    //   data,
-    //   meta: computeMetaFromData(data, meta, this.props.functions)
-    // });
   };
   componentWillMount() {
     if (utils.isPromise(this.props.data)) {
@@ -91,13 +96,40 @@ class ZebulonTable extends Component {
     if (this.props.data !== data || this.props.meta !== meta)
       this.init(nextProps.data, nextProps.meta);
     if (this.props.keyEvent !== keyEvent) this.handleKeyEvent(keyEvent);
-    // this.init(this.props.data, this.props.meta);
   }
-  // shouldComponentUpdate(nextProps) {
-  //   return (
-  //     this.state.data !== nextProps.data || this.state.meta !== nextProps.meta
-  //   );
-  // }
+  // comunication with server
+  select = ({ from, columns, where }) => {
+    if (this.props.select) return this.props.select(from, columns, where);
+  };
+  save = (data, updatedRows, params) => {
+    let ok = true,
+      updatedData = Object.keys(updatedRows).map(index => ({
+        ...updatedRows[index],
+        initialRow: updatedRows[index].row,
+        row: data[index]
+      }));
+    if (this.props.check) ok = this.props.check(updatedData, params);
+    if (ok && this.props.save) this.props.save(updatedData, params);
+    else {
+      if (ok && this.props.delete) {
+        const deletedData = updatedData.filter(row => row.deleted_);
+        ok = this.props.delete(deletedData, params);
+      }
+      if (ok && this.props.insert) {
+        const insertedData = updatedData.filter(
+          row => row.inserted_ && !row.deleted_
+        );
+        ok = this.props.insert(insertedData, params);
+      }
+      if (ok && this.props.update) {
+        updatedData = updatedData.filter(
+          row => row.updated_ && !row.inserted_ && !row.deleted_
+        );
+        ok = this.props.update(updatedData, params);
+      }
+    }
+    return ok;
+  };
 
   render() {
     // this.id = `table-${this.props.id || 0}`;
@@ -127,7 +159,6 @@ class ZebulonTable extends Component {
           onTableEnter={this.props.onTableEnter}
           onTableQuit={this.props.onTableQuit}
           onTableClose={this.props.onTableClose}
-          onRowNew={this.props.onRowNew}
           callbacks={this.props.callbacks}
         />
       </div>
@@ -137,32 +168,7 @@ class ZebulonTable extends Component {
   }
 }
 
-// expose all actions
-// Object.keys(actions).forEach(action => {
-//   /* eslint-disable func-names */
-//   ZebulonGrid.prototype[action] = function(...args) {
-//     this.store.dispatch(actions[action](...args));
-//   };
-//   /* eslint-enable */
-// });
-// ZebulonGrid.prototype["setData"] = function(data) {
-//   setData(this.store, data);
-// };
-// ZebulonGrid.prototype["getStore"] = function() {
-//   return this.store.getState();
-// };
-// ZebulonGrid.prototype["setConfiguration"] = function(configuration, data) {
-//   applyConfigurationToStore(
-//     this.store,
-//     configuration,
-//     this.props.configurationFunctions,
-//     data
-//   );
-// };
-// ZebulonGrid.prototype["setSizes"] = function(sizes) {
-//   applySizesToStore(this.store, { ...defaultSizes, ...sizes });
-// };
 ZebulonTable.prototype["getState"] = function() {
   return this.state;
 };
-export default ZebulonTable;
+// export  ZebulonTable;

@@ -70,7 +70,8 @@
 .zebulon-table-filter-empty {
   background-color: white;
 }
-.zebulon-table-cell-3state-checkbox {
+.zebulon-table-filter-checkbox-undefined {
+  background-color: lightgrey;
 }
 .zebulon-table-status {
   outline: none;

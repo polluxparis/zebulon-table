@@ -50,7 +50,10 @@ const filter = (column, position, width, filterTo, onChange, openFilter) => {
   const className = classnames({
     "zebulon-table-cell": true,
     "zebulon-table-header": true,
-    "zebulon-table-filter": true
+    "zebulon-table-filter": true,
+    "zebulon-table-filter-checkbox-undefined":
+      (column.v === undefined || column.v === null) &&
+      column.dataType === "boolean"
   });
   let textAlign = column.alignement || "left";
   if (!column.alignement) {

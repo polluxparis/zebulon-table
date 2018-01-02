@@ -3,11 +3,9 @@ import { Headers, Status } from "./TableHeaders";
 import { Rows } from "./Rows";
 import { utils, Filter } from "zebulon-controls";
 // import { Filter } from "./controls-o/Filter";
-import { computeData } from "./utils";
+// import { computeData } from "./utils";
 
 // import { utils } from "zebulon-controls";
-
-// import { actionDescriptions } from "../PivotGrid/MetaDescriptions";
 export class Table extends Component {
   constructor(props) {
     super(props);
@@ -144,7 +142,7 @@ export class Table extends Component {
       } else if (button.type === "duplicate") {
         return this.handleDuplicate(rowIndex || 0);
       } else if (button.type === "save") {
-        return this.handleSave() || true;
+        return this.onSave();
       } else if (button.type === "detail" && button.content) {
         this.setState({ detail: button });
       } else {
@@ -155,7 +153,7 @@ export class Table extends Component {
   handleAction = button => {
     if (button.action) {
       const { selectedRange, updatedRows, data, meta } = this.state;
-      button.action({
+      button.actionFunction({
         selectedRange,
         updatedRows,
         data,
@@ -180,10 +178,7 @@ export class Table extends Component {
     if (this.selectRange(range, this.row, "quit") === false) return false;
     let filteredData = [...this.state.filteredData];
     const status = { new_: true, errors: {} };
-    // const updatedRows = {
-    //   ...this.state.updatedRows,
-    //   [this.state.data.length]: status
-    // };
+    // eslint-disable-next-line
     this.state.updatedRows[this.state.data.length] = status;
     const row = { index_: this.state.data.length };
     this.state.meta.properties
@@ -210,13 +205,6 @@ export class Table extends Component {
         "enter"
       );
     }
-    // this.selectRange(
-    //   {
-    //     end: { rows: index, columns: 0 },
-    //     start: { rows: index, columns: this.state.meta.properties.length - 1 }
-    //   },
-    //   row
-    // );
   };
   handleDuplicate = index => {
     if (this.row) {
@@ -225,15 +213,14 @@ export class Table extends Component {
 
       let filteredData = [...this.state.filteredData];
       const status = { new_: true, errors: {} };
+      // eslint-disable-next-line
       this.state.updatedRows[this.state.data.length] = status;
-      // const updatedRows = {
-      //   ...this.state.updatedRows,
-      //   [this.state.data.length]: status
-      // };
       const row = { ...this.row, index_: this.state.data.length };
-      // this.state.meta.properties
-      //   .filter(column => column.defaultFunction)
-      //   .forEach(column => (row[column.id] = column.defaultFunction(row)));
+      this.state.meta.properties
+        .filter(column => column.defaultFunction)
+        .forEach(
+          column => (row[column.id] = column.defaultFunction({ row, status }))
+        );
       this.state.data.push(row);
       filteredData = filteredData
         .slice(0, index)
@@ -292,7 +279,9 @@ export class Table extends Component {
     this.closeOpenedWindows();
     // if (this.selectRange(this.range, this.row) === false) return false;
     if (e !== column.v) {
-      if (column.filterType === "=") {
+      if (column.dataType === "boolean") {
+        column.f = row => (row[column.id] || false) === e;
+      } else if (column.filterType === "=") {
         column.f = row => row[column.id] === e;
       } else if (column.filterType === ">=") {
         column.f = row => row[column.id] >= e;
@@ -522,6 +511,7 @@ export class Table extends Component {
     }
     return true;
   };
+  //  table events
   onChange = (value, row, column) => {
     this.updated = true;
     this.rowUpdated = true;
@@ -533,6 +523,7 @@ export class Table extends Component {
         errors: {},
         updated_: true
       };
+      // eslint-disable-next-line
       this.state.updatedRows[row.index_] = updatedRow;
     } else if (!updatedRow.updated_) {
       updatedRow.updated_ = true;
@@ -548,8 +539,8 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (column.onChange) {
-      if (column.onChange(message) === false) return false;
+    if (column.onChangeFunction) {
+      if (column.onChangeFunction(message) === false) return false;
     }
     if (this.props.onChange) {
       if (this.props.onChange(message) === false) return false;
@@ -570,8 +561,8 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (column.onQuit && this.updated)
-      if (column.onQuit(message) === false) return false;
+    if (column.onQuitFunction && this.updated)
+      if (column.onQuitFunction(message) === false) return false;
     if (this.props.onCellQuit)
       if (this.props.onCellQuit(message) === false) return false;
     console.log("onCellQuit", message);
@@ -618,8 +609,8 @@ export class Table extends Component {
           }
           status.errors[property.id] = error;
         });
-      if (this.state.meta.row.onQuit) {
-        if (this.state.meta.row.onQuit(message) === false) return false;
+      if (this.state.meta.row.onQuitFunction) {
+        if (this.state.meta.row.onQuitFunction(message) === false) return false;
       }
     }
 
@@ -659,6 +650,8 @@ export class Table extends Component {
       params: this.props.params
     };
     this.tableUpdated = false;
+    this.rowUpdated = false;
+    this.updated = false;
     if (this.props.onTableEnter) this.props.onTableEnter(message);
     console.log("onTableEnter", message);
   };
@@ -679,8 +672,27 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (this.props.onTableQuit) this.props.onTableQuit(message);
+    if (this.props.onTableClose) this.props.onTableQuit(message);
     console.log("onTableQuit", message);
+  };
+  onSaveBefore = message => {
+    if (this.props.onSaveBefore) return this.props.onSaveBefore(message);
+    return true;
+  };
+  onSave = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (!this.onSaveBefore(message)) return false;
+    if (this.props.onSave && !this.props.onSave(message)) return false;
+    return true;
+  };
+  onSaveAfter = message => {
+    if (this.props.onSaveAfter) return this.props.onSaveAfter(message);
+    return true;
   };
   handleErrors = (e, rowIndex, errors) => {
     if (errors.length || this.state.toolTip) {
@@ -698,18 +710,11 @@ export class Table extends Component {
 
   handleText = (cell, row, column) => {
     let label;
-    //  ca n'a rien a faire la. A voir
-    if (row.tp === "accessor") {
-      label = "Parameters: (row,params)";
-    } else if (row.tp === "format") {
-      label = "Parameters: (value)";
-    } else if (row.tp === "aggregation") {
-      label = "Parameters: ([values])";
-    } else if (row.tp === "sort") {
-      label = "Parameters: (rowA, rowB)";
-    } else if (row.tp === "window") {
-      label = "Parameters: (value)";
-    }
+    if (this.state.meta.row.descriptorFunction)
+      label = this.state.meta.row.descriptorFunction({
+        row,
+        meta: this.state.meta
+      });
     const text = {
       top:
         (3 + cell.rows - this.state.scroll.rows.startIndex) * this.rowHeight +
@@ -747,13 +752,13 @@ export class Table extends Component {
           this.doubleclickAction = action;
         }
         let disable = false;
-        if (typeof action.disable === "function") {
+        if (action.disableFunction) {
           const row =
             this.range.end.rows !== undefined
               ? this.state.filteredData[this.range.end.rows]
               : { index_: undefined };
           const status = this.state.updatedRows[row.index_];
-          disable = action.disable({ row, status });
+          disable = action.disableFunction({ row, status });
         }
         return (
           <button

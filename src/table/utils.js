@@ -20,7 +20,36 @@ export const getFunction = (functions, object, type, value) => {
 };
 export const computeMeta = (meta, functions) => {
   let position = 0;
+
   meta.visibleLength = 0;
+  meta.row.descriptorFunction = getFunction(
+    functions,
+    meta.table.object,
+    "accessor",
+    meta.row.descriptor
+  );
+  meta.row.onQuitFunction = getFunction(
+    functions,
+    meta.table.object,
+    "validator",
+    meta.row.onQuit
+  );
+  meta.table.actions.forEach(action => {
+    if (action.action) {
+      action.actionFunction = getFunction(
+        functions,
+        meta.table.object,
+        "action",
+        action.action
+      );
+    }
+    action.disableFunction = getFunction(
+      functions,
+      meta.table.object,
+      "editable",
+      action.disable
+    );
+  });
   meta.properties.forEach((column, index) => {
     const width = column.hidden ? 0 : column.width || 0;
     column.position = position;
@@ -53,23 +82,33 @@ export const computeMeta = (meta, functions) => {
         } else column.selectItems = select || [""];
       } else column.selectItems = select || [""];
     }
-    // if(Array.isArray(select)column.selectData=select
-    //   else if(typeof
-    // column.selectFunction = getFunction(
-    //   functions,
-    //   meta.table.object,
-    //   "select",
-    //   column.select
-    // );
     column.accessorFunction = getFunction(
       functions,
       meta.table.object,
       "accessor",
       column.accessor
     );
-    column.defaultFunction =
-      getFunction(functions, meta.table.object, "default", column.default) ||
-      (() => {
+    column.defaultFunction = getFunction(
+      functions,
+      meta.table.object,
+      "default",
+      column.default
+    );
+    column.onChangeFunction = getFunction(
+      functions,
+      meta.table.object,
+      "validator",
+      column.onChange
+    );
+    column.onQuitFunction = getFunction(
+      functions,
+      meta.table.object,
+      "validator",
+      column.onQuit
+    );
+
+    if (!column.defaultFunction && column.default) {
+      column.defaultFunction = () => {
         if (
           typeof column.default === "string" &&
           !(column.dataType === "string" || column.dataType === "text")
@@ -92,10 +131,13 @@ export const computeMeta = (meta, functions) => {
         } else {
           return column.default;
         }
-      });
+      };
+    }
   });
-  // return meta;
+  // const a = buildObject(meta, null, functions);
 };
+// return meta;
+// };
 export const computeMetaFromData = (data, meta, functions) => {
   let position = 0;
   if (!meta.properties.length && data.length) {
@@ -103,8 +145,12 @@ export const computeMetaFromData = (data, meta, functions) => {
     Object.keys(row).forEach((key, index) => {
       let dataType = typeof row[key],
         filterType = "";
-      if (dataType === "object" && utils.isDate(row[key])) {
-        dataType = "date";
+      if (dataType === "object") {
+        if (utils.isDate(row[key])) {
+          dataType = "date";
+        } else {
+          dataType = "object";
+        }
         // format = dateToString;
       }
       let alignement = "unset";
@@ -125,6 +171,7 @@ export const computeMetaFromData = (data, meta, functions) => {
         width,
         dataType,
         alignement,
+        hidden: dataType === "object",
         position,
         editable: !!meta.table.editable,
         index_: index,
@@ -149,7 +196,6 @@ export const computeData = ({ data, meta, updatedRows, params }) => {
       column.tp === "Computed" && typeof column.accessorFunction === "function"
   );
   columns.forEach(column => {
-    // column.f = f[column.valueAccessor];
     column.dataType = typeof column.accessorFunction({
       row: data[0],
       status: updatedRows[data[0].index_],
@@ -168,11 +214,6 @@ export const computeData = ({ data, meta, updatedRows, params }) => {
         }))
     )
   );
-  // computeMeta(meta, f);
-  // this.setState({
-  //   data,
-  //   meta: computeMeta(meta, f)
-  // });
 };
 // -----------------------------------------------------------
 // build a table of functions from the initial function object
@@ -199,4 +240,73 @@ export const functionsTable = functions => {
     (acc, object) => acc.concat(functionsByObject(object, functions)),
     []
   );
+};
+// -----------------------------------------------------------
+// Export configuration
+// -----------------------------------------------------------
+const excludes = {
+  visibleLength: true,
+  selectItems: true,
+  selectFilter: true,
+  accessorFunction: true,
+  formatFunction: true,
+  defaultFunction: true,
+  // alignement: true,
+  position: true,
+  index_: true
+};
+// const hasFunction = {
+//   editable: true,
+//   accessor: true,
+//   select: true,
+//   format: true,
+//   disable: true,
+//   action: true,
+//   onChange: true,
+//   onQuit: true,
+//   descriptor: true
+// };
+// const getItem = (key, value, parent, functions) => {
+//   let v = value;
+//   if (!utils.isNullOrUndefined(v) && !excludes.includes(key)) {
+//     if (typeof v === "function") {
+//       v: parent;
+//       // manage function
+//     } else if (typeof v === "function") {
+//       v: parent;
+//       // manage function
+//     } else if (typeof v === "function") {
+//       v: parent;
+//       // manage function
+//     }
+//   }
+// };
+export const buildObject = item => {
+  if (Array.isArray(item)) {
+    return item.map(item => buildObject(item));
+  } else if (typeof item === "object") {
+    return Object.keys(item).reduce((acc, key) => {
+      if (!utils.isNullOrUndefined(item[key]) && !excludes[key]) {
+        acc[key] = buildObject(item[key]);
+      }
+      return acc;
+    }, {});
+  } else {
+    return item;
+  }
+};
+
+export const exportFunctions = functions => {
+  const f = {};
+  functions.forEach(fct => {
+    if (!f[fct.visibility]) f[fct.visibility] = {};
+    if (!f[fct.visibility][fct.tp]) f[fct.visibility][fct.tp] = {};
+    f[fct.visibility][fct.tp][fct.id] = "~~~" + String(fct.functionJS) + "~~~";
+  });
+  return JSON.stringify(f)
+    .replace(/"~~~/g, "")
+    .replace(/~~~"/g, "")
+    .replace(/\\n/g, "")
+    .replace(/\\t/g, "")
+    .replace(/\\"/g, '"');
 };

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import ZebulonTableAndConfiguration from "../table/ZebulonTableAndConfiguration";
+import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
 // import ZebulonTable from "../table/ZebulonTable";
 import { Input } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
@@ -29,11 +29,13 @@ class ZebulonTableDemo extends Component {
     document.addEventListener("copy", this.handleKeyEvent);
     document.addEventListener("paste", this.handleKeyEvent);
     document.addEventListener("keydown", this.handleKeyEvent);
+    window.addEventListener("beforeunload", this.handleKeyEvent);
   }
   componentDidUnMount() {
     document.removeEventListener("copy", this.handleKeyEvent);
     document.removeEventListener("paste", this.handleKeyEvent);
     document.removeEventListener("keydown", this.handleKeyEvent);
+    window.removeEventListener("beforeunload", this.handleKeyEvent);
   }
   onResize = (e, data) => {
     this.setState({
@@ -46,12 +48,13 @@ class ZebulonTableDemo extends Component {
   };
   handleKeyEvent = e => {
     this.setState({ keyEvent: e });
+    return true;
   };
   render() {
-    let { data, meta, metaProperties } = this.state;
+    let { data, meta, propertiesMeta } = this.state;
     if (this.state.configuration) {
       data = meta;
-      meta = metaProperties;
+      meta = propertiesMeta;
     }
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
@@ -76,7 +79,7 @@ class ZebulonTableDemo extends Component {
             meta={meta}
             status={{}}
             sizes={this.state.sizes}
-            ref={ref => (this.zebulon = ref)}
+            // ref={ref => (this.zebulon = ref)}
             keyEvent={this.state.keyEvent}
           />
         </ResizableBox>

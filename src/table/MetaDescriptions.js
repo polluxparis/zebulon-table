@@ -1,85 +1,13 @@
-import React, { Component } from "react";
-// import * as aggregations from "../../utils/aggregation";
-import { Input, utils } from "zebulon-controls";
-import { getFunction, computeData } from "./utils";
-class Property extends Component {
-	constructor(props) {
-		super(props);
-		const object = this.props.row;
-		const indexes = [8, 9, 10, 11, 12, 13];
-		// const items = [],
-		this.title = "Functions for analytic property";
-		this.inputs = [];
-		const style = {
-			border: "solid lightgrey thin",
-			boxSizing: "border-box",
-			padding: 0,
-			backgroundColor: "inherit",
-			width: 200,
-			textAlign: "left"
-		};
-		indexes.forEach(index => {
-			const column = this.props.meta[index];
-			// items.push(this.props.meta[index]);
-			this.inputs.push(
-				<Input
-					style={style}
-					label={column.caption}
-					select={column.select}
-					className="zebulon-input-label"
-					row={props.row}
-					id={column.id}
-					key={column.id}
-					value={this.props.row[column.id]}
-					onChange={e => props.onChange(e, this.props.row, column)}
-				/>
-			);
-		});
-	}
-	render() {
-		// onst select = ["", "a", "b", "c"];
-		// const style = {
-		// 	border: "solid lightgrey thin",
-		// 	boxSizing: "border-box",
-		// 	padding: 0,
-		// 	backgroundColor: "inherit",
-		// 	width: 200,
-		// 	textAlign: "left"
+import React from "react";
+import { /*Input,*/ utils } from "zebulon-controls";
+import {
+	// getFunction,
+	computeData,
+	buildObject,
+	exportFunctions
+} from "./utils";
+import { Property } from "./Property";
 
-		// };
-		return (
-			<div
-				style={{
-					position: "absolute",
-					border: "solid 0.1em rgba(0, 0, 0, 0.5)",
-					backgroundColor: "white",
-					top: this.props.top,
-					left: 25,
-					zIndex: 3,
-					opacity: 1,
-					width: 400,
-					height: "fit-content",
-					autoFocus: true
-				}}
-			>
-				<div
-					style={{
-						textAlign: "Center",
-						fontWeight: "bold",
-						margin: 3,
-						marginBottom: 7,
-						display: "flex",
-						justifyContent: "space-between"
-					}}
-				>
-					{this.title}
-					<button onClick={this.props.close}>X</button>
-				</div>
-				{this.inputs}
-			</div>
-		);
-	}
-}
 const propertyDetail = (
 	row,
 	data,
@@ -105,24 +33,10 @@ const propertyDetail = (
 };
 const propertyValidator = (row, data, meta, status, params) => {
 	console.log("propertyValidator", row, status);
-	// return (
-	// 	<Property
-	// 		row={row}
-	// 		data={data}
-	// 		meta={meta}
-	// 		params={params}
-	// 		status={status}
-	// 		onChange={callbacks.onChange}
-	// 		close={callbacks.close}
-	// 		top={top}
-	// 	/>
-	// );
 };
 const functionToString = row => {
 	if (typeof row.functionJS === "function") {
 		return String(row.functionJS);
-		// let fs = String(row.functionJS);
-		// return fs.slice(fs.indexOf("{"));
 	}
 	return row.functionJS;
 };
@@ -150,7 +64,6 @@ const stringToFunction = (row, status) => {
 		status.errors.functionJS = error;
 		return;
 	}
-	// console.log("stringToFunction", f);
 };
 export const functions = {
 	properties: {
@@ -166,7 +79,11 @@ export const functions = {
 			notInitial: ({ row }) => "Initial" !== row.tp
 		},
 		row: () => {},
-		table: () => {}
+		table: () => {},
+		actions: {
+			exportMeta: ({ meta }) =>
+				"meta = " + JSON.stringify(buildObject(meta))
+		}
 	},
 	dataset: {
 		selects: {
@@ -215,16 +132,41 @@ export const functions = {
 			}
 		},
 		actions: {
-			saveDataAndConfig: a => {},
 			computeData
 		}
 	},
 	functions: {
 		accessors: {
-			functionToString: ({ row }) => functionToString(row)
+			functionToString: ({ row }) => functionToString(row),
+			functionDescriptor: ({ row, meta }) => {
+				let label;
+
+				if (row.tp === "accessor") {
+					label = "Parameters: ({row,status,data,params})";
+				} else if (row.tp === "editable") {
+					label = "Parameters: ({row,status,data,params})";
+				} else if (row.tp === "select") {
+					label = "Parameters: ({row,status,data,params})";
+				} else if (row.tp === "validator") {
+					label = "Parameters: ({row,status,data,params})";
+				} else if (row.tp === "format") {
+					label = "Parameters: ({value,row,status,data,params})";
+				} else if (row.tp === "aggregation") {
+					label = "Parameters: ([values])";
+				} else if (row.tp === "sort") {
+					label = "Parameters: (rowA, rowB)";
+				} else if (row.tp === "window") {
+					label = "Parameters: (value)";
+				}
+				return `${row.caption || row.id} : ${label}`;
+			}
 		},
 		validators: {
 			stringToFunction: ({ row, status }) => stringToFunction(row, status)
+		},
+		actions: {
+			exportFunctions: ({ data }) =>
+				"functions = " + exportFunctions(data)
 		}
 	},
 	globals_: {
@@ -233,13 +175,9 @@ export const functions = {
 };
 
 export const metaDescriptions = (object, functions, properties) => {
-	// const accessors = props.configurationFunctions.accessors;
-	const f = functions; //functionsTable(functions);
-	// const f={functions.global,...functions[object]};
+	const f = functions;
 
 	const getFunctions = (type, obj = object) => {
-		// return [""].concat(
-		// Object.values(
 		return f
 			.filter(
 				f =>
@@ -253,8 +191,6 @@ export const metaDescriptions = (object, functions, properties) => {
 				},
 				{ undefined: "" }
 			);
-		// )
-		// );
 	};
 	const getAccessors = obj => () => getFunctions("accessor", obj);
 	const getAccessorsAndProperties = obj => () => {
@@ -270,11 +206,11 @@ export const metaDescriptions = (object, functions, properties) => {
 	};
 	const getAggregations = obj => () => getFunctions("aggregation");
 	const getFormats = obj => () => getFunctions("format", obj);
-	const getSorts = obj => () => getFunctions("sort");
+	// const getSorts = obj => () => getFunctions("sort");
 	const getWindowFunctions = obj => () => getFunctions("window");
 	const getSelects = obj => () => getFunctions("select", obj);
 	const getValidators = obj => () => getFunctions("validator");
-	const getEditables = obj => () => getFunctions("editable");
+	// const getEditables = obj => () => getFunctions("editable");
 	const getDefaults = obj => () => getFunctions("default", obj);
 	// // const availableAccessors = [""].concat(
 	// // 	Object.keys(accessors).concat(props.meta.map(column => column.id))
@@ -290,37 +226,17 @@ export const metaDescriptions = (object, functions, properties) => {
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: getFunction(
-							f,
-							object,
-							"editable",
-							"isNotSelected"
-						)
+						disable: "isNotSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: getFunction(
-							f,
-							object,
-							"editable",
-							"isNotSelected"
-						)
+						disable: "isNotSelected"
 					},
 					{
 						type: "action",
 						caption: "Compute",
-						action: getFunction(f, object, "action", "computeData")
-					},
-					{
-						type: "save",
-						caption: "Save",
-						action: getFunction(
-							f,
-							object,
-							"action",
-							"saveDataAndConfig"
-						)
+						action: "computeData"
 					}
 				]
 			},
@@ -333,33 +249,30 @@ export const metaDescriptions = (object, functions, properties) => {
 			table: {
 				object,
 				editable: true,
+				primaryKey: "id",
+				code: "caption",
 				actions: [
 					{ type: "insert", caption: "New" },
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: getFunction(
-							f,
-							object,
-							"editable",
-							"isNotSelected"
-						)
+						disable: "isNotSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: getFunction(
-							f,
-							object,
-							"editable",
-							"isNotSelected"
-						)
+						disable: "isNotSelected"
+					},
+					{
+						type: "action",
+						caption: "Export configuration",
+						action: "exportMeta"
 					}
 				]
 			},
 			row: {
-				validator: propertyValidator,
-				detail: propertyDetail
+				validator: "propertyValidator",
+				detail: "propertyDetail"
 			},
 			properties: [
 				{
@@ -367,7 +280,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					caption: "Column",
 					width: 100,
 					dataType: "string",
-					editable: getFunction(f, object, "editable", "notInitial"),
+					editable: "notInitial",
 					mandatory: true
 				},
 				{
@@ -375,8 +288,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					caption: "Type",
 					width: 100,
 					dataType: "string",
-					// accessor: (row, status) => (status.new_ ? row.tp : row.tp),
-					editable: getFunction(f, object, "editable", "notInitial"),
+					editable: "notInitial",
 					select: ["", "Computed", "Analytic"],
 					default: "Computed",
 					mandatory: true
@@ -442,8 +354,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					caption: "Accessor",
 					width: 100,
 					dataType: "string",
-					editable: getFunction(f, object, "editable", "notInitial"),
-					// select: getFunction(f, object, "editable", "notInitial"),
+					editable: "notInitial",
 					hidden: false,
 					select: getAccessors("dataset")
 				},
@@ -470,7 +381,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					width: 100,
 					dataType: "string",
 					editable: true,
-					select: getValidators
+					select: getValidators("dataset")
 				},
 				{
 					id: "groupByAccessor",
@@ -479,7 +390,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
-					select: getAccessorsAndProperties
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "comparisonAccessor",
@@ -488,7 +399,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
-					select: getAccessorsAndProperties
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "sortAccessor",
@@ -497,7 +408,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
-					select: getAccessorsAndProperties
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "aggregation",
@@ -506,7 +417,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
-					select: getAggregations
+					select: getAggregations("dataset")
 				},
 				{
 					id: "startFunction",
@@ -515,7 +426,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
-					select: getWindowFunctions
+					select: getWindowFunctions("dataset")
 				},
 				{
 					id: "endFunction",
@@ -524,41 +435,37 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
-					select: getWindowFunctions
+					select: getWindowFunctions("dataset")
 				}
 			]
 		};
 	} else if (object === "functions") {
-		// const fo = functions.functions;
 		return {
 			table: {
 				object,
 				editable: true,
+				primaryKey: "id",
+				code: "caption",
 				actions: [
 					{ type: "insert", caption: "New" },
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: getFunction(
-							f,
-							object,
-							"editable",
-							"isNotSelected"
-						)
+						disable: "isNotSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: getFunction(
-							f,
-							object,
-							"editable",
-							"isNotSelected"
-						)
+						disable: "isNotSelected"
+					},
+					{
+						type: "action",
+						caption: "Export functions",
+						action: "exportFunctions"
 					}
 				]
 			},
-			row: {},
+			row: { descriptor: "functionDescriptor" },
 			properties: [
 				{
 					id: "id",
@@ -613,81 +520,37 @@ export const metaDescriptions = (object, functions, properties) => {
 				{
 					id: "functionJS",
 					caption: "Function",
-					// accessor: getFunction(
-					// 	f,
-					// 	object,
-					// 	"accessor",
-					// 	"functionToString"
-					// ),
 					accessor: "functionToString",
-					onQuit: getFunction(
-						f,
-						object,
-						"validator",
-						"stringToFunction"
-					),
-					// accessor: row => {
-					// 	return functionToString(row.functionJS);
-					// },
+					onQuit: "stringToFunction",
 					width: 500,
 					dataType: "text",
 					editable: true
 				}
 			]
 		};
-	}
-};
-export const actionDescriptions = (object, callbacks) => {
-	if (object === "dataset") {
-		return [
-			{ caption: "New", type: "new" },
-			{
-				caption: "Delete",
-				type: "delete",
-				disable: row => row.index_ === undefined || "Initial" === row.tp
+	} else if (object === "measures" || object === "dimensions") {
+		return {
+			table: {
+				object,
+				editable: true,
+				primaryKey: "id",
+				code: "caption",
+				actions: [
+					{ type: "insert", caption: "New" },
+					{
+						type: "delete",
+						caption: "Delete",
+						disable: "isNotSelected"
+					},
+					{
+						type: "duplicate",
+						caption: "Duplicate",
+						disable: "isNotSelected"
+					}
+				]
 			},
-			{
-				caption: "Compute",
-				action: e => callbacks.computeData()
-			},
-			{ caption: "Save", type: "save" }
-		];
-	} else if (object === "properties") {
-		return [
-			{ caption: "New", type: "new" },
-			{
-				caption: "Delete",
-				type: "delete",
-				disable: row => row.index_ === undefined || "Initial" === row.tp
-			},
-			{
-				caption: "Analytic",
-				type: "detail",
-				disable: row => "Analytic" !== row.tp,
-				content: (row, data, meta, status, params, top, left) => {
-					return (
-						<Property
-							row={row}
-							data={data}
-							meta={meta}
-							params={params}
-							status={status}
-							onChange={callbacks.onChange}
-							close={callbacks.close}
-							top={top}
-						/>
-					);
-				}
-			}
-		];
-	} else {
-		return [
-			{ caption: "New", type: "new" },
-			{
-				caption: "Delete",
-				type: "delete",
-				disable: row => row.index_ === undefined || "Initial" === row.tp
-			}
-		];
+			row: {},
+			properties: []
+		};
 	}
 };

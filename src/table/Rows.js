@@ -44,7 +44,12 @@ export class Rows extends ScrollableGrid {
     const editable =
       // focused &&
       typeof (column.editable || false) === "function"
-        ? column.editable({ row, status: updatedRows[row.index_] || {} })
+        ? column.editable({
+            row,
+            status: updatedRows[row.index_],
+            data: this.props.data,
+            params: this.props.params
+          })
         : column.editable;
     const className = classnames({
       "zebulon-table-cell": true,
@@ -53,7 +58,12 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-editable": editable && focused
     });
     let value = column.accessorFunction
-      ? column.accessorFunction({ row, status: updatedRows[row.index_] || {} })
+      ? column.accessorFunction({
+          row,
+          status: updatedRows[row.index_],
+          data: this.props.data,
+          params: this.props.params
+        })
       : row[column.id];
     if (column.formatFunction && !(editable && focused)) {
       value = column.formatFunction({
@@ -81,11 +91,11 @@ export class Rows extends ScrollableGrid {
     //  map the data
     if (select && !Array.isArray(select) && typeof select === "object") {
       if (!(editable && focused)) {
-        value = select[value].caption;
+        value = (select[value] || {}).caption;
         select = null;
       } else select = Object.values(select);
     }
-
+    // if (column.dataType === "boolean") value = value || false;
     return (
       <Input
         row={row}
