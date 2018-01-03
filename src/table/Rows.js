@@ -58,21 +58,27 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-editable": editable && focused
     });
     let value = column.accessorFunction
-      ? column.accessorFunction({
+      ? // ? column.accessorFunction({
+        //     row,
+        //     status: updatedRows[row.index_],
+        //     data: this.props.data,
+        //     params: this.props.params
+        //   })
+        column.accessorFunction(
           row,
-          status: updatedRows[row.index_],
-          data: this.props.data,
-          params: this.props.params
-        })
+          this.props.params,
+          updatedRows[row.index_],
+          this.props.data
+        )
       : row[column.id];
     if (column.formatFunction && !(editable && focused)) {
-      value = column.formatFunction({
+      value = column.formatFunction(
         value,
         row,
-        status: updatedRows[row.index_],
-        data: this.props.data,
-        params: this.props.params
-      });
+        this.props.params,
+        updatedRows[row.index_],
+        this.props.data
+      );
     }
     let select = column.selectItems || column.select;
     if (

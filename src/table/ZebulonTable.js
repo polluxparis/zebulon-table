@@ -44,6 +44,28 @@ export class ZebulonTable extends Component {
       document.removeEventListener("keydown", this.handleKeyDown);
     }
   }
+  init = (data, meta) => {
+    data.forEach((row, index) => (row.index_ = index));
+    computeMetaFromData(data, meta, this.props.functions);
+  };
+  componentWillMount() {
+    if (utils.isPromise(this.props.data)) {
+      this.props.data.then(data => {
+        this.init(data, this.props.meta.properties);
+      });
+    } else {
+      this.init(this.props.data, this.props.meta);
+    }
+  }
+  componentWillReceiveProps(nextProps) {
+    const { data, meta, sizes, keyEvent } = nextProps;
+    if (this.state.sizes !== nextProps.sizes) this.setState({ sizes });
+    if (this.props.data !== data || this.props.meta !== meta) {
+      this.setState({ data, meta });
+      this.init(nextProps.data, nextProps.meta);
+    }
+    if (this.props.keyEvent !== keyEvent) this.handleKeyEvent(keyEvent);
+  }
   handleKeyEvent = e => {
     if (!this.table) return;
     else if (e.type === "copy") this.handleCopy(e);
@@ -77,26 +99,7 @@ export class ZebulonTable extends Component {
       this.table.handlePaste(e);
     }
   };
-  init = (data, meta) => {
-    data.forEach((row, index) => (row.index_ = index));
-    computeMetaFromData(data, meta, this.props.functions);
-  };
-  componentWillMount() {
-    if (utils.isPromise(this.props.data)) {
-      this.props.data.then(data => {
-        this.init(data, this.props.meta.properties);
-      });
-    } else {
-      this.init(this.props.data, this.props.meta);
-    }
-  }
-  componentWillReceiveProps(nextProps) {
-    const { data, meta, sizes, keyEvent } = nextProps;
-    if (this.state.sizes !== nextProps.sizes) this.setState({ sizes });
-    if (this.props.data !== data || this.props.meta !== meta)
-      this.init(nextProps.data, nextProps.meta);
-    if (this.props.keyEvent !== keyEvent) this.handleKeyEvent(keyEvent);
-  }
+
   // comunication with server
   select = ({ from, columns, where }) => {
     if (this.props.select) return this.props.select(from, columns, where);

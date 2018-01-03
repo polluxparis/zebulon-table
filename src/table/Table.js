@@ -21,8 +21,7 @@ export class Table extends Component {
           direction: 1,
           startIndex: 0,
           shift: 0,
-          position: 0,
-          error: {}
+          position: 0
         },
         columns: {
           index: 0,
@@ -249,7 +248,30 @@ export class Table extends Component {
     const f = Object.values(filters).filter(filter => filter.v !== null);
     if (!f.length) return data;
     const filter = row => f.reduce((acc, filter) => acc && filter.f(row), true);
-    return data.filter(filter);
+    const filteredData = data.filter(filter);
+    if (
+      filteredData.length !== this.state.filteredData.length &&
+      this.state.scroll.rows.startIndex !== 0 &&
+      this.state.scroll.rows.index +
+        (this.state.scroll.rows.direction === 1
+          ? this.rowsHeight / this.rowHeight
+          : 0) >
+        filteredData.length
+    ) {
+      this.setState({
+        scroll: {
+          columns: this.state.scroll.columns,
+          rows: {
+            index: 0,
+            direction: 1,
+            startIndex: 0,
+            shift: 0,
+            position: 0
+          }
+        }
+      });
+    }
+    return filteredData;
   };
   openFilter = (e, column) => {
     if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
@@ -711,17 +733,14 @@ export class Table extends Component {
   handleText = (cell, row, column) => {
     let label;
     if (this.state.meta.row.descriptorFunction)
-      label = this.state.meta.row.descriptorFunction({
-        row,
-        meta: this.state.meta
-      });
+      label = this.state.meta.row.descriptorFunction(row);
     const text = {
       top:
         (3 + cell.rows - this.state.scroll.rows.startIndex) * this.rowHeight +
         this.state.scroll.rows.shift,
       left:
         column.position + this.rowHeight - this.state.scroll.columns.position,
-      v: (column.accessorFunction || (({ row }) => row[column.id]))({ row }),
+      v: (column.accessorFunction || (row => row[column.id]))(row),
       label,
       editable: column.editable,
       row,
@@ -738,6 +757,7 @@ export class Table extends Component {
     const height = this.props.height,
       width = this.props.width;
     const { visible } = this.props;
+
     // let filter;
 
     if (!visible) {
@@ -928,6 +948,10 @@ export class Table extends Component {
     //   </div>
     // ) : null;
     // ----------------------------------
+    this.rowsHeight =
+      height -
+      (2 + (betweens !== null)) * this.rowHeight -
+      (actions.length ? 30 : 0);
     return (
       <div
         style={{
@@ -964,11 +988,7 @@ export class Table extends Component {
         <div style={{ display: "-webkit-box" }}>
           <Status
             data={this.state.filteredData}
-            height={
-              height -
-              (2 + (betweens !== null)) * this.rowHeight -
-              (actions.length ? 30 : 0)
-            }
+            height={this.rowsHeight}
             rowHeight={this.rowHeight}
             scroll={this.state.scroll.rows}
             updatedRows={this.state.updatedRows}
@@ -981,11 +1001,7 @@ export class Table extends Component {
             meta={this.state.meta.properties}
             columnVisibleLength={this.state.meta.visibleLength}
             data={this.state.filteredData}
-            height={
-              height -
-              (2 + (betweens !== null)) * this.rowHeight -
-              (actions.length ? 30 : 0)
-            }
+            height={this.rowsHeight}
             width={width - this.rowHeight}
             rowHeight={this.rowHeight}
             scroll={this.state.scroll}

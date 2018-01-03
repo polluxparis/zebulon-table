@@ -36,12 +36,10 @@ export const computeMeta = (meta, functions) => {
   );
   meta.table.actions.forEach(action => {
     if (action.action) {
-      action.actionFunction = getFunction(
-        functions,
-        meta.table.object,
-        "action",
-        action.action
-      );
+      action.actionFunction =
+        typeof action.action === "function"
+          ? action.action
+          : getFunction(functions, meta.table.object, "action", action.action);
     }
     action.disableFunction = getFunction(
       functions,
@@ -182,12 +180,9 @@ export const computeMetaFromData = (data, meta, functions) => {
         vTo: null
       });
       position += width;
-      // return meta;
     });
-    // return meta;
-  } else {
-    computeMeta(meta, functions);
   }
+  computeMeta(meta, functions);
 };
 // compute new description
 export const computeData = ({ data, meta, updatedRows, params }) => {
@@ -244,13 +239,13 @@ export const functionsTable = functions => {
 // -----------------------------------------------------------
 // Export configuration
 // -----------------------------------------------------------
-const excludes = {
+const excludeProperties = {
   visibleLength: true,
   selectItems: true,
   selectFilter: true,
-  accessorFunction: true,
-  formatFunction: true,
-  defaultFunction: true,
+  // accessorFunction: true,
+  // formatFunction: true,
+  // defaultFunction: true,
   // alignement: true,
   position: true,
   index_: true
@@ -281,7 +276,7 @@ const excludes = {
 //     }
 //   }
 // };
-export const buildObject = item => {
+export const buildObject = (item, excludes = excludeProperties) => {
   if (Array.isArray(item)) {
     return item.map(item => buildObject(item));
   } else if (typeof item === "object") {

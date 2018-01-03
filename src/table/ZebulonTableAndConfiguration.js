@@ -23,12 +23,14 @@ export class ZebulonTableAndConfiguration extends Component {
 
 		this.state.propertiesMeta = metaDescriptions(
 			"properties",
+			props.callbacks,
 			this.state.functions,
 			this.state.meta.properties
 		);
 		computeMeta(this.state.propertiesMeta, this.state.functions);
 		this.state.functionsMeta = metaDescriptions(
 			"functions",
+			props.callbacks,
 			this.state.functions
 		);
 		computeMeta(this.state.functionsMeta, this.state.functions);
@@ -37,7 +39,9 @@ export class ZebulonTableAndConfiguration extends Component {
 				this.state[tab.id] = tab.data;
 				this.state[`${tab.id}Meta`] = metaDescriptions(
 					tab.id,
-					this.state.functions
+					props.callbacks,
+					this.state.functions,
+					this.state.meta.properties
 				);
 				computeMetaFromData(
 					this.state[tab.id],
@@ -50,11 +54,38 @@ export class ZebulonTableAndConfiguration extends Component {
 	componentWillReceiveProps(nextProps) {
 		if (
 			nextProps.data !== this.props.data ||
-			nextProps.meta !== this.props.meta
+			nextProps.meta !== this.props.meta ||
+			nextProps.functions !== this.props.functions
 		) {
 			this.setState({
 				data: nextProps.data,
-				meta: nextProps.meta
+				meta: nextProps.meta,
+				functions: nextProps.functions
+			});
+		}
+		if (nextProps.tabs) {
+			nextProps.tabs.forEach((tab, index) => {
+				if (
+					!this.props.tabs ||
+					!this.props.tabs[index] ||
+					this.props.tabs[index].id !== tab.id ||
+					tab.data !== this.props.tabs[index].data
+				) {
+					this.setState({
+						[tab.id]: tab.data,
+						[`${tab.id}Meta`]: metaDescriptions(
+							tab.id,
+							this.props.callbacks,
+							this.state.functions,
+							this.state.meta.properties
+						)
+					});
+					computeMetaFromData(
+						this.state[tab.id],
+						this.state[`${tab.id}Meta`],
+						this.state.functions
+					);
+				}
 			});
 		}
 		if (nextProps.keyEvent !== this.props.keyEvent) {

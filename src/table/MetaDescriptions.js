@@ -87,7 +87,7 @@ export const functions = {
 	},
 	dataset: {
 		selects: {
-			titi_lb: ({ row, status, data, params }) => [
+			titi_lb: ({ row, params, status, data }) => [
 				"",
 				"titi_a",
 				"titi_b",
@@ -96,7 +96,7 @@ export const functions = {
 			]
 		},
 		formats: {
-			formatAmt: ({ value, row, status, data, params }) => {
+			formatAmt: (value, row, params, status, data) => {
 				if (
 					(value < 3000 && value > 1000) ||
 					utils.isNullOrUndefined(value)
@@ -137,12 +137,12 @@ export const functions = {
 	},
 	functions: {
 		accessors: {
-			functionToString: ({ row }) => functionToString(row),
-			functionDescriptor: ({ row, meta }) => {
+			functionToString,
+			functionDescriptor: row => {
 				let label;
 
 				if (row.tp === "accessor") {
-					label = "Parameters: ({row,status,data,params})";
+					label = "Parameters: (row,params,status,data)";
 				} else if (row.tp === "editable") {
 					label = "Parameters: ({row,status,data,params})";
 				} else if (row.tp === "select") {
@@ -150,7 +150,7 @@ export const functions = {
 				} else if (row.tp === "validator") {
 					label = "Parameters: ({row,status,data,params})";
 				} else if (row.tp === "format") {
-					label = "Parameters: ({value,row,status,data,params})";
+					label = "Parameters: (value,params,row,status,data)";
 				} else if (row.tp === "aggregation") {
 					label = "Parameters: ([values])";
 				} else if (row.tp === "sort") {
@@ -169,12 +169,35 @@ export const functions = {
 				"functions = " + exportFunctions(data)
 		}
 	},
+	dimensions: {
+		accessors: {
+			sortAcc: row => (row.sort || {}).keyAccessor,
+			sortFct: row => (row.sort || {}).custom
+		},
+		validators: {
+			sortAcc: ({ row }) =>
+				(row.sort = {
+					...(row.sort || {}),
+					keyAccessor: row.sortAccessor
+				}),
+			sortFct: ({ row }) =>
+				(row.sort = {
+					...(row.sort || {}),
+					custom: row.sortFunction
+				})
+		}
+	},
 	globals_: {
 		editables: { isNotSelected: ({ row }) => row.index_ === undefined }
 	}
 };
 
-export const metaDescriptions = (object, functions, properties) => {
+export const metaDescriptions = (
+	object,
+	callbacks = {},
+	functions,
+	properties
+) => {
 	const f = functions;
 
 	const getFunctions = (type, obj = object) => {
@@ -204,13 +227,13 @@ export const metaDescriptions = (object, functions, properties) => {
 		);
 		return accessors;
 	};
-	const getAggregations = obj => () => getFunctions("aggregation");
+	const getAggregations = obj => () => getFunctions("aggregation", obj);
 	const getFormats = obj => () => getFunctions("format", obj);
-	// const getSorts = obj => () => getFunctions("sort");
-	const getWindowFunctions = obj => () => getFunctions("window");
+	const getSorts = obj => () => getFunctions("sort", obj);
+	const getWindowFunctions = obj => () => getFunctions("window", obj);
 	const getSelects = obj => () => getFunctions("select", obj);
-	const getValidators = obj => () => getFunctions("validator");
-	// const getEditables = obj => () => getFunctions("editable");
+	const getValidators = obj => () => getFunctions("validator", obj);
+	const getEditables = obj => () => getFunctions("editable", obj);
 	const getDefaults = obj => () => getFunctions("default", obj);
 	// // const availableAccessors = [""].concat(
 	// // 	Object.keys(accessors).concat(props.meta.map(column => column.id))
@@ -299,6 +322,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					width: 100,
 					dataType: "string",
 					editable: true,
+					filterType: "values",
 					select: ["", "number", "string", "text", "date", "boolean"]
 				},
 				{
@@ -337,6 +361,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					width: 100,
 					dataType: "string",
 					editable: true,
+					filterType: "values",
 					select: getFormats("dataset")
 				},
 				{
@@ -356,6 +381,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: "notInitial",
 					hidden: false,
+					filterType: "values",
 					select: getAccessors("dataset")
 				},
 				{
@@ -364,6 +390,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					width: 100,
 					dataType: "string",
 					editable: true,
+					filterType: "values",
 					select: getSelects("dataset")
 				},
 				{
@@ -373,6 +400,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getDefaults("dataset")
 				},
 				{
@@ -381,6 +409,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					width: 100,
 					dataType: "string",
 					editable: true,
+					filterType: "values",
 					select: getValidators("dataset")
 				},
 				{
@@ -390,6 +419,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getAccessorsAndProperties("dataset")
 				},
 				{
@@ -399,6 +429,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getAccessorsAndProperties("dataset")
 				},
 				{
@@ -408,6 +439,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getAccessorsAndProperties("dataset")
 				},
 				{
@@ -417,6 +449,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getAggregations("dataset")
 				},
 				{
@@ -426,6 +459,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getWindowFunctions("dataset")
 				},
 				{
@@ -435,6 +469,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					dataType: "string",
 					editable: true,
 					hidden: true,
+					filterType: "values",
 					select: getWindowFunctions("dataset")
 				}
 			]
@@ -495,6 +530,7 @@ export const metaDescriptions = (object, functions, properties) => {
 						"functions",
 						"global"
 					],
+					filterType: "values",
 					mandatory: true,
 					default: "global"
 				},
@@ -504,6 +540,7 @@ export const metaDescriptions = (object, functions, properties) => {
 					width: 150,
 					dataType: "string",
 					editable: true,
+					filterType: "values",
 					select: [
 						"",
 						"accessor",
@@ -514,7 +551,8 @@ export const metaDescriptions = (object, functions, properties) => {
 						"select",
 						"validator",
 						"editable",
-						"default"
+						"default",
+						"descriptor"
 					]
 				},
 				{
@@ -528,7 +566,82 @@ export const metaDescriptions = (object, functions, properties) => {
 				}
 			]
 		};
-	} else if (object === "measures" || object === "dimensions") {
+	} else if (object === "measures") {
+		return {
+			table: {
+				object: "measures",
+				editable: true,
+				primaryKey: "id",
+				code: "caption",
+				actions: [
+					{ type: "insert", caption: "New" },
+					{
+						type: "delete",
+						caption: "Delete",
+						disable: "isNotSelected"
+					},
+					{
+						type: "duplicate",
+						caption: "Duplicate",
+						disable: "isNotSelected"
+					},
+					{
+						type: "action",
+						caption: "Apply",
+						action: callbacks.applyMeasures
+					}
+				]
+			},
+			row: {},
+			properties: [
+				{
+					id: "id",
+					caption: "id",
+					width: 100,
+					dataType: "string",
+					editable: true,
+					mandatory: true
+				},
+				{
+					id: "caption",
+					caption: "caption",
+					width: 150,
+					dataType: "string",
+					editable: true
+				},
+				{
+					id: "valueAccessor",
+					caption: "Value accessor",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					mandatory: true,
+					filterType: "values",
+					select: getAccessorsAndProperties("dataset")
+				},
+				{
+					id: "format",
+					caption: "format",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					filterType: "values",
+					select: getFormats("dataset")
+				},
+				{
+					id: "aggregation",
+					caption: "aggregation",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					mandatory: true,
+					default: "sum",
+					filterType: "values",
+					select: getAggregations("dataset")
+				}
+			]
+		};
+	} else if (object === "dimensions") {
 		return {
 			table: {
 				object,
@@ -546,11 +659,87 @@ export const metaDescriptions = (object, functions, properties) => {
 						type: "duplicate",
 						caption: "Duplicate",
 						disable: "isNotSelected"
+					},
+					{
+						type: "action",
+						caption: "Apply",
+						action: callbacks.applyDimensions
 					}
 				]
 			},
 			row: {},
-			properties: []
+			properties: [
+				{
+					id: "id",
+					caption: "Dimension",
+					width: 100,
+					dataType: "string",
+					editable: true
+				},
+				{
+					id: "caption",
+					caption: "Caption",
+					width: 150,
+					dataType: "string",
+					editable: true
+				},
+				{
+					id: "keyAccessor",
+					caption: "Key accessor",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					filterType: "values",
+					select: getAccessorsAndProperties("dataset")
+				},
+				{
+					id: "labelAccessor",
+					caption: "Label accessor",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					select: getAccessorsAndProperties("dataset")
+				},
+				{
+					id: "sort",
+					caption: "sort",
+					width: 100,
+					dataType: "object",
+					hidden: true,
+					editable: true
+				},
+				{
+					id: "sortAccessor",
+					accessor: "sortAcc",
+					onQuit: "sortAcc",
+					caption: "Sort accessor",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					filterType: "values",
+					select: getAccessorsAndProperties("dataset")
+				},
+				{
+					id: "sortFunction",
+					accessor: "sortFct",
+					onQuit: "sortFct",
+					caption: "Sort function",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					filterType: "values",
+					select: getSorts("dataset")
+				},
+				{
+					id: "format",
+					caption: "format",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					filterType: "values",
+					select: getFormats("dataset")
+				}
+			]
 		};
 	}
 };
