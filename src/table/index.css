@@ -113,59 +113,7 @@
 }
 
 /*-----------------------------------------------*/
-.zebulon-contextmenu-item {
-  padding: 2px;
-  background-color: white;
-  height: 20px;
-  width: stretch;
-  min-width: 50px;
-  z-index: 100;
-  opacity: 1;
-  display: flex;
-  justify-content: space-between;
-}
-.zebulon-contextmenu-item-separation {
-  border-top: solid 0.05em rgba(0, 0, 0, 0.5);
-}
-.zebulon-contextmenu-item-disable {
-  color: lightgrey;
-}
-.zebulon-contextmenu-item-checked {
-}
-.zebulon-contextmenu-item-selected {
-  background-color: lightgrey;
-}
-.zebulon-contextmenu-group {
-  width: max-content;
-  min-width: 80px;
-  height: fit-content;
-  border: solid 0.05em rgba(0, 0, 0, 0.5);
-  cursor: pointer;
-  z-index: 100;
-}
-/*-----------------------------------------------*/
-.zebulon-scrollbar-bar {
-  background-color: lightgrey;
-  border: solid 0.03em grey;
-  border-radius: 0.25rem;
-}
-.zebulon-scrollbar-thumb {
-  background-color: grey;
-  border: solid 0.03em grey;
-  border-radius: 0.25rem;
-}
 
-.zebulon-tool-tip {
-  padding: 5px;
-  position: absolute;
-  z-index: 9999;
-  cursor: default;
-  animation: 0.5s fadeIn;
-  border: 0.05em solid;
-  min-height: 30px;
-  background-color: white;
-  border-radius: 5px;
-}
 .zebulon-tabs-list {
   width: inherit;
   justify-content: space-around;

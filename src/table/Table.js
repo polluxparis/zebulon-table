@@ -372,7 +372,7 @@ export class Table extends Component {
         }
         // if (sort.dataType==="number"){nullValue=null}
         sort.accessorFunction =
-          sort.accessor ||
+          sort.accessorFunction ||
           (row =>
             utils.isNullOrUndefined(row[sort.id]) ? nullValue : row[sort.id]);
         return sort;

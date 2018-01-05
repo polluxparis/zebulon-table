@@ -2,27 +2,53 @@ import React from "react";
 import classnames from "classnames";
 import { ScrollableGrid, utils, constants } from "zebulon-controls";
 import { Input } from "./Input";
+console.log("constants", constants);
 export class Rows extends ScrollableGrid {
-  getRatios = () => {
-    const { height, width, meta, rowHeight, scroll, data } = this.props;
+  getRatios = props => {
+    const { height, width, meta, rowHeight, scroll, data } = props;
     const lastColumn = meta[meta.length - 1];
     const columnsWidth =
       lastColumn.position + (lastColumn.hidden ? 0 : lastColumn.width || 0);
     // const verticalDisplay=height / (data.length * rowHeight);
-    // const horizontalDisplay=height / (data.length * rowHeight);
+    const horizontalDisplay =
+      (width -
+        (data.length * rowHeight > height ? constants.ScrollbarSize : 0)) /
+      columnsWidth;
+    const verticalDisplay =
+      (height - (columnsWidth > width ? constants.ScrollbarSize : 0)) /
+      (data.length * rowHeight);
+    // if (
+    //   scroll.rows.startIndex / data.length >
+    //   1 - Math.min(verticalDisplay, 1)
+    // ) {
+    //   this.onScroll(constants.AxisType.ROWS, null, null, 1 - verticalDisplay);
+    // } else if (
+    //   verticalDisplay >= 1 &&
+    //   (scroll.rows.startIndex !== 0 || scroll.rows.direction !== 1)
+    // ) {
+    //   this.onScroll(constants.AxisType.ROWS, 1, 0);
+    // }
+    // if (
+    //   horizontalDisplay >= 1 &&
+    //   (scroll.columns.startIndex !== 0 || scroll.columns.shift !== 0)
+    // ) {
+    //   this.onScroll(constants.AxisType.COLUMN, null, null, 0);
+    // } else
+
     return {
       vertical: {
-        display:
-          (height - (columnsWidth > width ? constants.ScrollbarSize : 0)) /
-          (data.length * rowHeight),
-        position: scroll.rows.index / data.length
+        display: verticalDisplay,
+        position: Math.min(
+          scroll.rows.startIndex / data.length,
+          1 - verticalDisplay
+        )
       },
       horizontal: {
-        display:
-          (width -
-            (data.length * rowHeight > height ? constants.ScrollbarSize : 0)) /
-          columnsWidth,
-        position: scroll.columns.position / columnsWidth
+        display: horizontalDisplay,
+        position: Math.min(
+          scroll.columns.position / columnsWidth,
+          1 - horizontalDisplay
+        )
       }
     };
   };

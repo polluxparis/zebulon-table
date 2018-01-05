@@ -140,7 +140,6 @@ export const functions = {
 			functionToString,
 			functionDescriptor: row => {
 				let label;
-
 				if (row.tp === "accessor") {
 					label = "Parameters: (row,params,status,data)";
 				} else if (row.tp === "editable") {

@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
 // import ZebulonTable from "../table/ZebulonTable";
+import "zebulon-controls/lib/index.css";
 import { Input } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
 import { functionsTable } from "../table/utils";

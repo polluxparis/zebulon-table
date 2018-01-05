@@ -267,26 +267,28 @@ export class Status extends Component {
         width: rowHeight,
         height: rowHeight
       };
-      const updatedRow = updatedRows[
-        data[index + scroll.startIndex].index_
-      ] || { errors: {} };
-      const className = classnames({
-        "zebulon-table-status": true,
-        "zebulon-table-status-selected":
-          selectedIndex === index + scroll.startIndex
-      });
-      const ix = index;
-      cells.push(
-        editCell(
-          style,
-          className,
-          index + scroll.startIndex,
-          updatedRow,
-          this.onClick,
-          () => {},
-          (e, errors) => handleErrors(e, ix, errors)
-        )
-      );
+      if (index + scroll.startIndex < data.length) {
+        const updatedRow = updatedRows[
+          data[index + scroll.startIndex].index_
+        ] || { errors: {} };
+        const className = classnames({
+          "zebulon-table-status": true,
+          "zebulon-table-status-selected":
+            selectedIndex === index + scroll.startIndex
+        });
+        const ix = index;
+        cells.push(
+          editCell(
+            style,
+            className,
+            index + scroll.startIndex,
+            updatedRow,
+            this.onClick,
+            () => {},
+            (e, errors) => handleErrors(e, ix, errors)
+          )
+        );
+      }
       index += 1;
     }
     return (

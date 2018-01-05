@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import cx from "classnames";
 import { ZebulonTable } from "./ZebulonTable";
-import { metaDescriptions } from "./MetaDescriptions";
+import { metaDescriptions, functions } from "./MetaDescriptions";
 import { computeMeta, computeMetaFromData, functionsTable } from "./utils";
 
 import { utils } from "zebulon-controls";
@@ -9,16 +9,20 @@ import { utils } from "zebulon-controls";
 export class ZebulonTableAndConfiguration extends Component {
 	constructor(props) {
 		super(props);
-		let functions = props.functions;
-		if (!Array.isArray(props.functions)) {
-			functions = functionsTable(props.functions);
+		let f = props.functions || functions;
+		if (!Array.isArray(f)) {
+			f = functionsTable(f);
 		}
-		computeMetaFromData(props.data, props.meta, functions);
+		let meta = props.meta;
+		if (!meta) {
+			meta = metaDescriptions("dataset", props.callbacks, functions);
+		}
+		computeMetaFromData(props.data, meta, f);
 		this.state = {
 			selectedTab: 0,
 			data: props.data,
-			meta: props.meta,
-			functions
+			meta,
+			functions: f
 		};
 
 		this.state.propertiesMeta = metaDescriptions(
