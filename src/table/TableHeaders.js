@@ -184,8 +184,8 @@ export class Headers extends Component {
       const columnWidth = Math.max(
         Math.min(
           index === this.props.scroll.startIndex
-            ? column.width + shift
-            : column.width,
+            ? column.computedWidth + shift
+            : column.computedWidth,
           width - position
         ),
         0

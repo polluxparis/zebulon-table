@@ -44,7 +44,7 @@ export class Table extends Component {
     //     close: this.closeOpenedWindows
     //   });
     // }
-    this.rowHeight = this.props.rowHeight || 25;
+    this.rowHeight = this.props.rowHeight;
     this.range = { start: {}, end: {} };
     this.onTableEnter();
   }
@@ -122,6 +122,30 @@ export class Table extends Component {
   //-----------------------------------------
   // buttons and actions management
   //-----------------------------------------
+  getDetail = ({
+    Detail,
+    row,
+    data,
+    meta,
+    status,
+    params,
+    top,
+    onClose,
+    onChange
+  }) => {
+    return (
+      <Detail
+        row={row}
+        data={data}
+        meta={meta}
+        params={params}
+        status={status}
+        onChange={onChange}
+        close={onClose}
+        top={top}
+      />
+    );
+  };
   handleClickButton = index => {
     this.closeOpenedWindows();
     const button = this.state.meta.table.actions[index];
@@ -280,7 +304,23 @@ export class Table extends Component {
     if (!filter) {
       const items = {};
       this.props.data.forEach(row => {
-        items[row[column.id]] = { id: row[column.id], label: row[column.id] };
+        const id = (column.accessorFunction || (row => row[column.id]))(
+          row,
+          this.props.params,
+          {},
+          this.state.data
+        ); // a voir status
+        // items[row[column.id]] = { id, label:id };
+        items[id] = {
+          id,
+          label: (column.formatFunction || utils.formatValue)(
+            id,
+            row,
+            this.props.params,
+            {},
+            this.state.data
+          )
+        };
       });
       column.items = Object.values(items);
       filter = column;
@@ -301,25 +341,30 @@ export class Table extends Component {
     this.closeOpenedWindows();
     // if (this.selectRange(this.range, this.row) === false) return false;
     if (e !== column.v) {
+      const facc = row =>
+        (column.accessorFunction || (row => row[column.id]))(
+          row,
+          this.props.params,
+          {},
+          this.state.data
+        );
       if (column.dataType === "boolean") {
-        column.f = row => (row[column.id] || false) === e;
+        column.f = row => (facc(row) || false) === e;
       } else if (column.filterType === "=") {
-        column.f = row => row[column.id] === e;
+        column.f = row => facc(row) === e;
       } else if (column.filterType === ">=") {
-        column.f = row => row[column.id] >= e;
+        column.f = row => facc(row) >= e;
       } else if (column.filterType === "between" && filterTo) {
         column.f = row =>
-          row[column.id] <= e &&
-          (column.v !== null ? row[column.id] >= column.v : true);
+          facc(row) <= e && (column.v !== null ? facc(row) >= column.v : true);
       } else if (column.filterType === "between" && !filterTo) {
         column.f = row =>
-          row[column.id] >= e &&
-          (column.vTo !== null ? row[column.id] <= column.vTo : true);
+          facc(row) >= e &&
+          (column.vTo !== null ? facc(row) <= column.vTo : true);
       } else if (column.filterType === "<=") {
-        column.f = row => row[column.id] <= e;
+        column.f = row => facc(row) <= e;
       } else {
-        column.f = row =>
-          String(row[column.id] || "").startsWith(String(e || ""));
+        column.f = row => String(facc(row) || "").startsWith(String(e || ""));
       }
       if (column.filterType === "between" && filterTo) column.vTo = e;
       else column.v = e;
@@ -341,7 +386,14 @@ export class Table extends Component {
   onChangeFilterValues = filter => {
     const id = this.state.openedFilter;
     const column = this.state.filters[this.state.openedFilter];
-    column.f = row => filter[row[id]] !== undefined;
+    const facc = row =>
+      (column.accessorFunction || (row => row[column.id]))(
+        row,
+        this.props.params,
+        {},
+        this.state.data
+      );
+    column.f = row => filter[facc(row)] !== undefined;
     column.v = filter;
     const filters = { ...this.state.filters, [column.id]: column };
     const filteredData = this.filters(this.state.data, filters);
@@ -417,13 +469,13 @@ export class Table extends Component {
       index: column.index_,
       direction: column.sort,
       id: column.id,
-      accessor: column.accessor,
+      accessorFunction: column.accessorFunction,
       dataType: column.dataType
     };
     if (column.sort === undefined) {
       delete sorts[column.id];
     }
-    this.sorts(this.state.filteredData, sorts);
+    this.sorts(this.state.filteredData, sorts, column);
     this.setState({ filteredData: this.state.filteredData, sorts });
   };
   // handleSave = () => {
@@ -771,19 +823,19 @@ export class Table extends Component {
         if (!this.doubleclickAction && action.type === "detail") {
           this.doubleclickAction = action;
         }
-        let disable = false;
-        if (action.disableFunction) {
+        let enable = action.enable || false;
+        if (action.enableFunction) {
           const row =
             this.range.end.rows !== undefined
               ? this.state.filteredData[this.range.end.rows]
               : { index_: undefined };
           const status = this.state.updatedRows[row.index_];
-          disable = action.disableFunction({ row, status });
+          enable = action.enableFunction({ row, status });
         }
         return (
           <button
             key={index}
-            disabled={disable}
+            disabled={!enable}
             style={{
               width: `${96 / this.state.meta.table.actions.length}%`,
               margin: 2,
@@ -896,19 +948,24 @@ export class Table extends Component {
       //       top: (3 + rowIndex) * this.rowHeight + this.state.scroll.rows.shift,
       // left:
       //   column.position + this.rowHeight - this.state.scroll.columns.position
-      detail = detail(
+      detail = this.getDetail({
+        Detail: detail,
         row,
-        this.state.data,
-        this.state.meta.properties,
+        data: this.state.data,
+        meta: this.state.meta.properties,
         status,
-        this.props.params,
-        (4 +
-          (betweens !== null) +
-          this.state.selectedRange.end.rows -
-          this.state.scroll.rows.startIndex) *
-          this.rowHeight +
-          this.state.scroll.rows.shift
-      );
+        params: this.props.params,
+        top:
+          (4 +
+            (betweens !== null) +
+            this.state.selectedRange.end.rows -
+            this.state.scroll.rows.startIndex) *
+            this.rowHeight +
+          this.state.scroll.rows.shift,
+
+        onChange: this.state.meta.row.onChange,
+        onClose: this.closeOpenedWindows
+      });
     }
     // ------------------------
     // errors

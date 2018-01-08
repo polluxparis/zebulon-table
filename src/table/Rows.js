@@ -2,13 +2,13 @@ import React from "react";
 import classnames from "classnames";
 import { ScrollableGrid, utils, constants } from "zebulon-controls";
 import { Input } from "./Input";
+import { cellData } from "./utils";
 console.log("constants", constants);
 export class Rows extends ScrollableGrid {
   getRatios = props => {
     const { height, width, meta, rowHeight, scroll, data } = props;
     const lastColumn = meta[meta.length - 1];
-    const columnsWidth =
-      lastColumn.position + (lastColumn.hidden ? 0 : lastColumn.width || 0);
+    const columnsWidth = lastColumn.position + lastColumn.computedWidth;
     // const verticalDisplay=height / (data.length * rowHeight);
     const horizontalDisplay =
       (width -
@@ -56,7 +56,9 @@ export class Rows extends ScrollableGrid {
   cell = (
     row,
     column,
-    updatedRows,
+    status,
+    data,
+    params,
     style,
     focused,
     hasFocus,
@@ -67,66 +69,20 @@ export class Rows extends ScrollableGrid {
     onFocus,
     rowIndex
   ) => {
-    const editable =
-      // focused &&
-      typeof (column.editable || false) === "function"
-        ? column.editable({
-            row,
-            status: updatedRows[row.index_],
-            data: this.props.data,
-            params: this.props.params
-          })
-        : column.editable;
+    const { editable, value, select } = cellData(
+      row,
+      column,
+      status,
+      data,
+      params,
+      focused
+    );
     const className = classnames({
       "zebulon-table-cell": true,
       "zebulon-table-cell-selected": selected,
       "zebulon-table-cell-focused": focused,
       "zebulon-table-cell-editable": editable && focused
     });
-    let value = column.accessorFunction
-      ? // ? column.accessorFunction({
-        //     row,
-        //     status: updatedRows[row.index_],
-        //     data: this.props.data,
-        //     params: this.props.params
-        //   })
-        column.accessorFunction(
-          row,
-          this.props.params,
-          updatedRows[row.index_],
-          this.props.data
-        )
-      : row[column.id];
-    if (column.formatFunction && !(editable && focused)) {
-      value = column.formatFunction(
-        value,
-        row,
-        this.props.params,
-        updatedRows[row.index_],
-        this.props.data
-      );
-    }
-    let select = column.selectItems || column.select;
-    if (
-      editable &&
-      focused &&
-      column.selectFilter &&
-      typeof column.selectFilter === "function"
-    ) {
-      select = column.selectFilter({
-        row,
-        status: this.props.updatedRows[row.index_],
-        data: this.props.data,
-        params: this.props.params
-      });
-    }
-    //  map the data
-    if (select && !Array.isArray(select) && typeof select === "object") {
-      if (!(editable && focused)) {
-        value = (select[value] || {}).caption;
-        select = null;
-      } else select = Object.values(select);
-    }
     // if (column.dataType === "boolean") value = value || false;
     return (
       <Input
@@ -203,11 +159,13 @@ export class Rows extends ScrollableGrid {
           this.cell(
             row,
             column,
-            updatedRows,
+            updatedRows[row.index_],
+            this.props.data,
+            this.props.params,
             {
               position: "absolute",
               left,
-              width: column.width || 0,
+              width: column.computedWidth,
               height: rowHeight,
               textAlign
             },
@@ -222,7 +180,7 @@ export class Rows extends ScrollableGrid {
             rowIndex
           )
         );
-        left += column.width || 0;
+        left += column.computedWidth;
       }
       index += 1;
     }

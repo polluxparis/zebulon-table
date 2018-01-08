@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
 import { utils } from "zebulon-controls";
-import { computeMetaFromData, functionsTable } from "./utils";
+import { computeMeta, computeMetaFromData, functionsTable } from "./utils";
 
 // import { utils.isPromise, isDate } from "./utils/generic";
 
@@ -23,7 +23,7 @@ export class ZebulonTable extends Component {
       sizes: props.sizes,
       keyEvent: props.keyEvent
     };
-
+    this.zoomValue = props.sizes.zoom || 1;
     if (Array.isArray(props.functions)) {
       this.state.functions = props.functions;
     } else {
@@ -44,29 +44,55 @@ export class ZebulonTable extends Component {
       document.removeEventListener("keydown", this.handleKeyDown);
     }
   }
-  init = (data, meta) => {
+  init = (data, meta, zoom, functions) => {
     data.forEach((row, index) => (row.index_ = index));
-    computeMetaFromData(data, meta, this.props.functions);
+    computeMetaFromData(data, meta, zoom, functions);
   };
   componentWillMount() {
     if (utils.isPromise(this.props.data)) {
       this.props.data.then(data => {
-        this.init(data, this.props.meta.properties);
+        this.init(
+          data,
+          this.props.meta.properties,
+          this.zoomValue,
+          this.state.functions
+        );
       });
     } else {
-      this.init(this.props.data, this.props.meta);
+      this.init(
+        this.props.data,
+        this.props.meta,
+        this.zoomValue,
+        this.state.functions
+      );
     }
   }
   componentWillReceiveProps(nextProps) {
     const { data, meta, sizes, keyEvent } = nextProps;
-    if (this.state.sizes !== nextProps.sizes) this.setState({ sizes });
+    if (this.state.sizes !== nextProps.sizes) {
+      if (sizes.zoom) {
+        if (this.zoomValue !== sizes.zoom) {
+          this.zoomValue = sizes.zoom;
+          computeMeta(meta, this.zoomValue, this.props.functions);
+        }
+      }
+      this.setState({ sizes: { ...sizes, zoom: this.zoomValue } });
+    }
     if (this.props.data !== data || this.props.meta !== meta) {
       this.setState({ data, meta });
-      this.init(nextProps.data, nextProps.meta);
+      this.init(data, meta, this.zoomValue, this.state.functions);
     }
     if (this.props.keyEvent !== keyEvent) this.handleKeyEvent(keyEvent);
   }
   handleKeyEvent = e => {
+    const zoom = utils.isZoom(e);
+    if (zoom) {
+      e.preventDefault();
+      this.zoomValue *= zoom === 1 ? 1.1 : 1 / 1.1;
+      this.setState({ ...this.props.sizes, zoom: this.zoomValue });
+      computeMeta(this.state.meta, this.zoomValue, this.state.functions);
+      return;
+    }
     if (!this.table) return;
     else if (e.type === "copy") this.handleCopy(e);
     else if (e.type === "paste") this.handlepaste(e);
@@ -149,7 +175,9 @@ export class ZebulonTable extends Component {
           visible={this.props.visible === undefined ? true : this.props.visible}
           width={this.state.sizes.width}
           height={this.state.sizes.height}
-          rowHeight={this.state.sizes.rowHeight}
+          rowHeight={
+            (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
+          }
           isActive={this.props.isActive}
           ref={ref => (this.table = ref)}
           getActions={this.props.getActions}

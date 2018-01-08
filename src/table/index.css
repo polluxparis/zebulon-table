@@ -1,23 +1,25 @@
-/*.zebulon-input {
+.zebulon-table-input {
   font: inherit;
-  border: unset;
+  border: solid rgba(0, 0, 0, 0.2) 0.02em;
   box-sizing: border-box;
-  padding: 0;
+  /*padding: 3px;*/
   background-color: inherit;
-    display: flex;
+  min-width: 150px;
   vertical-align: middle;
-  line-height: inherit;
+  /*line-height: inherit;*/
+  height: 25px;
 }
 .zebulon-input-label: {
-  border: solid lightgrey thin;
+  /*border: solid lightgrey thin;
   box-sizing: border-box;
   padding: 0;
-  background-color: inherit;
+  background-color: inherit;*/
+  height: 25px;
 }
 .zebulon-input-select: {
   width: inherit;
 }
-*/
+
 .zebulon-table-cell {
   overflow: hidden;
   white-space: nowrap;

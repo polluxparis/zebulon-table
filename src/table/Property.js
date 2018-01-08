@@ -1,37 +1,51 @@
 import React, { Component } from "react";
 // import * as aggregations from "../../utils/aggregation";
-import { Input, utils } from "zebulon-controls";
-import { getFunction, computeData } from "./utils";
+import { utils } from "zebulon-controls";
+import { getFunction, computeData, cellData } from "./utils";
+import { Input } from "./Input";
 export class Property extends Component {
 	constructor(props) {
 		super(props);
-		const object = this.props.row;
-		const indexes = [8, 9, 10, 11, 12, 13];
+		const object = props.row;
+		const indexes = [13, 14, 15, 16, 17, 18];
 		// const items = [],
 		this.title = "Functions for analytic property";
 		this.inputs = [];
 		const style = {
-			border: "solid lightgrey thin",
-			boxSizing: "border-box",
-			padding: 0,
-			backgroundColor: "inherit",
-			width: 200,
+			// border: "solid lightgrey thin",
+			// boxSizing: "border-box",
+			// padding: 0,
+			// backgroundColor: "inherit",
+			// width: 200,
 			textAlign: "left"
 		};
+		const { row, status, data, params } = props;
 		indexes.forEach(index => {
-			const column = this.props.meta[index];
-			// items.push(this.props.meta[index]);
+			const column = props.meta[index];
+			const { editable, value, select } = cellData(
+				row,
+				column,
+				status,
+				data,
+				params,
+				true
+			);
 			this.inputs.push(
 				<Input
 					style={style}
 					label={column.caption}
-					select={column.select}
-					className="zebulon-input-label"
-					row={props.row}
+					select={select}
+					className="zebulon-table-input"
+					row={row}
+					column={column}
 					id={column.id}
 					key={column.id}
-					value={this.props.row[column.id]}
-					onChange={e => props.onChange(e, this.props.row, column)}
+					inputType="field"
+					focused={true}
+					editable={editable}
+					value={value}
+					onChange={e =>
+						(props.onChange || (() => {}))(e, row, column)}
 				/>
 			);
 		});
@@ -75,7 +89,7 @@ export class Property extends Component {
 					{this.title}
 					<button onClick={this.props.close}>X</button>
 				</div>
-				{this.inputs}
+				<div>{this.inputs}</div>{" "}
 			</div>
 		);
 	}

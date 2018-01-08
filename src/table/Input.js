@@ -2,13 +2,29 @@ import React, { Component } from "react";
 import { utils } from "zebulon-controls";
 const { dateToString, stringToDate, isNullOrUndefined } = utils;
 
-const formatValue = (value, meta) => {
-  const { dataType, format } = meta;
+const formatValue = (props, value) => {
+  const {
+    row,
+    column,
+    status,
+    params,
+    data,
+    inputType,
+    focused,
+    editable
+  } = props;
+  const { dataType, formatFunction } = column;
   let v = isNullOrUndefined(value) ? "" : value;
-  if (dataType === "boolean" && value === "") {
+  if (
+    formatFunction &&
+    inputType !== "filter" &&
+    (!(focused && editable) && dataType !== "boolean")
+  ) {
+    v = formatFunction(v, row, params, status, data);
+  } else if (dataType === "boolean" && value === "") {
     v = null;
   } else if (dataType === "date" && value !== null) {
-    v = dateToString(v, format || "dd/mm/yyyy");
+    v = dateToString(v, undefined || "dd/mm/yyyy");
   }
   return v;
 };
@@ -18,14 +34,14 @@ export class Input extends Component {
     let value = props.value;
     this.state = {
       value,
-      formatedValue: formatValue(value, props.column)
+      formatedValue: formatValue(props, value)
     };
   }
   componentWillReceiveProps(nextProps) {
     if (nextProps.value !== this.state.value) {
       this.setState({
         value: nextProps.value,
-        formatedValue: formatValue(nextProps.value, nextProps.column)
+        formatedValue: formatValue(nextProps, nextProps.value)
       });
     }
   }
@@ -63,7 +79,7 @@ export class Input extends Component {
       if (validatedValue !== undefined && dataType === "date") {
         validatedValue = stringToDate(validatedValue, format);
         if (validatedValue !== undefined) {
-          value = formatValue(validatedValue, column);
+          value = formatValue(this.props, validatedValue);
         }
       }
       if (onChange)
@@ -90,9 +106,13 @@ export class Input extends Component {
       onMouseOver,
       onFocus
     } = this.props;
+    let input;
     const { dataType, format } = column;
-    if (row && !(focused && editable) && dataType !== "boolean") {
-      return (
+    if (
+      inputType !== "filter" &&
+      (!(focused && editable) && dataType !== "boolean")
+    ) {
+      input = (
         <div
           key={column.id}
           className={className || "zebulon-input zebulon-input-select"}
@@ -103,90 +123,104 @@ export class Input extends Component {
           {this.state.formatedValue}
         </div>
       );
-    }
-    const innerStyle = {
-      textAlign: style.textAlign
-    };
-    if (inputType === "filter") {
-      innerStyle.padding = ".4em";
-    }
+    } else {
+      const innerStyle = {
+        textAlign: style.textAlign
+      };
+      if (inputType === "filter") {
+        innerStyle.padding = ".4em";
+      }
 
-    let type = "text",
-      input,
-      checkboxLabel;
-    // label;
-    let disabled = !editable || undefined;
-    if (select) {
-      let options = select;
-      if (typeof options === "function") {
-        options = options(row);
+      let type = "text";
+      // label;
+      let disabled = !editable || undefined;
+      if (select) {
+        let options = select;
+        if (typeof options === "function") {
+          options = options(row);
+        }
+        input = (
+          <select
+            className={className || "zebulon-input zebulon-input-select"}
+            onChange={this.handleChange}
+            value={this.state.formatedValue}
+            style={innerStyle}
+            autoFocus={true}
+          >
+            {options.map((item, index) => (
+              <option
+                key={index}
+                value={typeof item === "object" ? item.id : item}
+              >
+                {typeof item === "object" ? item.caption : item}
+              </option>
+            ))}
+          </select>
+        );
+      } else if (dataType === "boolean") {
+        type = "checkbox";
+        innerStyle.width = "unset";
+        innerStyle.margin = 0;
+        input = (
+          <input
+            type="checkbox"
+            key={column.id}
+            className={className || "zebulon-input"}
+            style={innerStyle}
+            checked={this.state.value || false}
+            disabled={false}
+            onChange={this.handleChange}
+            onFocus={onClick}
+          />
+        );
+      } else {
+        input = (
+          <input
+            type="text"
+            key={column.id}
+            className={className || "zebulon-input"}
+            autoFocus={hasFocus && inputType !== "filter"}
+            style={innerStyle}
+            value={
+              isNullOrUndefined(this.state.formatedValue) ? (
+                ""
+              ) : (
+                this.state.formatedValue
+              )
+            }
+            disabled={disabled}
+            onChange={this.handleChange}
+            tabIndex={0}
+            onFocus={e => (onFocus || (() => {}))(e, row, column)}
+          />
+        );
       }
       input = (
-        <select
-          className={className || "zebulon-input zebulon-input-select"}
-          onChange={this.handleChange}
-          value={this.state.formatedValue}
-          style={innerStyle}
-          autoFocus={true}
+        <div
+          id="div-input"
+          key={column.id}
+          className={className || "zebulon-input"}
+          style={style}
         >
-          {options.map((item, index) => (
-            <option
-              key={index}
-              value={typeof item === "object" ? item.id : item}
-            >
-              {typeof item === "object" ? item.caption : item}
-            </option>
-          ))}
-        </select>
-      );
-    } else if (dataType === "boolean") {
-      type = "checkbox";
-      innerStyle.width = "unset";
-      innerStyle.margin = 0;
-      input = (
-        <input
-          type="checkbox"
-          key={column.id}
-          className={className || "zebulon-input"}
-          style={innerStyle}
-          checked={this.state.value || false}
-          disabled={false}
-          onChange={this.handleChange}
-          onFocus={onClick}
-        />
-      );
-    } else {
-      input = (
-        <input
-          type="text"
-          key={column.id}
-          className={className || "zebulon-input"}
-          autoFocus={hasFocus && inputType !== "filter"}
-          style={innerStyle}
-          value={
-            isNullOrUndefined(this.state.formatedValue) ? (
-              ""
-            ) : (
-              this.state.formatedValue
-            )
-          }
-          disabled={disabled}
-          onChange={this.handleChange}
-          tabIndex={0}
-          onFocus={e => (onFocus || (() => {}))(e, row, column)}
-        />
+          {input}
+        </div>
       );
     }
-    input = (
-      <div
-        id="div-input"
-        key={column.id}
-        className={className || "zebulon-input"}
-        style={style}
-      >
-        {input}
-      </div>
-    );
+    if (inputType === "field") {
+      input = (
+        <label
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "0.2em"
+          }}
+          // className={this.props.className}
+        >
+          {column.caption}
+          {input}
+        </label>
+      );
+    }
     return input;
   }
 }

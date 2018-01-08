@@ -4,33 +4,34 @@ import {
 	// getFunction,
 	computeData,
 	buildObject,
-	exportFunctions
+	exportFunctions,
+	aggregations
 } from "./utils";
 import { Property } from "./Property";
 
-const propertyDetail = (
-	row,
-	data,
-	meta,
-	status,
-	params,
-	top,
-	left,
-	callbacks
-) => {
-	return (
-		<Property
-			row={row}
-			data={data}
-			meta={meta}
-			params={params}
-			status={status}
-			onChange={callbacks.onChange}
-			close={callbacks.close}
-			top={top}
-		/>
-	);
-};
+// const propertyDetail = ({
+// 	row,
+// 	data,
+// 	meta,
+// 	status,
+// 	params,
+// 	top,
+// 	onClose,
+// 	onChange
+// ) => {
+// 	return (
+// 		<Property
+// 			row={row}
+// 			data={data}
+// 			meta={meta}
+// 			params={params}
+// 			status={status}
+// 			onChange={onChange}
+// 			close={close}
+// 			top={top}
+// 		/>
+// 	);
+// };
 const propertyValidator = (row, data, meta, status, params) => {
 	console.log("propertyValidator", row, status);
 };
@@ -76,7 +77,9 @@ export const functions = {
 			row: ({ row, status, data, params }) => {}
 		},
 		editables: {
-			notInitial: ({ row }) => "Initial" !== row.tp
+			isInitial: ({ row }) => row.tp === "Initial",
+			isNotInitial: ({ row }) => row.tp !== "Initial",
+			isAnalytic: ({ row }) => row.tp === "Analytic"
 		},
 		row: () => {},
 		table: () => {},
@@ -96,6 +99,10 @@ export const functions = {
 			]
 		},
 		formats: {
+			"mm/yyyy": value =>
+				utils.isNullOrUndefined(value)
+					? ""
+					: utils.formatValue(value, "mm/yyyy"),
 			formatAmt: (value, row, params, status, data) => {
 				if (
 					(value < 3000 && value > 1000) ||
@@ -129,6 +136,30 @@ export const functions = {
 						</div>
 					);
 				}
+			}
+		},
+		aggregations,
+		windows: {
+			from7d: x => {
+				const xx = new Date(x);
+				xx.setDate(xx.getDate() - 7);
+				return xx;
+			},
+			to5d: x => {
+				const xx = new Date(x);
+				xx.setDate(xx.getDate() + 5);
+				return xx;
+			}
+		},
+		accessors: {
+			qty3: row => row.qty / 3,
+			mth: row => {
+				if (utils.isNullOrUndefined(row.d)) {
+					return null;
+				}
+				const d = new Date(row.d);
+				d.setDate(1);
+				return d;
 			}
 		},
 		actions: {
@@ -187,7 +218,7 @@ export const functions = {
 		}
 	},
 	globals_: {
-		editables: { isNotSelected: ({ row }) => row.index_ === undefined }
+		editables: { isSelected: ({ row }) => row.index_ !== undefined }
 	}
 };
 
@@ -244,21 +275,22 @@ export const metaDescriptions = (
 				object,
 				editable: true,
 				actions: [
-					{ type: "insert", caption: "New" },
+					{ type: "insert", caption: "New", enable: true },
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "action",
 						caption: "Compute",
-						action: "computeData"
+						action: "computeData",
+						enable: true
 					}
 				]
 			},
@@ -274,21 +306,28 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New" },
+					{ type: "insert", caption: "New", enable: true },
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: "isNotSelected"
+						enable: "isNotInitial"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: "isNotSelected"
+						enable: "isSelected"
+					},
+					{
+						type: "detail",
+						caption: "Analytic",
+						enable: "isAnalytic",
+						content: Property
 					},
 					{
 						type: "action",
 						caption: "Export configuration",
-						action: "exportMeta"
+						action: "exportMeta",
+						enable: true
 					}
 				]
 			},
@@ -302,7 +341,7 @@ export const metaDescriptions = (
 					caption: "Column",
 					width: 100,
 					dataType: "string",
-					editable: "notInitial",
+					editable: "isNotInitial",
 					mandatory: true
 				},
 				{
@@ -310,7 +349,7 @@ export const metaDescriptions = (
 					caption: "Type",
 					width: 100,
 					dataType: "string",
-					editable: "notInitial",
+					editable: "isNotInitial",
 					select: ["", "Computed", "Analytic"],
 					default: "Computed",
 					mandatory: true
@@ -319,7 +358,7 @@ export const metaDescriptions = (
 					id: "dataType",
 					caption: "Data type",
 					width: 100,
-					dataType: "string",
+					dataType: "isNotInitial",
 					editable: true,
 					filterType: "values",
 					select: ["", "number", "string", "text", "date", "boolean"]
@@ -336,8 +375,8 @@ export const metaDescriptions = (
 					caption: "Editable",
 					width: 100,
 					dataType: "boolean",
-					editable: true,
-					default: true
+					editable: "isInitial",
+					default: false
 				},
 				{
 					id: "mandatory",
@@ -378,7 +417,7 @@ export const metaDescriptions = (
 					caption: "Accessor",
 					width: 100,
 					dataType: "string",
-					editable: "notInitial",
+					editable: "isNotInitial",
 					hidden: false,
 					filterType: "values",
 					select: getAccessors("dataset")
@@ -422,16 +461,6 @@ export const metaDescriptions = (
 					select: getAccessorsAndProperties("dataset")
 				},
 				{
-					id: "comparisonAccessor",
-					caption: "Comparison accessor",
-					width: 200,
-					dataType: "string",
-					editable: true,
-					hidden: true,
-					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
-				},
-				{
 					id: "sortAccessor",
 					caption: "Sort accessor",
 					width: 200,
@@ -450,6 +479,16 @@ export const metaDescriptions = (
 					hidden: true,
 					filterType: "values",
 					select: getAggregations("dataset")
+				},
+				{
+					id: "comparisonAccessor",
+					caption: "Comparison accessor",
+					width: 200,
+					dataType: "string",
+					editable: true,
+					hidden: true,
+					filterType: "values",
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "startFunction",
@@ -485,12 +524,12 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "action",

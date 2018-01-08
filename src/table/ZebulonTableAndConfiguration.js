@@ -17,27 +17,36 @@ export class ZebulonTableAndConfiguration extends Component {
 		if (!meta) {
 			meta = metaDescriptions("dataset", props.callbacks, functions);
 		}
-		computeMetaFromData(props.data, meta, f);
+		computeMetaFromData(props.data, meta, props.sizes.zoom, f);
 		this.state = {
 			selectedTab: 0,
 			data: props.data,
 			meta,
-			functions: f
+			functions: f,
+			sizes: props.sizes
 		};
-
+		this.zoomValue = props.sizes.zoom || 1;
 		this.state.propertiesMeta = metaDescriptions(
 			"properties",
 			props.callbacks,
 			this.state.functions,
 			this.state.meta.properties
 		);
-		computeMeta(this.state.propertiesMeta, this.state.functions);
+		computeMeta(
+			this.state.propertiesMeta,
+			props.sizes.zoom,
+			this.state.functions
+		);
 		this.state.functionsMeta = metaDescriptions(
 			"functions",
 			props.callbacks,
 			this.state.functions
 		);
-		computeMeta(this.state.functionsMeta, this.state.functions);
+		computeMeta(
+			this.state.functionsMeta,
+			props.sizes.zoom,
+			this.state.functions
+		);
 		if (this.props.tabs) {
 			this.props.tabs.forEach(tab => {
 				this.state[tab.id] = tab.data;
@@ -50,6 +59,7 @@ export class ZebulonTableAndConfiguration extends Component {
 				computeMetaFromData(
 					this.state[tab.id],
 					this.state[`${tab.id}Meta`],
+					props.sizes.zoom,
 					this.state.functions
 				);
 			});
@@ -66,6 +76,9 @@ export class ZebulonTableAndConfiguration extends Component {
 				meta: nextProps.meta,
 				functions: nextProps.functions
 			});
+		}
+		if (nextProps.sizes.zoom !== this.props.sizes.zoom) {
+			this.zoomValue = nextProps.sizes.zoom || 1;
 		}
 		if (nextProps.tabs) {
 			nextProps.tabs.forEach((tab, index) => {
@@ -87,6 +100,7 @@ export class ZebulonTableAndConfiguration extends Component {
 					computeMetaFromData(
 						this.state[tab.id],
 						this.state[`${tab.id}Meta`],
+						this.zoomValue,
 						this.state.functions
 					);
 				}
@@ -97,6 +111,13 @@ export class ZebulonTableAndConfiguration extends Component {
 		}
 	}
 	handleKeyDown = e => {
+		const zoom = utils.isZoom(e);
+		if (zoom) {
+			e.preventDefault();
+			this.zoomValue *= zoom === 1 ? 1.1 : 1 / 1.1;
+			this.setState({ ...this.props.sizes, zoom: this.zoomValue });
+			return;
+		}
 		if (utils.isNavigationKey(e)) {
 			const tab = this.tabs[this.state.selectedTab].id;
 			if (this[tab] && this[tab].handleKeyDown) {
@@ -105,7 +126,11 @@ export class ZebulonTableAndConfiguration extends Component {
 		}
 	};
 	initTabs = props => {
-		const sizes = { ...props.sizes, height: props.sizes.height - 30 };
+		const sizes = {
+			...props.sizes,
+			height: props.sizes.height - 30 * (props.sizes.zoom || 1),
+			zoom: this.zoomValue
+		};
 		const tabs = [
 			{
 				id: "dataset",
@@ -203,7 +228,7 @@ export class ZebulonTableAndConfiguration extends Component {
 	// 	}
 	// };
 	onTableEnter = ({ meta }) => {
-		computeMeta(meta, this.state.functions);
+		computeMeta(meta, this.zoomValue, this.state.functions);
 	};
 	// onRowNew = ({ row }) => {
 	// 	computeMeta(this.state.meta, this.state.functions);
@@ -228,10 +253,14 @@ export class ZebulonTableAndConfiguration extends Component {
 			}
 		}
 		this.tabs = this.initTabs(this.props);
+		const zoomValue = this.zoomValue;
 		return (
-			<div>
+			<div style={{ fontSize: `${zoomValue * 100}%` }}>
 				<div
-					style={{ display: "flex", height: 25 }}
+					style={{
+						display: "flex",
+						height: 25 * zoomValue
+					}}
 					className="zebulon-tabs-list"
 				>
 					{this.tabs.map((tab, index) => (
@@ -249,7 +278,11 @@ export class ZebulonTableAndConfiguration extends Component {
 						</div>
 					))}
 				</div>
-				<div style={{ height: this.props.sizes.height - 30 }}>
+				<div
+					style={{
+						height: this.props.sizes.height - 30 * zoomValue
+					}}
+				>
 					{this.tabs.map(tab => tab.content)}
 				</div>
 			</div>

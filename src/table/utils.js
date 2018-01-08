@@ -18,7 +18,7 @@ export const getFunction = (functions, object, type, value) => {
       : [];
   return v.length ? v[0].functionJS : undefined;
 };
-export const computeMeta = (meta, functions) => {
+export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
 
   meta.visibleLength = 0;
@@ -41,19 +41,26 @@ export const computeMeta = (meta, functions) => {
           ? action.action
           : getFunction(functions, meta.table.object, "action", action.action);
     }
-    action.disableFunction = getFunction(
+    action.enableFunction = getFunction(
       functions,
       meta.table.object,
       "editable",
-      action.disable
+      action.enable
     );
   });
   meta.properties.forEach((column, index) => {
-    const width = column.hidden ? 0 : column.width || 0;
+    const width = zoom * (column.hidden ? 0 : column.width || 0);
+    column.computedWidth = width;
     column.position = position;
     column.index_ = index;
     position += width;
     meta.visibleLength += width !== 0;
+    column.editableFunction = getFunction(
+      functions,
+      meta.table.object,
+      "editable",
+      column.editable
+    );
     column.formatFunction = getFunction(
       functions,
       meta.table.object,
@@ -131,12 +138,51 @@ export const computeMeta = (meta, functions) => {
         }
       };
     }
+    if (column.comparisonAccessor) {
+      // a voir
+      column.groupByAccessorFunction = getFunction(
+        functions,
+        meta.table.object,
+        "accessor",
+        column.groupByAccessor
+      );
+      column.sortAccessorFunction = getFunction(
+        functions,
+        meta.table.object,
+        "accessor",
+        column.sortAccessor || column.accessor
+      );
+      column.comparisonAccessorFunction = getFunction(
+        functions,
+        meta.table.object,
+        "accessor",
+        column.comparisonAccessor
+      );
+      column.startFunctionFunction = getFunction(
+        functions,
+        meta.table.object,
+        "window",
+        column.startFunction
+      );
+      column.endFunctionFunction = getFunction(
+        functions,
+        meta.table.object,
+        "window",
+        column.endFunction
+      );
+      column.aggregationFunction = getFunction(
+        functions,
+        meta.table.object,
+        "aggregation",
+        column.aggregation
+      );
+    }
   });
   // const a = buildObject(meta, null, functions);
 };
 // return meta;
 // };
-export const computeMetaFromData = (data, meta, functions) => {
+export const computeMetaFromData = (data, meta, zoom, functions) => {
   let position = 0;
   if (!meta.properties.length && data.length) {
     const row = data[0];
@@ -182,34 +228,9 @@ export const computeMetaFromData = (data, meta, functions) => {
       position += width;
     });
   }
-  computeMeta(meta, functions);
+  computeMeta(meta, zoom, functions);
 };
-// compute new description
-export const computeData = ({ data, meta, updatedRows, params }) => {
-  const columns = meta.properties.filter(
-    column =>
-      column.tp === "Computed" && typeof column.accessorFunction === "function"
-  );
-  columns.forEach(column => {
-    column.dataType = typeof column.accessorFunction({
-      row: data[0],
-      status: updatedRows[data[0].index_],
-      data,
-      params
-    });
-  });
-  data.forEach(row =>
-    columns.forEach(
-      column =>
-        (row[column.id] = column.accessorFunction({
-          row,
-          status: updatedRows[row.index_],
-          data,
-          params
-        }))
-    )
-  );
-};
+
 // -----------------------------------------------------------
 // build a table of functions from the initial function object
 // -----------------------------------------------------------
@@ -304,4 +325,231 @@ export const exportFunctions = functions => {
     .replace(/\\n/g, "")
     .replace(/\\t/g, "")
     .replace(/\\"/g, '"');
+};
+// ----------------------------------
+// common data access (row or fiels)
+// ----------------------------------
+export const cellData = (row, column, status, data, params, focused) => {
+  const editable =
+    // focused &&
+    column.editableFunction
+      ? column.editableFunction({
+          row,
+          status,
+          data,
+          params
+        })
+      : column.editable;
+  let value = column.accessorFunction
+    ? column.accessorFunction(row, params, status, data)
+    : row[column.id];
+  // if (column.formatFunction && !(editable && focused)) {
+  //   value = column.formatFunction(value, row, params, status, data);
+  // }
+  let select = column.selectItems || column.select;
+  if (
+    editable &&
+    focused &&
+    column.selectFilter &&
+    typeof column.selectFilter === "function"
+  ) {
+    select = column.selectFilter({
+      row,
+      status,
+      data,
+      params
+    });
+  }
+  //  map the data
+  if (select && !Array.isArray(select) && typeof select === "object") {
+    if (!(editable && focused)) {
+      value = (select[value] || {}).caption;
+      select = null;
+    } else select = Object.values(select);
+  }
+  return { editable, select, value };
+};
+// ----------------------------
+//  aggregations
+//  ---------------------------
+export const aggregations = {
+  count: values => values.length,
+  sum: values => values.reduce((sum, value) => (sum += value), null),
+  min: values =>
+    values.reduce(
+      (min, value) => (min = min === null || value < min ? value : min),
+      null
+    ),
+  max: values =>
+    values.reduce(
+      (max, value) => (max = max === null || value > max ? value : max),
+      null
+    ),
+  avg: values =>
+    values.length === 0 ? null : aggregations.sum(values) / values.length,
+  weighted_avg: values => {
+    const wavg = values.reduce(
+      (wavg, value) => {
+        wavg.v0 += value.v0;
+        wavg.v1 += value.v1;
+        return wavg;
+      },
+      { v0: null, v1: null }
+    );
+    return wavg.v0 === 0 && wavg.v1 === 0 ? null : wavg.v0 / wavg.v1;
+  },
+  delta: values => {
+    const delta = values.reduce(
+      (delta, value) => {
+        delta.v0 += value.v0;
+        delta.v1 += value.v1;
+        return delta;
+      },
+      { v0: null, v1: null }
+    );
+    return delta.v0 - delta.v1;
+  },
+  prod: values => values.reduce((prod, value) => (prod *= value), null)
+};
+// -------------------------------------
+// compute new description
+// -------------------------------------
+const sortFunction = accessor => (rowA, rowB) => {
+  const a = accessor(rowA),
+    b = accessor(rowB);
+  let x = 0,
+    i = 0;
+
+  while (!x && i < a.length) {
+    x = (a[i] > b[i]) - (b[i] > a[i]);
+    i++;
+  }
+
+  return x;
+};
+export const computeData = ({ data, meta, updatedRows, params }) => {
+  let columns = meta.properties.filter(
+    column =>
+      column.tp === "Computed" && typeof column.accessorFunction === "function"
+  );
+  columns.forEach(column => {
+    column.dataType = typeof column.accessorFunction({
+      row: data[0],
+      status: updatedRows[data[0].index_],
+      data,
+      params
+    });
+  });
+  data.forEach(row =>
+    columns.forEach(
+      column =>
+        (row[column.id] = column.accessorFunction({
+          row,
+          status: updatedRows[row.index_],
+          data,
+          params
+        }))
+    )
+  );
+  columns = meta.properties.filter(
+    column =>
+      column.tp === "Analytic" && typeof column.accessorFunction === "function"
+  );
+  columns.forEach(column => {
+    computeAnalytic(data, column);
+  });
+};
+// const computeAnalytics = query => {
+//   const measures = query.query.measures.filter(
+//     measure => measure.tp === "analytics"
+//   );
+//   query.data = measures.reduce((data, measure) => {
+//     query.measures[measure.id] = null;
+//     return computeAnalytic(
+//       data,
+//       configurationFunctions.analytics[measure.id],
+//       measure.id
+//     );
+//   }, query.data);
+//   return query;
+// };
+const computeAnalytic = (data, column) => {
+  let d = data.concat([]);
+  let groups = [[]],
+    min = 0,
+    max;
+  // sort;
+  let sortAccessor =
+    column.sortAccessorFunction || (row => row[column.sortAccessor]);
+  let groupByAccessor =
+    column.groupByAccessorFunction || (row => row[column.groupByAccessor]);
+  // const a=[]
+  // if (sortAccessor){
+  //   sort = sortAccessor(data[0]);
+  //   if (!Array.isArray(sort))
+  const accessor = row => {
+    let acc = [];
+    if (groupByAccessor) {
+      acc = acc.concat(groupByAccessor(row));
+    }
+    if (sortAccessor) {
+      acc = acc.concat(sortAccessor(row));
+    }
+    return acc;
+  };
+  if (sortAccessor || groupByAccessor) {
+    // const groupBy = groupByAccessorFunction(data[0]);
+    //   const sort = groupByAccessorFunction(data[0]);
+    //   if (Array.isArray(groupBy0)) {
+    //     accessor = row => groupByAccessorFunction(row).concat(sortAccessor(row));
+    //   } else {
+    //     accessor = [groupByAccessorFunction(row)].concat(sortAccessor(row));
+    //   }
+    // } else {
+    //    accessor = groupByAccessorFunction||sortAccessor;
+    //     if(accessor){const groupBy0 = groupByAccessorFunction(data[0]);
+    // }
+    // const accessor=row=>{const gb=groupByAccessorFunction(row);sortAccessor(row)]);
+
+    // if (sortAccessor) {
+    //   const sortLength = Array.isArray(sortAccessor(d[0]))
+    //     ? sortAccessor(d[0]).length
+    //     : null;
+    d.sort(sortFunction(accessor));
+  }
+  // group by and window interval
+  d.forEach((row, index) => {
+    row._index = groups[groups.length - 1].length;
+    row._window = {
+      ref: (column.comparisonAccessorFunction ||
+        (row => row[column.comparisonAccessor]))(row),
+      value: (column.accessorFunction || (row => row[column.accessor]))(row),
+      groupBy: JSON.stringify(groupByAccessor(row))
+    };
+    row._window.start = column.startFunctionFunction(row._window.ref);
+    row._window.end = column.endFunctionFunction(row._window.ref);
+    if (index > 0 && row._window.groupBy !== d[index - 1]._window.groupBy) {
+      groups.push([]);
+    }
+    groups[groups.length - 1].push(row);
+  });
+  // computation
+  groups.forEach(group =>
+    group.forEach((row, index) => {
+      let i = index - 1,
+        values = [row._window.value];
+      while (i >= 0 && group[i]._window.ref >= row._window.start) {
+        values.push(group[i]._window.value);
+        i--;
+      }
+      i = index + 1;
+      while (i < group.length && group[i]._window.ref <= row._window.end) {
+        values.push(group[i]._window.value);
+        i++;
+      }
+      row[column.id] = column.aggregationFunction(values);
+    })
+  );
+
+  return data;
 };
