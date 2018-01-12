@@ -1,29 +1,31 @@
 import React, { Component } from "react";
 import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
+import { ZebulonTable } from "../table/ZebulonTable";
 // import ZebulonTable from "../table/ZebulonTable";
 import "zebulon-controls/lib/index.css";
 import "../table/index.css";
-import { Input } from "zebulon-controls";
+import { Input, constants } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
 import { functionsTable } from "../table/utils";
 import { ResizableBox } from "react-resizable";
 import { getMockDatasource } from "./mock";
-
+// const AxisType = utils.AxisType;
 class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);
     this.options = [200, 40, 3];
     this.state = {
-      data: getMockDatasource(1, ...this.options),
+      data: null, //getMockDatasource(1, ...this.options),
       sizes: {
         height: 600,
         width: 1000,
         rowHeight: 25
       },
-      // if set to undefined, component will listen itself to key events.
-      // If several instances of the component are used, you'll have to declare the instance active using the isActive prop
       keyEvent: null,
-      functions: functionsTable(functions)
+      functions: functionsTable(functions),
+      updatedRows: {},
+      params: {},
+      status: {}
     };
     this.state.meta = metaDescriptions("dataset", this.state.functions);
   }
@@ -39,6 +41,60 @@ class ZebulonTableDemo extends Component {
     document.removeEventListener("keydown", this.handleKeyEvent);
     window.removeEventListener("beforeunload", this.handleKeyEvent);
   }
+  // ----------------------------------------------------------
+  // custom navigation handler
+  // -> uncomment and adapt following function
+  // ----------------------------------------------------------
+  // navigationKeyHandler = (e, cells) => {
+  //   if (!((e.which > 32 && e.which < 41) || e.which === 9)) {
+  //     return false;
+  //   }
+  //   let direction, cell, axis;
+  //   if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+  //     if (
+  //       document.activeElement.tagName === "SELECT" ||
+  //       document.activeElement.tagName === "TEXTAREA"
+  //     ) {
+  //       return false;
+  //     }
+  //     direction = e.key === "ArrowDown" ? 1 : -1;
+  //     axis = constants.AxisType.ROWS;
+  //     cell = cells.nextCell(axis, direction, 1);
+  //   } else if (
+  //     e.key === "ArrowRight" ||
+  //     e.key === "ArrowLeft" ||
+  //     e.key === "Tab"
+  //   ) {
+  //     if (
+  //       (document.activeElement.tagName === "INPUT" ||
+  //         document.activeElement.tagName === "TEXTAREA") &&
+  //       e.key !== "Tab"
+  //     ) {
+  //       return false;
+  //     }
+  //     direction =
+  //       e.key === "ArrowRight" || (e.key === "Tab" && !e.shiftKey) ? 1 : -1;
+  //     axis = constants.AxisType.COLUMNS;
+  //     cell = cells.nextCell(axis, direction, 1);
+  //   } else if (e.key === "PageUp" || e.key === "PageDown") {
+  //     direction = e.key === "PageDown" ? 1 : -1;
+  //     axis = e.altKey ? constants.AxisType.COLUMNS : constants.AxisType.ROWS;
+  //     cell = cells.nextPageCell(axis, direction);
+  //   } else if (e.key === "Home" || e.key === "End") {
+  //     direction = e.key === "End" ? 1 : -1;
+  //     axis = e.altKey ? constants.AxisType.COLUMNS : constants.AxisType.ROWS;
+  //     cell = cells.endCell(axis, direction);
+  //   }
+  //   // selection
+  //   e.preventDefault();
+  //   if (cells.selectCell(cell, e.shiftKey && e.key !== "Tab") === false) {
+  //     return false;
+  //   }
+  //   return { cell, axis, direction };
+  // };
+  // ------------------------------------------
+  // end navigation handler
+  // ------------------------------------------
   onResize = (e, data) => {
     this.setState({
       sizes: {
@@ -52,11 +108,58 @@ class ZebulonTableDemo extends Component {
     this.setState({ keyEvent: e });
     return true;
   };
+  errorHandler = {
+    onRowQuit: message => {
+      window.alert(JSON.stringify(message.status));
+      return false;
+    }
+  };
   render() {
-    let { data, meta, propertiesMeta } = this.state;
+    let {
+        data,
+        meta,
+        updatedRows,
+        sizes,
+        keyEvent,
+        functions,
+        params,
+        status
+      } = this.state,
+      component;
+
     if (this.state.configuration) {
-      data = meta;
-      meta = propertiesMeta;
+      component = (
+        <ZebulonTableAndConfiguration
+          functions={functions}
+          params={params}
+          data={data}
+          meta={meta}
+          updatedRows={updatedRows}
+          status={status}
+          sizes={sizes}
+          keyEvent={keyEvent}
+          errorHandler={this.errorHandler}
+          navigationKeyHandler={this.navigationKeyHandler}
+        />
+      );
+    } else {
+      component = (
+        <ZebulonTable
+          key="dataset"
+          id="dataset"
+          visible={true}
+          data={data}
+          meta={meta}
+          updatedRows={updatedRows}
+          status={status}
+          sizes={sizes}
+          functions={functions}
+          params={params}
+          keyEvent={keyEvent}
+          errorHandler={this.errorHandler}
+          navigationKeyHandler={this.navigationKeyHandler}
+        />
+      );
     }
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
@@ -74,27 +177,10 @@ class ZebulonTableDemo extends Component {
           width={this.state.sizes.width}
           onResize={this.onResize}
         >
-          <ZebulonTableAndConfiguration
-            functions={this.state.functions}
-            params={{}}
-            data={data}
-            meta={meta}
-            status={{}}
-            sizes={this.state.sizes}
-            // ref={ref => (this.zebulon = ref)}
-            keyEvent={this.state.keyEvent}
-          />
+          {component}
         </ResizableBox>
       </div>
     );
   }
 }
-// <ZebulonTable
-//   data={data}
-//   meta={meta}
-//   sizes={this.state.sizes}
-//   ref={ref => (this.zebulon = ref)}
-//   keyEvent={this.state.keyEvent}
-// />
-
 export default ZebulonTableDemo;

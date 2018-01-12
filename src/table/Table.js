@@ -3,7 +3,7 @@ import { Headers, Status } from "./TableHeaders";
 import { Rows } from "./Rows";
 import { utils, Filter } from "zebulon-controls";
 // import { Filter } from "./controls-o/Filter";
-// import { computeData } from "./utils";
+import { manageRowError } from "./utils";
 
 // import { utils } from "zebulon-controls";
 export class Table extends Component {
@@ -14,7 +14,7 @@ export class Table extends Component {
       filteredData: props.data,
       meta: props.meta,
       filters: {},
-      updatedRows: {},
+      updatedRows: props.updatedRows,
       scroll: {
         rows: {
           index: 0,
@@ -51,16 +51,23 @@ export class Table extends Component {
   componentWillReceiveProps(nextProps) {
     if (
       nextProps.data !== this.props.data ||
-      nextProps.meta !== this.props.meta
+      nextProps.meta !== this.props.meta ||
+      nextProps.status !== this.props.status ||
+      nextProps.updatedRows !== this.props.updatedRows
     ) {
       this.setState({
         data: nextProps.data,
         filteredData: this.filters(nextProps.data, this.state.filters),
-        meta: nextProps.meta
+        meta: nextProps.meta,
+        status: nextProps.status,
+        updatedRows: nextProps.updatedRows
       });
     }
+    this.rowHeight = nextProps.rowHeight;
     if (nextProps.visible && !this.props.visible) this.onTableEnter();
-    else if (!nextProps.visible && this.props.visible) this.onTableQuit();
+    else if (!nextProps.visible && this.props.visible) {
+      this.onTableQuit();
+    }
   }
   componentWillUnmount() {
     this.onTableClose();
@@ -301,7 +308,7 @@ export class Table extends Component {
     if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
       return false;
     let filter = this.state.filters[column.id];
-    if (!filter) {
+    if (!filter || !filter.items) {
       const items = {};
       this.props.data.forEach(row => {
         const id = (column.accessorFunction || (row => row[column.id]))(
@@ -339,8 +346,9 @@ export class Table extends Component {
     const range = this.state.selectedRange;
     if (this.selectRange(range, this.row, "quit") === false) return false;
     this.closeOpenedWindows();
+    const v = e === undefined ? null : e;
     // if (this.selectRange(this.range, this.row) === false) return false;
-    if (e !== column.v) {
+    if ((v !== column.v && !filterTo) || (v !== column.vTo && filterTo)) {
       const facc = row =>
         (column.accessorFunction || (row => row[column.id]))(
           row,
@@ -349,25 +357,29 @@ export class Table extends Component {
           this.state.data
         );
       if (column.dataType === "boolean") {
-        column.f = row => (facc(row) || false) === e;
+        column.f = row => (facc(row) || false) === v;
       } else if (column.filterType === "=") {
-        column.f = row => facc(row) === e;
+        column.f = row => facc(row) === v;
       } else if (column.filterType === ">=") {
-        column.f = row => facc(row) >= e;
+        column.f = row => facc(row) >= v;
       } else if (column.filterType === "between" && filterTo) {
         column.f = row =>
-          facc(row) <= e && (column.v !== null ? facc(row) >= column.v : true);
+          (v !== null ? facc(row) <= v : true) &&
+          (column.v !== null ? facc(row) >= column.v : true);
       } else if (column.filterType === "between" && !filterTo) {
         column.f = row =>
-          facc(row) >= e &&
+          (v !== null ? facc(row) >= v : true) &&
           (column.vTo !== null ? facc(row) <= column.vTo : true);
       } else if (column.filterType === "<=") {
-        column.f = row => facc(row) <= e;
+        column.f = row => facc(row) <= v;
       } else {
-        column.f = row => String(facc(row) || "").startsWith(String(e || ""));
+        column.f = row => String(facc(row) || "").startsWith(String(v || ""));
       }
-      if (column.filterType === "between" && filterTo) column.vTo = e;
-      else column.v = e;
+      if (column.filterType === "between" && filterTo) {
+        column.vTo = v;
+      } else {
+        column.v = v;
+      }
       const filters = { ...this.state.filters, [column.id]: column };
       const filteredData = this.filters(this.state.data, filters);
       // if (filteredData === false) return false;
@@ -537,8 +549,9 @@ export class Table extends Component {
             this.row,
             this.column
           ) === false
-        )
+        ) {
           return false;
+        }
         if (prevEnd.rows !== range.end.rows || row) {
           if (
             this.onRowQuit(
@@ -546,8 +559,9 @@ export class Table extends Component {
               this.previousRow,
               this.state.updatedRows[this.row.index_]
             ) === false
-          )
+          ) {
             return false;
+          }
         }
       }
       if (type === "quit") return true;
@@ -565,11 +579,13 @@ export class Table extends Component {
       if (range.end.rows !== undefined) {
         this.column = this.state.meta.properties[range.end.columns];
         this.previousValue = this.row[this.column.id];
-        if (prevEnd.rows !== range.end.rows || type === "enter")
+        if (prevEnd.rows !== range.end.rows || type === "enter") {
           this.onRowEnter(this.row);
+        }
         this.onCellEnter(this.previousValue, this.row, this.column);
-        if (this.state.meta.properties[range.end.columns].dataType === "text")
+        if (this.state.meta.properties[range.end.columns].dataType === "text") {
           this.handleText(range.end, this.row, this.column);
+        }
       } else {
         this.column = undefined;
         this.previousValue = undefined;
@@ -613,13 +629,25 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (column.onChangeFunction) {
-      if (column.onChangeFunction(message) === false) return false;
-    }
-    if (this.props.onChange) {
-      if (this.props.onChange(message) === false) return false;
+    let b = this.onChange_(message);
+    if (!b && this.props.errorHandler.onChange) {
+      b = this.props.errorHandler.onChange(message);
     }
     console.log("onChange", message);
+    return b;
+  };
+  onChange_ = message => {
+    if (
+      message.column.onChangeFunction &&
+      message.column.onChangeFunction(message) === false
+    ) {
+      return false;
+    }
+    if (this.props.onChange) {
+      if (this.props.onChange(message) === false) {
+        return false;
+      }
+    }
     return true;
   };
   onCellQuit = (value, previousValue, row, column) => {
@@ -635,11 +663,25 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (column.onQuitFunction && this.updated)
-      if (column.onQuitFunction(message) === false) return false;
-    if (this.props.onCellQuit)
-      if (this.props.onCellQuit(message) === false) return false;
+    let b = this.onCellQuit_(message);
+    if (!b && this.props.errorHandler.onCellQuit) {
+      b = this.props.errorHandler.onCellQuit(message);
+    }
     console.log("onCellQuit", message);
+    return b;
+  };
+  onCellQuit_ = message => {
+    if (
+      message.column.onQuitFunction &&
+      this.updated &&
+      message.column.onQuitFunction(message) === false
+    ) {
+      return false;
+    }
+    if (this.props.onCellQuit && this.props.onCellQuit(message) === false) {
+      return false;
+    }
+
     return true;
   };
   onCellEnter = (value, row, column) => {
@@ -657,6 +699,9 @@ export class Table extends Component {
     console.log("onCellEnter", message);
   };
   onRowQuit = (row, previousRow, status) => {
+    if (!status) {
+      return true;
+    }
     const message = {
       updated: this.rowUpdated,
       row,
@@ -667,30 +712,45 @@ export class Table extends Component {
       params: this.props.params
     };
     // mandatory data
+
+    let b = this.onRowQuit_(message);
+    if (
+      (!b || (message.status.errors || {}).n_) &&
+      this.props.errorHandler.onRowQuit
+    ) {
+      b = this.props.errorHandler.onRowQuit(message);
+    }
+    console.log("onRowQuit", message);
+    return b;
+  };
+  onRowQuit_ = message => {
     if (this.rowUpdated) {
       // return false;
       this.state.meta.properties
         .filter(property => property.mandatory)
         .forEach(property => {
-          const error = status.errors[property.id] || {};
-          if (
-            utils.isNullOrUndefined(row[property.id]) ||
-            row[property.id] === ""
-          ) {
-            error.mandatory = "mandatory data";
-          } else {
-            delete error.mandatory;
-          }
-          status.errors[property.id] = error;
+          const error = message.status.errors[property.id] || {};
+
+          manageRowError(
+            message.status,
+            property.id,
+            "mandatory",
+            utils.isNullOrUndefined(message.row[property.id]) ||
+            message.row[property.id] === ""
+              ? "mandatory data"
+              : null
+          );
         });
-      if (this.state.meta.row.onQuitFunction) {
-        if (this.state.meta.row.onQuitFunction(message) === false) return false;
+      if (
+        this.state.meta.row.onQuitFunction &&
+        this.state.meta.row.onQuitFunction(message) === false
+      ) {
+        return false;
       }
     }
-
-    if (this.props.onRowQuit)
-      if (this.props.onRowQuit(message) === false) return false;
-    console.log("onRowQuit", message);
+    if (this.props.onRowQuit && this.props.onRowQuit(message) === false) {
+      return false;
+    }
     return true;
   };
   onRowEnter = row => {
@@ -701,7 +761,9 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (this.props.onRowEnter) this.props.onRowEnter(message);
+    if (this.props.onRowEnter) {
+      this.props.onRowEnter(message);
+    }
     console.log("onRowEnter", message);
   };
   onRowNew = row => {
@@ -726,18 +788,63 @@ export class Table extends Component {
     this.tableUpdated = false;
     this.rowUpdated = false;
     this.updated = false;
-    if (this.props.onTableEnter) this.props.onTableEnter(message);
+    if (this.props.onTableEnter) {
+      this.props.onTableEnter(message);
+    }
     console.log("onTableEnter", message);
   };
-  onTableQuit = () => {
+  canQuit = () => {
+    if (this.onTableQuit(true)) {
+      this.tableUpdated = false;
+      return true;
+    }
+    return false;
+  };
+  onTableQuit = bExternal => {
+    if (bExternal && !this.tableUpdated) {
+      return true;
+    }
     const message = {
       updatedRows: this.state.updatedRows,
       meta: this.state.meta,
       data: this.state.data,
       params: this.props.params
     };
-    if (this.props.onTableQuit) this.props.onTableQuit(message);
+    let b = this.onTableQuit_(message);
+    if (!b && this.props.errorHandler.onTableQuit) {
+      b = this.props.errorHandler.onTableQuit(message);
+    }
     console.log("onTableQuit", message);
+    return b;
+  };
+  onTableQuit_ = message => {
+    if (this.range.end.rows) {
+      if (
+        !this.onCellQuit(
+          this.row[this.column.id],
+          this.previousValue,
+          this.row,
+          this.column
+        )
+      ) {
+        return false;
+      }
+      this.previousValue = this.row[this.column.id];
+      if (
+        !this.onRowQuit(
+          this.row,
+          this.previousRow,
+          this.state.updatedRows[this.row.index_]
+        )
+      ) {
+        return false;
+      }
+      this.previousRow = { ...this.row };
+    }
+    if (this.props.onTableQuit && this.props.onTableQuit(message) === false) {
+      return false;
+    }
+    return true;
   };
   onTableClose = () => {
     const message = {
@@ -746,7 +853,9 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    if (this.props.onTableClose) this.props.onTableQuit(message);
+    if (this.props.onTableClose) {
+      this.props.onTableClose(message);
+    }
     console.log("onTableQuit", message);
   };
   onSaveBefore = message => {
@@ -805,6 +914,7 @@ export class Table extends Component {
     this.setState({ text: { ...this.state.text, v: e.target.value } });
     this.onChange(e.target.value, row, column);
   };
+  onMetaChange = () => this.setState({ scroll: this.state.scroll });
   render() {
     const height = this.props.height,
       width = this.props.width;
@@ -814,6 +924,19 @@ export class Table extends Component {
 
     if (!visible) {
       return null;
+    } else if (this.props.status.loading || this.props.status.loadingConfig) {
+      return <div>Loading data...</div>;
+    } else if (this.props.status.error) {
+      if (this.props.status.error.message === "No rows retrieved") {
+        return <div style={{ width: "max-content" }}>No rows retrieved</div>;
+      } else {
+        return (
+          <div style={{ color: "red", width: "max-content" }}>
+            <p>{this.props.status.error.type}</p>
+            <p>{this.props.status.error.message}</p>
+          </div>
+        );
+      }
     }
     // -----------------------------
     //   action buttons
@@ -993,17 +1116,6 @@ export class Table extends Component {
         </div>
       );
     }
-    //   const content:toolTip.errors.map(
-
-    //  ? (
-    //   <div
-    //     key={"tool-tip"}
-    //     className="zebulon-tool-tip"
-    //     style={this.state.toolTip.style}
-    //   >
-    //     {this.state.toolTip.content}
-    //   </div>
-    // ) : null;
     // ----------------------------------
     this.rowsHeight =
       height -
@@ -1030,6 +1142,7 @@ export class Table extends Component {
           height={this.rowHeight}
           width={width}
           scroll={this.state.scroll.columns}
+          onMetaChange={this.onMetaChange}
         />
         <Headers
           type="filter"
@@ -1066,12 +1179,11 @@ export class Table extends Component {
             selectedRange={this.state.selectedRange}
             selectRange={this.selectRange}
             onChange={this.onChange}
-            // onFocus={this.onFocus}
             onFocus={() => {}}
             hasFocus={this.hasFocus}
             updatedRows={this.state.updatedRows}
-            // functions={this.props.functions}
             params={this.props.params}
+            navigationKeyHandler={this.props.navigationKeyHandler}
             ref={ref => (this.rows = ref)}
           />
         </div>

@@ -1,40 +1,24 @@
 import React from "react";
-import { /*Input,*/ utils } from "zebulon-controls";
+import { utils } from "zebulon-controls";
 import {
-	// getFunction,
 	computeData,
 	buildObject,
 	exportFunctions,
 	aggregations
 } from "./utils";
 import { Property } from "./Property";
+import { getPromiseMockDatasource } from "../demo/mock";
 
-// const propertyDetail = ({
-// 	row,
-// 	data,
-// 	meta,
-// 	status,
-// 	params,
-// 	top,
-// 	onClose,
-// 	onChange
-// ) => {
-// 	return (
-// 		<Property
-// 			row={row}
-// 			data={data}
-// 			meta={meta}
-// 			params={params}
-// 			status={status}
-// 			onChange={onChange}
-// 			close={close}
-// 			top={top}
-// 		/>
-// 	);
+// const propertyValidator = (row, data, meta, status, params) => {
+// 	console.log("propertyValidator", row, status);
 // };
-const propertyValidator = (row, data, meta, status, params) => {
-	console.log("propertyValidator", row, status);
+//
+const get = ({ params, filters, callback }) => {
+	getPromiseMockDatasource(1, 200, 40, 3).then(data =>
+		callback(data, { loaded: true, loading: false })
+	);
 };
+const set = () => {};
 const functionToString = row => {
 	if (typeof row.functionJS === "function") {
 		return String(row.functionJS);
@@ -104,11 +88,12 @@ export const functions = {
 					? ""
 					: utils.formatValue(value, "mm/yyyy"),
 			formatAmt: (value, row, params, status, data) => {
+				const v = utils.formatValue(value, null, 2);
 				if (
 					(value < 3000 && value > 1000) ||
 					utils.isNullOrUndefined(value)
 				) {
-					return value;
+					return v;
 				} else if (value >= 3000) {
 					return (
 						<div
@@ -119,7 +104,7 @@ export const functions = {
 							}}
 						>
 							<div>↑</div>
-							<div>{value}</div>
+							<div>{v}</div>
 						</div>
 					);
 				} else if (value <= 1000) {
@@ -132,7 +117,7 @@ export const functions = {
 							}}
 						>
 							<div>↓</div>
-							<div>{value}</div>
+							<div>{v}</div>
 						</div>
 					);
 				}
@@ -164,6 +149,10 @@ export const functions = {
 		},
 		actions: {
 			computeData
+		},
+		dmls: {
+			get,
+			set
 		}
 	},
 	functions: {
@@ -274,6 +263,8 @@ export const metaDescriptions = (
 			table: {
 				object,
 				editable: true,
+				get: "get",
+				set: "set",
 				actions: [
 					{ type: "insert", caption: "New", enable: true },
 					{
@@ -325,15 +316,22 @@ export const metaDescriptions = (
 					},
 					{
 						type: "action",
-						caption: "Export configuration",
-						action: "exportMeta",
+						caption: "Apply",
+						action: callbacks.applyMeta,
 						enable: true
 					}
+					// ,
+					// {
+					// 	type: "action",
+					// 	caption: "Export configuration",
+					// 	action: "exportMeta",
+					// 	enable: true
+					// }
 				]
 			},
 			row: {
-				validator: "propertyValidator",
-				detail: "propertyDetail"
+				// validator: "propertyValidator",
+				// detail: "propertyDetail"
 			},
 			properties: [
 				{
@@ -373,7 +371,7 @@ export const metaDescriptions = (
 				{
 					id: "editable",
 					caption: "Editable",
-					width: 100,
+					width: 80,
 					dataType: "boolean",
 					editable: "isInitial",
 					default: false
@@ -381,7 +379,15 @@ export const metaDescriptions = (
 				{
 					id: "mandatory",
 					caption: "Mandatory",
-					width: 100,
+					width: 90,
+					dataType: "boolean",
+					editable: true,
+					default: true
+				},
+				{
+					id: "hidden",
+					caption: "Hidden",
+					width: 80,
 					dataType: "boolean",
 					editable: true,
 					default: true
@@ -612,21 +618,22 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New" },
+					{ type: "insert", caption: "New", enable: true },
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "action",
 						caption: "Apply",
-						action: callbacks.applyMeasures
+						action: callbacks.applyMeasures,
+						enable: true
 					}
 				]
 			},
@@ -687,21 +694,22 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New" },
+					{ type: "insert", caption: "New", enable: true },
 					{
 						type: "delete",
 						caption: "Delete",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						disable: "isNotSelected"
+						enable: "isSelected"
 					},
 					{
 						type: "action",
 						caption: "Apply",
-						action: callbacks.applyDimensions
+						action: callbacks.applyDimensions,
+						enable: true
 					}
 				]
 			},

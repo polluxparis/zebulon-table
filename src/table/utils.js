@@ -18,6 +18,14 @@ export const getFunction = (functions, object, type, value) => {
       : [];
   return v.length ? v[0].functionJS : undefined;
 };
+export const computeMetaPositions = meta => {
+  let position = 0;
+  meta.forEach((column, index) => {
+    column.index_ = index;
+    column.position = position;
+    position += column.computedWidth;
+  });
+};
 export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
 
@@ -49,6 +57,9 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     );
   });
   meta.properties.forEach((column, index) => {
+    if (column.id === "index_" && column.hidden === undefined) {
+      column.hidden = true;
+    }
     const width = zoom * (column.hidden ? 0 : column.width || 0);
     column.computedWidth = width;
     column.position = position;
@@ -215,7 +226,7 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
         width,
         dataType,
         alignement,
-        hidden: dataType === "object",
+        hidden: dataType === "object" || key === "index_",
         position,
         editable: !!meta.table.editable,
         index_: index,
@@ -256,6 +267,38 @@ export const functionsTable = functions => {
     (acc, object) => acc.concat(functionsByObject(object, functions)),
     []
   );
+};
+// -----------------------------------------------------------
+// Error management
+// -----------------------------------------------------------
+export const manageRowError = (status, object, type, error) => {
+  const existsErrors = !utils.isNullOrUndefined(status.errors);
+  const errors = status.errors || {};
+  const existsObject = !utils.isNullOrUndefined(errors[object]);
+  const objectErrors = errors[object] || {};
+  const existsType = !utils.isNullOrUndefined(objectErrors[type]);
+  if (error) {
+    objectErrors[type] = error;
+    if (!existsType) {
+      objectErrors.n_ = (objectErrors.n_ || 0) + 1;
+    }
+    if (!existsObject) {
+      errors[object] = objectErrors;
+    }
+    errors.n_ = (errors.n_ || 0) + 1;
+    if (!existsErrors) {
+      status.errors = errors;
+    }
+  } else {
+    if (existsType) {
+      delete objectErrors[type];
+      objectErrors.n_--;
+      if (objectErrors.n_ === 0) {
+        delete errors[object];
+      }
+      errors.n_--;
+    }
+  }
 };
 // -----------------------------------------------------------
 // Export configuration
@@ -443,12 +486,12 @@ export const computeData = ({ data, meta, updatedRows, params }) => {
   data.forEach(row =>
     columns.forEach(
       column =>
-        (row[column.id] = column.accessorFunction({
+        (row[column.id] = column.accessorFunction(
           row,
-          status: updatedRows[row.index_],
+          updatedRows[row.index_],
           data,
           params
-        }))
+        ))
     )
   );
   columns = meta.properties.filter(

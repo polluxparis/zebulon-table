@@ -17,24 +17,6 @@ export class Rows extends ScrollableGrid {
     const verticalDisplay =
       (height - (columnsWidth > width ? constants.ScrollbarSize : 0)) /
       (data.length * rowHeight);
-    // if (
-    //   scroll.rows.startIndex / data.length >
-    //   1 - Math.min(verticalDisplay, 1)
-    // ) {
-    //   this.onScroll(constants.AxisType.ROWS, null, null, 1 - verticalDisplay);
-    // } else if (
-    //   verticalDisplay >= 1 &&
-    //   (scroll.rows.startIndex !== 0 || scroll.rows.direction !== 1)
-    // ) {
-    //   this.onScroll(constants.AxisType.ROWS, 1, 0);
-    // }
-    // if (
-    //   horizontalDisplay >= 1 &&
-    //   (scroll.columns.startIndex !== 0 || scroll.columns.shift !== 0)
-    // ) {
-    //   this.onScroll(constants.AxisType.COLUMN, null, null, 0);
-    // } else
-
     return {
       vertical: {
         display: verticalDisplay,
@@ -96,10 +78,10 @@ export class Rows extends ScrollableGrid {
         hasFocus={hasFocus}
         select={select}
         key={`cell-${row.index_}-${column.id}`}
-        onChange={onChange} //{e => onChange(e, row, column)}
+        onChange={onChange}
         onClick={onClick}
         onMouseOver={onMouseOver}
-        onFocus={onFocus} //e => onFocus(e, row, column, rowIndex)}
+        onFocus={onFocus}
       />
     );
   };

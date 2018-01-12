@@ -53,6 +53,7 @@
 }
 .zebulon-table-header {
   user-select: none;
+  font: inherit;
   /*outline: none;*/
   background-color: #eef8fb;
   /* overflow: hidden;
@@ -67,7 +68,7 @@
 .zebulon-table-filter {
   padding: 0;
   /*border: 0;*/
-  width: inherit;
+  /*width: inherit;*/
 }
 .zebulon-table-filter-empty {
   background-color: white;

@@ -9,19 +9,33 @@ import { utils } from "zebulon-controls";
 export class ZebulonTableAndConfiguration extends Component {
 	constructor(props) {
 		super(props);
+		this.sizes = {
+			...props.sizes,
+			height: props.sizes.height - 30 * (props.sizes.zoom || 1),
+			zoom: this.zoomValue
+		};
 		let f = props.functions || functions;
 		if (!Array.isArray(f)) {
 			f = functionsTable(f);
 		}
 		let meta = props.meta;
-		if (!meta) {
+		if (!props.meta.table) {
 			meta = metaDescriptions("dataset", props.callbacks, functions);
+			props.meta.table = meta.table;
+			props.meta.row = meta.row;
+			props.meta.properties = meta.properties;
+			meta = props.meta;
 		}
+
+		// meta = props.meta;
 		computeMetaFromData(props.data, meta, props.sizes.zoom, f);
 		this.state = {
 			selectedTab: 0,
 			data: props.data,
 			meta,
+			updatedRows: props.updatedRows || {},
+			propertiesUpdatedRows: {},
+			functionsUpdatedRows: {},
 			functions: f,
 			sizes: props.sizes
 		};
@@ -64,6 +78,7 @@ export class ZebulonTableAndConfiguration extends Component {
 				);
 			});
 		}
+		this.errorHandler = this.props.errorHandler || {};
 	}
 	componentWillReceiveProps(nextProps) {
 		if (
@@ -77,8 +92,24 @@ export class ZebulonTableAndConfiguration extends Component {
 				functions: nextProps.functions
 			});
 		}
+		if (
+			nextProps.updatedRows &&
+			nextProps.updatedRows !== this.props.updatedRows
+		) {
+			this.setState({
+				updatedRows: nextProps.updatedRows
+			});
+		}
 		if (nextProps.sizes.zoom !== this.props.sizes.zoom) {
 			this.zoomValue = nextProps.sizes.zoom || 1;
+		}
+		if (nextProps.sizes !== this.props.sizes) {
+			this.sizes = {
+				...nextProps.sizes,
+				height:
+					nextProps.sizes.height - 30 * (nextProps.sizes.zoom || 1),
+				zoom: this.zoomValue
+			};
 		}
 		if (nextProps.tabs) {
 			nextProps.tabs.forEach((tab, index) => {
@@ -110,6 +141,9 @@ export class ZebulonTableAndConfiguration extends Component {
 			this.handleKeyDown(nextProps.keyEvent);
 		}
 	}
+	shouldComponentUpdate(nextProps, nextState) {
+		return nextProps.keyEvent === this.props.keyEvent;
+	}
 	handleKeyDown = e => {
 		const zoom = utils.isZoom(e);
 		if (zoom) {
@@ -126,11 +160,6 @@ export class ZebulonTableAndConfiguration extends Component {
 		}
 	};
 	initTabs = props => {
-		const sizes = {
-			...props.sizes,
-			height: props.sizes.height - 30 * (props.sizes.zoom || 1),
-			zoom: this.zoomValue
-		};
 		const tabs = [
 			{
 				id: "dataset",
@@ -142,11 +171,15 @@ export class ZebulonTableAndConfiguration extends Component {
 						visible={this.state.selectedTab === 0}
 						data={this.state.data}
 						meta={this.state.meta}
-						sizes={sizes}
+						updatedRows={this.state.updatedRows}
+						sizes={this.sizes}
 						functions={this.state.functions}
 						params={props.params}
+						keyEvent={null}
 						onTableEnter={this.onTableEnter}
 						ref={ref => (this.dataset = ref)}
+						errorHandler={this.errorHandler}
+						navigationKeyHandler={this.props.navigationKeyHandler}
 					/>
 				)
 			},
@@ -160,13 +193,16 @@ export class ZebulonTableAndConfiguration extends Component {
 						visible={this.state.selectedTab === 1}
 						data={this.state.meta.properties}
 						meta={this.state.propertiesMeta}
-						sizes={sizes}
+						updatedRows={this.state.propertiesUpdatedRows}
+						sizes={this.sizes}
 						onChange={this.onChangeProperties}
 						onRowNew={this.onRowNew}
 						onTableEnter={this.onTableEnter}
 						functions={this.state.functions}
 						params={props.params}
+						keyEvent={null}
 						ref={ref => (this.properties = ref)}
+						navigationKeyHandler={this.props.navigationKeyHandler}
 					/>
 				)
 			},
@@ -180,10 +216,12 @@ export class ZebulonTableAndConfiguration extends Component {
 						visible={this.state.selectedTab === 2}
 						data={this.state.functions}
 						meta={this.state.functionsMeta}
-						sizes={sizes}
+						updatedRows={this.state.functionUpdatedRows}
+						sizes={this.sizes}
 						functions={this.state.functions}
 						params={props.params}
 						onTableEnter={this.onTableEnter}
+						keyEvent={null}
 						ref={ref => (this.functions = ref)}
 					/>
 				)
@@ -201,10 +239,12 @@ export class ZebulonTableAndConfiguration extends Component {
 							visible={this.state.selectedTab === tabs.length}
 							data={this.state[tab.id]}
 							meta={this.state[`${tab.id}Meta`]}
-							sizes={sizes}
+							updatedRows={this.state[`${tab.id}UpdatedRows`]}
+							sizes={this.sizes}
 							functions={this.state.functions}
 							params={props.params}
 							onTableEnter={this.onTableEnter}
+							keyEvent={null}
 							ref={ref => (this[tab.id] = ref)}
 						/>
 					)
@@ -229,6 +269,11 @@ export class ZebulonTableAndConfiguration extends Component {
 	// };
 	onTableEnter = ({ meta }) => {
 		computeMeta(meta, this.zoomValue, this.state.functions);
+	};
+	onSelectTab = index => {
+		if (this[this.tabs[this.state.selectedTab].id].table.canQuit()) {
+			this.setState({ selectedTab: index });
+		}
 	};
 	// onRowNew = ({ row }) => {
 	// 	computeMeta(this.state.meta, this.state.functions);
@@ -271,8 +316,7 @@ export class ZebulonTableAndConfiguration extends Component {
 								"zebulon-tabs-tab-selected":
 									index === this.state.selectedTab
 							})}
-							onClick={() =>
-								this.setState({ selectedTab: index })}
+							onClick={() => this.onSelectTab(index)}
 						>
 							{tab.caption}
 						</div>

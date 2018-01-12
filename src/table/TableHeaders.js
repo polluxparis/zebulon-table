@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-// import { Input } from "zebulon-controls";
+import { utils } from "zebulon-controls";
 import { Input } from "./Input";
+import { computeMetaPositions } from "./utils";
 import classnames from "classnames";
 export const editCell = (
   style,
@@ -23,10 +24,12 @@ export const editCell = (
   }
   const errors = [];
   Object.keys(row.errors).forEach(column => {
-    if (row.errors[column]) {
-      Object.keys(row.errors[column]).forEach(type =>
-        errors.push({ column, type, error: row.errors[column][type] })
-      );
+    if (row.errors[column] || column !== "n_") {
+      Object.keys(row.errors[column]).forEach(type => {
+        if (type !== "n_") {
+          errors.push({ column, type, error: row.errors[column][type] });
+        }
+      });
     }
   });
   if (errors.length && !row.deleted_) {
@@ -46,7 +49,16 @@ export const editCell = (
     </div>
   );
 };
-const filter = (column, position, width, filterTo, onChange, openFilter) => {
+const filter = (
+  column,
+  position,
+  width,
+  filterTo,
+  onChange,
+  openFilter,
+  handleDragOver,
+  handleDrop
+) => {
   const className = classnames({
     "zebulon-table-cell": true,
     "zebulon-table-header": true,
@@ -61,6 +73,16 @@ const filter = (column, position, width, filterTo, onChange, openFilter) => {
     else if (column.dataType === "date" || column.dataType === "boolean")
       textAlign = "center";
   }
+  let value = column.v;
+  if (filterTo) {
+    value = column.vTo;
+  } else if (column.filterType === "values" && column.v) {
+    value = "Ỵ";
+  } else if (column.filterType === "values") {
+    value = "";
+  }
+  const a =
+    document.activeElement.id === String(column.index_ + 1000 * filterTo);
   return (
     <Input
       column={column}
@@ -73,25 +95,30 @@ const filter = (column, position, width, filterTo, onChange, openFilter) => {
         textAlign
       }}
       editable={true}
-      inputType="filter"
-      value={
-        column.filterType === "values" ? column.v ? (
-          "Ỵ"
-        ) : (
-          ""
-        ) : filterTo ? (
-          column.vTo
-        ) : (
-          column.v
-        )
+      focused={
+        document.activeElement.id === String(column.index_ + 1000 * filterTo)
       }
+      inputType="filter"
+      value={value}
+      filterTo={filterTo}
       onChange={onChange}
       onFocus={e => openFilter(e, column)}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
     />
   );
   // }
 };
-const header = (column, position, width, handleClick) => {
+const header = (
+  column,
+  position,
+  width,
+  handleClick,
+  handleDragStart,
+  handleDragOver,
+  handleDrop
+  // handleDragEnd
+) => {
   let sort = "";
   if (column.sort === "asc") {
     sort = "↑";
@@ -102,20 +129,39 @@ const header = (column, position, width, handleClick) => {
   return (
     <div
       key={column.id}
+      id={column.index_}
+      draggable={true}
       className="zebulon-table-cell zebulon-table-header"
       onClick={() => handleClick(column, false)}
       onDoubleClick={() => handleClick(column, true)}
+      onDragStart={e => handleDragStart(e, "move")}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
       style={{
         position: "absolute",
         left: position,
         width,
         justifyContent: "space-between",
         display: "flex"
-        // border: "0.02em solid rgba(0, 0, 0, 0.3) "
       }}
     >
-      <div style={{ width: width - 12 }}>{column.caption || column.id}</div>
-      <div>{sort}</div>
+      <div id={column.index_} style={{ width: width - 12 }}>
+        {column.caption || column.id}
+      </div>
+      <div style={{ display: "flex" }}>
+        <div>{sort}</div>
+        <div
+          id={column.index_}
+          draggable={true}
+          style={{
+            // height,
+            width: 3,
+            cursor: "col-resize",
+            opacity: 0
+          }}
+          onDragStart={e => handleDragStart(e, "resize")}
+        />
+      </div>
     </div>
   );
 };
@@ -137,6 +183,10 @@ const filterEmpty = (id, position, width) => {
 
 // ↑↓
 export class Headers extends Component {
+  // constructor(props) {
+  //   super(props);
+  //   this.state = { type: this.props.type };
+  // }
   handleClick = (column, double) => {
     const { onSort } = this.props;
     if (!double) {
@@ -152,20 +202,79 @@ export class Headers extends Component {
       onSort(column, true);
     }
   };
-  // onDoubleClick = () => {
-  //   onSort(e, column, true);
-  // };
+
+  handleDragStart = (e, type) => {
+    this.dragMessage = { type, index: e.target.id, x: e.pageX };
+    e.dataTransfer.setData("text", JSON.stringify(this.dragMessage));
+    e.stopPropagation();
+
+    console.log(
+      "drag start",
+      type,
+      e.target,
+      e.pageX,
+      e.dataTransfer.getData("text")
+    );
+  };
+
+  handleDragOver = e => {
+    console.log("dragover", e.target, e.dataTransfer.getData("text"));
+    if (
+      this.dragMessage.type === "move" ||
+      (this.dragMessage.type === "resize" &&
+        this.props.meta[this.dragMessage.index].computedWidth +
+          e.pageX -
+          this.dragMessage.x >
+          20)
+    ) {
+      e.preventDefault();
+    }
+  };
+
+  handleDrop = e => {
+    e.preventDefault();
+    const msg = JSON.parse(e.dataTransfer.getData("text"));
+    console.log("drop", e.target.id, msg);
+    const { meta } = this.props;
+    if (msg.type) {
+      if (
+        msg.type === "move" &&
+        !utils.isNullOrUndefined(msg.index) &&
+        msg.index !== e.target.id
+      ) {
+        // console.log("drag end", msg.index, e.target.id);
+        meta[msg.index].index_ = meta[e.target.id].index_ + 0.1;
+        meta.sort((a, b) => (a.index_ > b.index_) - (a.index_ < b.index));
+        computeMetaPositions(meta);
+        this.props.onMetaChange();
+        // console.log("drag end", e);
+      } else if (
+        msg.type === "resize" &&
+        !utils.isNullOrUndefined(msg.x) &&
+        !utils.isNullOrUndefined(e.pageX)
+      ) {
+        const column = meta[msg.index];
+        const zoom = column.computedWidth / column.width;
+        column.computedWidth += e.pageX - msg.x;
+        column.width = column.computedWidth / zoom;
+        computeMetaPositions(meta);
+        this.props.onMetaChange();
+      }
+    }
+  };
+
   render() {
     let { shift, startIndex: index } = this.props.scroll;
     const {
       meta,
       width,
       height,
-      type,
       onChange,
       openFilter,
-      filterTo
+      filterTo,
+      type
     } = this.props;
+    // const type = this.state.type;
     const cells = [
       <div
         key="status"
@@ -193,7 +302,16 @@ export class Headers extends Component {
       if (!column.hidden && columnWidth) {
         let div;
         if (type === "header") {
-          div = header(column, position, columnWidth, this.handleClick);
+          div = header(
+            column,
+            position,
+            columnWidth,
+            this.handleClick,
+            this.handleDragStart,
+            this.handleDragOver,
+            this.handleDrop
+            // this.handleDragEnd
+          );
         } else if (type === "filter") {
           if (filterTo && column.filterType !== "between") {
             div = filterEmpty(column.id, position, columnWidth);
@@ -202,16 +320,15 @@ export class Headers extends Component {
               column,
               position,
               columnWidth,
-              filterTo,
+              filterTo || false,
               onChange,
-              column.filterType === "values" ? openFilter : () => {}
+              column.filterType === "values" ? openFilter : () => {},
+              this.handleDragOver,
+              this.handleDrop
             );
           }
         }
-
-        // if (!filterTo || column.filterType === "between") {
         cells.push(div);
-        // }
         position += columnWidth;
       }
       index += 1;
@@ -220,12 +337,14 @@ export class Headers extends Component {
       return (
         <div
           key={-2}
-          id={type}
+          id={type + filterTo ? "To" : ""}
           style={{
             width,
             height,
             overflow: "hidden"
           }}
+          // onDragOver={e => this.handleDragOver(e)}
+          // onDrop={e => this.handleDrop(e)}
         >
           {cells}
         </div>
@@ -307,3 +426,15 @@ export class Status extends Component {
     );
   }
 }
+// <div
+//   id="resize-bar"
+//   style={{
+//     position: "relative",
+//     top: 0,
+//     height: "inherit",
+//     width: 2,
+//     backgroundColor: "grey",
+//     overflow: "hidden"
+//     // ...this.getItemPosition()
+//   }}
+// />

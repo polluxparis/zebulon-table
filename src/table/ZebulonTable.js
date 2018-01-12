@@ -2,24 +2,33 @@ import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
 import { utils } from "zebulon-controls";
-import { computeMeta, computeMetaFromData, functionsTable } from "./utils";
+import {
+  computeMeta,
+  computeMetaFromData,
+  functionsTable,
+  getFunction
+} from "./utils";
 
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
   constructor(props) {
     super(props);
-    let data = props.data;
-    if (
-      !Array.isArray(data) &&
-      typeof data === "object" &&
-      data.from &&
-      (props.select || props.meta.table.selectFunction)
-    ) {
+    let data = props.data,
+      status = { loaded: false, loading: true };
+    // if data is passed as a dataset array
+    // typically for dataset configuration
+    // the data prop will mutate
+    // else ( if the data prop is a promise or a function or a get function is defined in the meta description)
+    // data prop will not mutate but the (updated) dataset will be a parameter of the callbacks
+    if (Array.isArray(data)) {
+      status = { loaded: true, loading: false };
     }
     this.state = {
       data: data,
+      status,
       meta: props.meta,
+      updatedRows: props.updatedRows || {},
       sizes: props.sizes,
       keyEvent: props.keyEvent
     };
@@ -29,6 +38,49 @@ export class ZebulonTable extends Component {
     } else {
       this.state.functions = functionsTable(props.functions);
     }
+    if (typeof data === "function") {
+      data(this.props.params, (data, status) => {
+        this.setState({ data, status });
+      });
+    } else if (utils.isPromise(data)) {
+      data
+        .then(data => {
+          this.init(
+            data,
+            this.state.meta,
+            this.zoomValue,
+            this.state.functions
+          );
+          this.setState({ data, status: { loaded: true, loading: false } });
+          return data;
+        })
+        .catch(error =>
+          this.setState({
+            data: [],
+            status: { loaded: false, loading: false, error }
+          })
+        );
+    } else if (props.meta && props.meta.table.get) {
+      const f = getFunction(
+        this.state.functions,
+        "dataset",
+        "dml",
+        props.meta.table.get
+      );
+      f({
+        params: this.props.params,
+        callback: (data, status) => {
+          this.init(
+            data,
+            this.state.meta,
+            this.zoomValue,
+            this.state.functions
+          );
+          this.setState({ data, status });
+        }
+      });
+    }
+    this.errorHandler = this.props.errorHandler || {};
   }
   componentDidMount() {
     if (!this.props.keyEvent === undefined) {
@@ -45,8 +97,10 @@ export class ZebulonTable extends Component {
     }
   }
   init = (data, meta, zoom, functions) => {
-    data.forEach((row, index) => (row.index_ = index));
-    computeMetaFromData(data, meta, zoom, functions);
+    if (data) {
+      data.forEach((row, index) => (row.index_ = index));
+      computeMetaFromData(data, meta, zoom, functions);
+    }
   };
   componentWillMount() {
     if (utils.isPromise(this.props.data)) {
@@ -68,7 +122,7 @@ export class ZebulonTable extends Component {
     }
   }
   componentWillReceiveProps(nextProps) {
-    const { data, meta, sizes, keyEvent } = nextProps;
+    const { data, meta, sizes, keyEvent, updatedRows } = nextProps;
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
         if (this.zoomValue !== sizes.zoom) {
@@ -82,7 +136,15 @@ export class ZebulonTable extends Component {
       this.setState({ data, meta });
       this.init(data, meta, this.zoomValue, this.state.functions);
     }
-    if (this.props.keyEvent !== keyEvent) this.handleKeyEvent(keyEvent);
+    if (updatedRows && this.props.updatedRows !== updatedRows) {
+      this.setState({ updatedRows });
+    }
+    if (this.props.keyEvent !== keyEvent) {
+      this.handleKeyEvent(keyEvent);
+    }
+  }
+  shouldComponentUpdate(nextProps, nextState) {
+    return this.props.keyEvent === nextProps.keyEvent;
   }
   handleKeyEvent = e => {
     const zoom = utils.isZoom(e);
@@ -162,15 +224,18 @@ export class ZebulonTable extends Component {
 
   render() {
     // this.id = `table-${this.props.id || 0}`;
-    if (!Array.isArray(this.state.data)) {
-      return null;
-    }
+    // if (!Array.isArray(this.state.data)) {
+    //   return null;
+    // }
     let div = (
       <div>
         <Table
           id={this.props.id}
+          status={this.state.status}
           data={this.state.data}
           meta={this.state.meta}
+          params={this.props.params}
+          updatedRows={this.state.updatedRows}
           key={this.props.id}
           visible={this.props.visible === undefined ? true : this.props.visible}
           width={this.state.sizes.width}
@@ -191,6 +256,8 @@ export class ZebulonTable extends Component {
           onTableQuit={this.props.onTableQuit}
           onTableClose={this.props.onTableClose}
           callbacks={this.props.callbacks}
+          errorHandler={this.errorHandler}
+          navigationKeyHandler={this.props.navigationKeyHandler}
         />
       </div>
     );
