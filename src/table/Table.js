@@ -3,7 +3,7 @@ import { Headers, Status } from "./TableHeaders";
 import { Rows } from "./Rows";
 import { utils, Filter } from "zebulon-controls";
 // import { Filter } from "./controls-o/Filter";
-import { manageRowError } from "./utils";
+import { manageRowError, filtersFunction } from "./utils";
 
 // import { utils } from "zebulon-controls";
 export class Table extends Component {
@@ -11,9 +11,9 @@ export class Table extends Component {
     super(props);
     this.state = {
       data: props.data,
-      filteredData: props.data,
+      filteredData: this.filters(props.data, props.filters),
       meta: props.meta,
-      filters: {},
+      filters: props.filters || {},
       updatedRows: props.updatedRows,
       scroll: {
         rows: {
@@ -31,22 +31,17 @@ export class Table extends Component {
           position: 0
         }
       },
+
       sorts: {},
       selectedRange: { start: {}, end: {} },
       detail: {},
       text: {}
     };
-    // props.getRef(this);
-    // if (props.getActions) {
-    //   this.actions = props.getActions(props.id, {
-    //     ...(props.callbacks || {}),
-    //     onChange: this.onChange,
-    //     close: this.closeOpenedWindows
-    //   });
-    // }
+
     this.rowHeight = this.props.rowHeight;
     this.range = { start: {}, end: {} };
     this.onTableEnter();
+    // this.filtersOut = props.filters;
   }
   componentWillReceiveProps(nextProps) {
     if (
@@ -195,7 +190,7 @@ export class Table extends Component {
   handleDelete = row => {
     let updatedRow = this.state.updatedRows[row.index_];
     if (!updatedRow) {
-      updatedRow = { row: { ...row }, errors: {} }; // a voir pour rollback ->valeur initial
+      updatedRow = { row: { ...row }, errors: {}, rowUpdated: row }; // a voir pour rollback ->valeur initial
     } else {
       updatedRow.deleted_ = !updatedRow.deleted_;
     }
@@ -207,10 +202,11 @@ export class Table extends Component {
     const range = this.state.selectedRange;
     if (this.selectRange(range, this.row, "quit") === false) return false;
     let filteredData = [...this.state.filteredData];
-    const status = { new_: true, errors: {} };
+    const row = { index_: this.state.data.length };
+    const status = { new_: true, errors: {}, rowUpdated: row };
     // eslint-disable-next-line
     this.state.updatedRows[this.state.data.length] = status;
-    const row = { index_: this.state.data.length };
+
     this.state.meta.properties
       .filter(column => column.defaultFunction)
       .forEach(
@@ -242,10 +238,11 @@ export class Table extends Component {
       if (this.selectRange(range, this.row, "quit") === false) return false;
 
       let filteredData = [...this.state.filteredData];
-      const status = { new_: true, errors: {} };
+
+      const row = { ...this.row, index_: this.state.data.length };
+      const status = { new_: true, errors: {}, rowUpdated: row };
       // eslint-disable-next-line
       this.state.updatedRows[this.state.data.length] = status;
-      const row = { ...this.row, index_: this.state.data.length };
       this.state.meta.properties
         .filter(column => column.defaultFunction)
         .forEach(
@@ -276,11 +273,21 @@ export class Table extends Component {
   // filtering
   // ----------------------------------------
   filters = (data, filters) => {
-    const f = Object.values(filters).filter(filter => filter.v !== null);
-    if (!f.length) return data;
-    const filter = row => f.reduce((acc, filter) => acc && filter.f(row), true);
+    if (!Array.isArray(data)) {
+      return [];
+    }
+    const filter = filtersFunction(filters, this.props.params, data);
+    // const f = Object.values(filters).filter(filter => {
+    //   return (
+    //     filter.v !== null ||
+    //     (filter.filterType === "between" && filter.vTo !== null)
+    //   );
+    // });
+    // if (!f.length) return data;
+    // const filter = row => f.reduce((acc, filter) => acc && filter.f(row), true);
     const filteredData = data.filter(filter);
     if (
+      this.state &&
       filteredData.length !== this.state.filteredData.length &&
       this.state.scroll.rows.startIndex !== 0 &&
       this.state.scroll.rows.index +
@@ -318,10 +325,16 @@ export class Table extends Component {
           this.state.data
         ); // a voir status
         // items[row[column.id]] = { id, label:id };
+        const label =
+          column.selectItems &&
+          !Array.isArray(column.selectItems) &&
+          typeof column.selectItems === "object"
+            ? (column.selectItems[id] || {}).caption
+            : id;
         items[id] = {
           id,
           label: (column.formatFunction || utils.formatValue)(
-            id,
+            label,
             row,
             this.props.params,
             {},
@@ -339,6 +352,7 @@ export class Table extends Component {
       openedFilter: column.id,
       filters: { ...this.state.filters, [column.id]: filter }
     });
+    // this.filtersOut[column.id] = filter;
   };
 
   onChangeFilter = (e, row, column, filterTo) => {
@@ -349,39 +363,48 @@ export class Table extends Component {
     const v = e === undefined ? null : e;
     // if (this.selectRange(this.range, this.row) === false) return false;
     if ((v !== column.v && !filterTo) || (v !== column.vTo && filterTo)) {
-      const facc = row =>
-        (column.accessorFunction || (row => row[column.id]))(
-          row,
-          this.props.params,
-          {},
-          this.state.data
-        );
-      if (column.dataType === "boolean") {
-        column.f = row => (facc(row) || false) === v;
-      } else if (column.filterType === "=") {
-        column.f = row => facc(row) === v;
-      } else if (column.filterType === ">=") {
-        column.f = row => facc(row) >= v;
-      } else if (column.filterType === "between" && filterTo) {
-        column.f = row =>
-          (v !== null ? facc(row) <= v : true) &&
-          (column.v !== null ? facc(row) >= column.v : true);
-      } else if (column.filterType === "between" && !filterTo) {
-        column.f = row =>
-          (v !== null ? facc(row) >= v : true) &&
-          (column.vTo !== null ? facc(row) <= column.vTo : true);
-      } else if (column.filterType === "<=") {
-        column.f = row => facc(row) <= v;
-      } else {
-        column.f = row => String(facc(row) || "").startsWith(String(v || ""));
-      }
       if (column.filterType === "between" && filterTo) {
         column.vTo = v;
       } else {
         column.v = v;
       }
-      const filters = { ...this.state.filters, [column.id]: column };
+      // filterFunction(column, this.props.params, this.state.data);
+      // const facc = row =>
+      //   (column.accessorFunction || (row => row[column.id]))(
+      //     row,
+      //     this.props.params,
+      //     {},
+      //     this.state.data
+      //   );
+      // if (column.dataType === "boolean") {
+      //   column.f = row => (facc(row) || false) === v;
+      // } else if (column.filterType === "=") {
+      //   column.f = row => facc(row) === v;
+      // } else if (column.filterType === ">=") {
+      //   column.f = row => facc(row) >= v;
+      // } else if (column.filterType === "between" && filterTo) {
+      //   column.f = row => {
+      //     return (
+      //       (v !== null ? facc(row) <= v : true) &&
+      //       (column.v !== null ? facc(row) >= column.v : true)
+      //     );
+      //   };
+      // } else if (column.filterType === "between" && !filterTo) {
+      //   column.f = row =>
+      //     (v !== null ? facc(row) >= v : true) &&
+      //     (column.vTo !== null ? facc(row) <= column.vTo : true);
+      // } else if (column.filterType === "<=") {
+      //   column.f = row => facc(row) <= v;
+      // } else {
+      //   column.f = row => String(facc(row) || "").startsWith(String(v || ""));
+      // }
+
+      // const filters = { ...this.state.filters, [column.id]: column };
+      // this.filtersOut[column.id] = column;
+      const filters = this.state.filters;
+      filters[column.id] = column;
       const filteredData = this.filters(this.state.data, filters);
+
       // if (filteredData === false) return false;
 
       this.sorts(filteredData, this.state.sorts);
@@ -390,7 +413,7 @@ export class Table extends Component {
         this.hasFocus = false;
       } else this.selectRange(range, undefined, "enter");
       this.setState({
-        filters,
+        // filters,
         filteredData
       });
     }
@@ -398,16 +421,18 @@ export class Table extends Component {
   onChangeFilterValues = filter => {
     const id = this.state.openedFilter;
     const column = this.state.filters[this.state.openedFilter];
-    const facc = row =>
-      (column.accessorFunction || (row => row[column.id]))(
-        row,
-        this.props.params,
-        {},
-        this.state.data
-      );
-    column.f = row => filter[facc(row)] !== undefined;
+    // const facc = row =>
+    //   (column.accessorFunction || (row => row[column.id]))(
+    //     row,
+    //     this.props.params,
+    //     {},
+    //     this.state.data
+    //   );
+    // column.f = row => filter[facc(row)] !== undefined;
     column.v = filter;
-    const filters = { ...this.state.filters, [column.id]: column };
+    const filters = this.state.filters;
+    filters[column.id] = column;
+    // this.filtersOut[column.id] = column;
     const filteredData = this.filters(this.state.data, filters);
     this.sorts(filteredData, this.state.sorts);
     const range = this.state.selectedRange;
@@ -415,7 +440,7 @@ export class Table extends Component {
       this.selectRange({ end: {}, start: {} }, undefined, "enter");
     else this.selectRange(range, undefined, "enter");
     this.setState({
-      filters,
+      // filters,
       filteredData,
       openedFilter: undefined
     });
@@ -601,7 +626,9 @@ export class Table extends Component {
     }
     return true;
   };
-  //  table events
+  // -------------------------------
+  //  Cell events
+  //  -------------------------------
   onChange = (value, row, column) => {
     this.updated = true;
     this.rowUpdated = true;
@@ -611,7 +638,8 @@ export class Table extends Component {
       updatedRow = {
         row: { ...row, [column.id]: this.previousValue },
         errors: {},
-        updated_: true
+        updated_: true,
+        rowUpdated: row
       };
       // eslint-disable-next-line
       this.state.updatedRows[row.index_] = updatedRow;
@@ -671,16 +699,21 @@ export class Table extends Component {
     return b;
   };
   onCellQuit_ = message => {
-    if (
-      message.column.onQuitFunction &&
-      this.updated &&
-      message.column.onQuitFunction(message) === false
-    ) {
+    const onCellQuit =
+      this.props.onCellQuit || this.state.meta.properties.onQuitFunction;
+    if (this.updated && onCellQuit && onCellQuit(message) === false) {
       return false;
     }
-    if (this.props.onCellQuit && this.props.onCellQuit(message) === false) {
-      return false;
-    }
+    // if (
+    //   message.column.onQuitFunction &&
+    //   this.updated &&
+    //   message.column.onQuitFunction(message) === false
+    // ) {
+    //   return false;
+    // }
+    // if (this.props.onCellQuit && this.props.onCellQuit(message) === false) {
+    //   return false;
+    // }
 
     return true;
   };
@@ -698,6 +731,9 @@ export class Table extends Component {
     if (this.props.onCellEnter) this.props.onCellEnter(row, column);
     console.log("onCellEnter", message);
   };
+  // -------------------------------
+  //  row events
+  //  -------------------------------
   onRowQuit = (row, previousRow, status) => {
     if (!status) {
       return true;
@@ -732,7 +768,8 @@ export class Table extends Component {
           const error = message.status.errors[property.id] || {};
 
           manageRowError(
-            message.status,
+            this.state.updatedRows,
+            message.row.index_,
             property.id,
             "mandatory",
             utils.isNullOrUndefined(message.row[property.id]) ||
@@ -741,15 +778,11 @@ export class Table extends Component {
               : null
           );
         });
-      if (
-        this.state.meta.row.onQuitFunction &&
-        this.state.meta.row.onQuitFunction(message) === false
-      ) {
+      const onRowQuit =
+        this.props.onRowQuit || this.state.meta.row.onQuitFunction;
+      if (onRowQuit && onRowQuit(message) === false) {
         return false;
       }
-    }
-    if (this.props.onRowQuit && this.props.onRowQuit(message) === false) {
-      return false;
     }
     return true;
   };
@@ -778,6 +811,9 @@ export class Table extends Component {
     console.log("onRowNew", message);
     return true;
   };
+  // -------------------------------
+  //  Table  events
+  //  -------------------------------
   onTableEnter = () => {
     const message = {
       updatedRows: this.state.updatedRows,
@@ -841,7 +877,8 @@ export class Table extends Component {
       }
       this.previousRow = { ...this.row };
     }
-    if (this.props.onTableQuit && this.props.onTableQuit(message) === false) {
+    const onTableQuit = this.props.onTableQuit || this.state.meta.table.onQuit;
+    if (onTableQuit && onTableQuit(message) === false) {
       return false;
     }
     return true;
@@ -858,25 +895,6 @@ export class Table extends Component {
     }
     console.log("onTableQuit", message);
   };
-  onSaveBefore = message => {
-    if (this.props.onSaveBefore) return this.props.onSaveBefore(message);
-    return true;
-  };
-  onSave = () => {
-    const message = {
-      updatedRows: this.state.updatedRows,
-      meta: this.state.meta,
-      data: this.state.data,
-      params: this.props.params
-    };
-    if (!this.onSaveBefore(message)) return false;
-    if (this.props.onSave && !this.props.onSave(message)) return false;
-    return true;
-  };
-  onSaveAfter = message => {
-    if (this.props.onSaveAfter) return this.props.onSaveAfter(message);
-    return true;
-  };
   handleErrors = (e, rowIndex, errors) => {
     if (errors.length || this.state.toolTip) {
       const toolTip = errors.length
@@ -890,7 +908,54 @@ export class Table extends Component {
       this.setState({ toolTip });
     }
   };
+  // -------------------------------
+  //  Save events
+  //  -------------------------------
 
+  onSave = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    let b = this.onSave_(message);
+    if (
+      (!b || (message.updatedRows || {}).nErrors_) &&
+      this.props.errorHandler.onSave
+    ) {
+      b = this.props.errorHandler.onSave(message);
+    }
+    if (b) {
+      this.setState({ data: message.data, updatedRows: {} });
+    }
+    return b;
+  };
+  onSave_ = message => {
+    if (!this.onSaveBefore(message)) return false;
+    const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
+    if (onSave && onSave(message) === false) {
+      return false;
+    }
+    return true;
+  };
+  onSaveBefore = message => {
+    const onSaveBefore =
+      this.props.onSaveBefore || this.state.meta.table.onSaveBeforeFunction;
+    if (onSaveBefore && onSaveBefore(message) === false) return false;
+    return true;
+  };
+  onSaveAfter = message => {
+    const onSaveAfter =
+      this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
+    if (onSaveAfter && onSaveAfter(message) === false) {
+      return false;
+    }
+    return true;
+  };
+  //-------------------------------------------
+  // end events
+  // ------------------------------------------
   handleText = (cell, row, column) => {
     let label;
     if (this.state.meta.row.descriptorFunction)
@@ -1001,11 +1066,11 @@ export class Table extends Component {
     // -----------------------------------
     const { openedFilter, filters } = this.state;
     if (openedFilter !== undefined) {
-      const { top, left, items, v } = filters[openedFilter];
+      const { top, left, items, v, caption } = filters[openedFilter];
       this.filter = (
         <Filter
           items={items}
-          title={openedFilter}
+          title={caption}
           filter={v}
           style={{
             position: "absolute",
@@ -1168,8 +1233,8 @@ export class Table extends Component {
             handleErrors={this.handleErrors}
           />
           <Rows
-            meta={this.state.meta.properties}
-            columnVisibleLength={this.state.meta.visibleLength}
+            meta={this.state.meta}
+            // columnsVisibleIndex={this.state.meta.visibleIndexes}
             data={this.state.filteredData}
             height={this.rowsHeight}
             width={width - this.rowHeight}

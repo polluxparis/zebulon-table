@@ -83,6 +83,7 @@ const filter = (
   }
   const a =
     document.activeElement.id === String(column.index_ + 1000 * filterTo);
+
   return (
     <Input
       column={column}
@@ -99,6 +100,7 @@ const filter = (
         document.activeElement.id === String(column.index_ + 1000 * filterTo)
       }
       inputType="filter"
+      tabIndex={column.index_ * 2 + (filterTo || 0) + 100}
       value={value}
       filterTo={filterTo}
       onChange={onChange}
@@ -107,7 +109,6 @@ const filter = (
       onDrop={handleDrop}
     />
   );
-  // }
 };
 const header = (
   column,
@@ -313,7 +314,10 @@ export class Headers extends Component {
             // this.handleDragEnd
           );
         } else if (type === "filter") {
-          if (filterTo && column.filterType !== "between") {
+          if (
+            (filterTo && column.filterType !== "between") ||
+            utils.isNullOrUndefined(column.dataType)
+          ) {
             div = filterEmpty(column.id, position, columnWidth);
           } else {
             div = filter(

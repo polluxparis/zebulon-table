@@ -4,20 +4,32 @@ import {
 	computeData,
 	buildObject,
 	exportFunctions,
-	aggregations
+	aggregations,
+	filtersFunction
 } from "./utils";
 import { Property } from "./Property";
-import { getPromiseMockDatasource } from "../demo/mock";
+import {
+	getMockDatasource,
+	// getPromiseMockDatasource,
+	getObservableMockDatasource
+} from "../demo/mock";
 
 // const propertyValidator = (row, data, meta, status, params) => {
 // 	console.log("propertyValidator", row, status);
 // };
-//
-const get = ({ params, filters, callback }) => {
-	getPromiseMockDatasource(1, 200, 40, 3).then(data =>
-		callback(data, { loaded: true, loading: false })
-	);
+// array
+const get_a = ({ params, filters }) => getMockDatasource(1, 200, 40, 3);
+// promise
+const get_p = ({ params, filters }) => {
+	let data = getMockDatasource(1, 200, 40, 3);
+	if (filters) {
+		data = data.filter(filtersFunction(filters, params, data));
+	}
+	return new Promise(resolve => setTimeout(resolve, 20)).then(() => data);
 };
+// observable
+const get_o = ({ params, filters }) =>
+	getObservableMockDatasource(1, 200, 40, 3);
 const set = () => {};
 const functionToString = row => {
 	if (typeof row.functionJS === "function") {
@@ -151,7 +163,9 @@ export const functions = {
 			computeData
 		},
 		dmls: {
-			get,
+			get_a,
+			get_p,
+			get_o,
 			set
 		}
 	},
@@ -263,8 +277,9 @@ export const metaDescriptions = (
 			table: {
 				object,
 				editable: true,
-				get: "get",
-				set: "set",
+				select: "get_o",
+				primaryKey: "id",
+				onSave: "set",
 				actions: [
 					{ type: "insert", caption: "New", enable: true },
 					{
@@ -596,7 +611,8 @@ export const metaDescriptions = (
 						"validator",
 						"editable",
 						"default",
-						"descriptor"
+						"descriptor",
+						"dml"
 					]
 				},
 				{

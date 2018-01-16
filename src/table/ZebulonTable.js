@@ -2,11 +2,14 @@ import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
 import { utils } from "zebulon-controls";
+
 import {
   computeMeta,
   computeMetaFromData,
   functionsTable,
-  getFunction
+  getFunction,
+  filterFunction,
+  getFilters
 } from "./utils";
 
 // import { utils.isPromise, isDate } from "./utils/generic";
@@ -14,74 +17,148 @@ import {
 export class ZebulonTable extends Component {
   constructor(props) {
     super(props);
-    let data = props.data,
-      status = { loaded: false, loading: true };
-    // if data is passed as a dataset array
-    // typically for dataset configuration
-    // the data prop will mutate
-    // else ( if the data prop is a promise or a function or a get function is defined in the meta description)
-    // data prop will not mutate but the (updated) dataset will be a parameter of the callbacks
-    if (Array.isArray(data)) {
-      status = { loaded: true, loading: false };
-    }
     this.state = {
-      data: data,
-      status,
+      // data: daa,
       meta: props.meta,
       updatedRows: props.updatedRows || {},
       sizes: props.sizes,
       keyEvent: props.keyEvent
     };
     this.zoomValue = props.sizes.zoom || 1;
+    // functions
     if (Array.isArray(props.functions)) {
       this.state.functions = props.functions;
     } else {
       this.state.functions = functionsTable(props.functions);
     }
-    if (typeof data === "function") {
-      data(this.props.params, (data, status) => {
-        this.setState({ data, status });
-      });
-    } else if (utils.isPromise(data)) {
-      data
-        .then(data => {
-          this.init(
-            data,
-            this.state.meta,
-            this.zoomValue,
-            this.state.functions
-          );
-          this.setState({ data, status: { loaded: true, loading: false } });
-          return data;
-        })
-        .catch(error =>
-          this.setState({
-            data: [],
-            status: { loaded: false, loading: false, error }
-          })
-        );
-    } else if (props.meta && props.meta.table.get) {
-      const f = getFunction(
-        this.state.functions,
-        "dataset",
-        "dml",
-        props.meta.table.get
-      );
-      f({
-        params: this.props.params,
-        callback: (data, status) => {
-          this.init(
-            data,
-            this.state.meta,
-            this.zoomValue,
-            this.state.functions
-          );
-          this.setState({ data, status });
-        }
-      });
-    }
+    const { data, status, filters } = this.getData(props);
+    this.state.data = data;
+    this.state.status = status;
+    this.state.filters = filters;
     this.errorHandler = this.props.errorHandler || {};
   }
+  getFilters = (filters, columns) => {
+    columns.forEach(column => {
+      if (filters[column.id]) {
+        column.filterType = filters[column.id].filterType;
+        column.v = filters[column.id].v;
+        column.vTo = filters[column.id].vTo;
+        // filterFunction(column, params, data);
+        filters[column.id] = column;
+      } else if (
+        !utils.isNullOrUndefined(column.v) ||
+        (column.filterType === "between" &&
+          !utils.isNullOrUndefined(column.vTo))
+      ) {
+        filters[column.id] = column;
+      }
+    });
+    return filters;
+  };
+  getData = props => {
+    let { data, meta, params, filters } = props,
+      status = { loaded: false, loading: true };
+    if (Array.isArray(data)) {
+      this.initData(
+        data,
+        meta,
+        this.zoomValue,
+        this.state.functions,
+        0,
+        filters
+      );
+      status = { loaded: true, loading: false };
+    } else {
+      if (typeof data === "function") {
+        this.select = data;
+        data = data({ params, filters: getFilters(meta.properties, filters) });
+      } else if (meta && meta.table.select) {
+        data = getFunction(
+          this.state.functions,
+          meta.table.object || "dataset",
+          "dml",
+          meta.table.select
+        );
+        this.select = data;
+        data = data({ params, filters: getFilters(meta.properties, filters) });
+      }
+      if (Array.isArray(data)) {
+        this.initData(
+          data,
+          meta,
+          this.zoomValue,
+          this.state.functions,
+          0,
+          filters
+        );
+        status = { loaded: true, loading: false };
+      } else if (utils.isPromise(data)) {
+        this.resolvePromise(data);
+      } else if (utils.isObservable(data)) {
+        this.subscribeObservable(data);
+        data = [];
+      }
+    }
+    return { data, status, filters };
+  };
+  initData = (data, meta, zoom, functions, startIndex, filters) => {
+    if (data) {
+      data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
+      if (meta.properties.length === 0) {
+        computeMetaFromData(data, meta, zoom, functions);
+      }
+    }
+    if (filters && meta.properties.length !== 0) {
+      this.getFilters(filters, meta.properties);
+    }
+  };
+  resolvePromise = data => {
+    data
+      .then(data => {
+        this.initData(
+          data,
+          this.state.meta,
+          this.zoomValue,
+          this.state.functions,
+          0,
+          this.state.filters
+        );
+        this.setState({ data, status: { loaded: true, loading: false } });
+        return data;
+      })
+      .catch(error =>
+        this.setState({
+          data: [],
+          status: { loaded: false, loading: false, error }
+        })
+      );
+  };
+  subscribeObservable = observable => {
+    this.observable = observable;
+    this.observable.subscribe(
+      x => {
+        this.initData(
+          x,
+          this.state.meta,
+          this.zoomValue,
+          this.state.functions,
+          this.state.data.length,
+          this.state.filters
+        );
+        console.log("observable", x.length);
+        this.setState({
+          data: this.state.data.concat(x),
+          status: { loaded: true, loading: false }
+        });
+      },
+      e =>
+        this.setState({
+          data: [],
+          status: { loaded: false, loading: false, error: e }
+        }),
+      () => this.setState({ status: { loaded: true, loading: false } })
+    );
+  };
   componentDidMount() {
     if (!this.props.keyEvent === undefined) {
       document.addEventListener("copy", this.handleCopy);
@@ -96,33 +173,24 @@ export class ZebulonTable extends Component {
       document.removeEventListener("keydown", this.handleKeyDown);
     }
   }
-  init = (data, meta, zoom, functions) => {
-    if (data) {
-      data.forEach((row, index) => (row.index_ = index));
-      computeMetaFromData(data, meta, zoom, functions);
-    }
-  };
-  componentWillMount() {
-    if (utils.isPromise(this.props.data)) {
-      this.props.data.then(data => {
-        this.init(
-          data,
-          this.props.meta.properties,
-          this.zoomValue,
-          this.state.functions
-        );
-      });
-    } else {
-      this.init(
-        this.props.data,
-        this.props.meta,
-        this.zoomValue,
-        this.state.functions
-      );
-    }
-  }
+
+  // componentWillMount() {
+  //   if (this.props.filters) {
+  //     const { meta, params, data, filters } = this.state;
+  //     this.setState({
+  //       filters: this.getFilters(
+  //         this.props.filters,
+  //         meta.properties,
+  //         params,
+  //         data,
+  //         0,
+  //         filters
+  //       )
+  //     });
+  //   }
+  // }
   componentWillReceiveProps(nextProps) {
-    const { data, meta, sizes, keyEvent, updatedRows } = nextProps;
+    const { data, meta, sizes, keyEvent, updatedRows, filters } = nextProps;
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
         if (this.zoomValue !== sizes.zoom) {
@@ -132,9 +200,12 @@ export class ZebulonTable extends Component {
       }
       this.setState({ sizes: { ...sizes, zoom: this.zoomValue } });
     }
-    if (this.props.data !== data || this.props.meta !== meta) {
-      this.setState({ data, meta });
-      this.init(data, meta, this.zoomValue, this.state.functions);
+    if (
+      this.props.data !== data ||
+      this.props.meta !== meta ||
+      this.props.filters !== filters
+    ) {
+      this.setState(this.getData(nextProps));
     }
     if (updatedRows && this.props.updatedRows !== updatedRows) {
       this.setState({ updatedRows });
@@ -235,6 +306,7 @@ export class ZebulonTable extends Component {
           data={this.state.data}
           meta={this.state.meta}
           params={this.props.params}
+          filters={this.state.filters}
           updatedRows={this.state.updatedRows}
           key={this.props.id}
           visible={this.props.visible === undefined ? true : this.props.visible}

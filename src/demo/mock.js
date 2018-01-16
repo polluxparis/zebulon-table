@@ -10,6 +10,7 @@ export function getMockDatasource(
 ) {
   let obj = [];
   const res = [];
+  let ii = 0;
   for (let k = 0; k < dataRepetition; k += 1) {
     for (let o = 0; o < nToto; o += 1) {
       for (let i = 0; i < nTiti; i += 1) {
@@ -29,7 +30,9 @@ export function getMockDatasource(
             Math.round(12 * Math.random()),
             Math.round(31 * Math.random())
           );
+          obj.id = ii;
           res.push(obj);
+          ii++;
         }
       }
     }
@@ -86,33 +89,30 @@ export const overwritedData = () => {
   return [obj];
 };
 
-export function getObservableMockDatasource(interval) {
-  const data = [
-    getMockDatasource(),
-    [
-      {
-        toto: "0",
-        toto_lb: "toto 0",
-        qty: 100,
-        amt: 100,
-        titi: "titi 0",
-        tutu: "1"
-      },
-      {
-        toto: "0",
-        toto_lb: "toto 0",
-        qty: 100,
-        amt: 100,
-        titi: "titi 0",
-        tutu: "0"
-      }
-    ],
-    { toto: "0", toto_lb: "toto 0", qty: 1, amt: 2, titi: "titi 0", tutu: "1" }
-  ];
-  return Observable.interval(interval || 100)
-    .take(3)
-    .map(i => data[i]);
-}
+export const getObservableMockDatasource = (
+  dataRepetition = 1,
+  nToto = 10,
+  nTiti = 10,
+  nTutu = 2
+) => {
+  const data = getMockDatasource(dataRepetition, nToto, nTiti, nTutu);
+  console.log("count data", data.length);
+  const data2 = [];
+  let i = 0;
+  while (i < data.length) {
+    data2.push(data.slice(i, (i += 1000)));
+  }
+
+  let ii = 0;
+  // return Observable.from(data2);
+  return Observable.interval(100)
+    .take(data2.length)
+    .map(i => data2[i]);
+  // return Observable.interval(interval || 100)
+  //   .take(1000)
+  //   .then((ii += 1000))
+  //   .map(i => data[i + ii]);
+};
 export function getObservableError() {
   return Observable.throw(new Error("titi"));
 }

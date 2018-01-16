@@ -4,11 +4,19 @@ import { ZebulonTable } from "../table/ZebulonTable";
 // import ZebulonTable from "../table/ZebulonTable";
 import "zebulon-controls/lib/index.css";
 import "../table/index.css";
-import { Input, constants } from "zebulon-controls";
+import { Input, constants, utils } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
-import { functionsTable } from "../table/utils";
+import { functionsTable, getFilters } from "../table/utils";
 import { ResizableBox } from "react-resizable";
 import { getMockDatasource } from "./mock";
+import {
+  countries,
+  metaCountries,
+  currencies,
+  metaCurrencies,
+  thirdparties,
+  metaThirdparties
+} from "./metaThirdparties";
 // const AxisType = utils.AxisType;
 class ZebulonTableDemo extends Component {
   constructor(props) {
@@ -25,7 +33,8 @@ class ZebulonTableDemo extends Component {
       functions: functionsTable(functions),
       updatedRows: {},
       params: {},
-      status: {}
+      status: {},
+      filters: { qty: { id: "qty", filterType: "between", v: 123, vTo: 256 } }
     };
     this.state.meta = metaDescriptions("dataset", this.state.functions);
   }
@@ -110,14 +119,14 @@ class ZebulonTableDemo extends Component {
   };
   errorHandler = {
     onRowQuit: message => {
-      window.alert(JSON.stringify(message.status));
-      return false;
+      return window.confirm(JSON.stringify(message.status));
     }
   };
   render() {
     let {
         data,
         meta,
+        filters,
         updatedRows,
         sizes,
         keyEvent,
@@ -126,40 +135,64 @@ class ZebulonTableDemo extends Component {
         status
       } = this.state,
       component;
-
-    if (this.state.configuration) {
+    const a = getFilters(this.state.meta.properties);
+    console.log("filters", a);
+    if (false) {
       component = (
-        <ZebulonTableAndConfiguration
-          functions={functions}
-          params={params}
-          data={data}
-          meta={meta}
+        <ZebulonTable
+          key="countries"
+          id="countries"
+          visible={true}
+          data={countries}
+          meta={metaCountries}
+          filters={filters}
           updatedRows={updatedRows}
           status={status}
           sizes={sizes}
+          functions={functions}
+          params={params}
           keyEvent={keyEvent}
           errorHandler={this.errorHandler}
-          navigationKeyHandler={this.navigationKeyHandler}
+          // navigationKeyHandler={this.navigationKeyHandler}
         />
       );
     } else {
-      component = (
-        <ZebulonTable
-          key="dataset"
-          id="dataset"
-          visible={true}
-          data={data}
-          meta={meta}
-          updatedRows={updatedRows}
-          status={status}
-          sizes={sizes}
-          functions={functions}
-          params={params}
-          keyEvent={keyEvent}
-          errorHandler={this.errorHandler}
-          navigationKeyHandler={this.navigationKeyHandler}
-        />
-      );
+      if (this.state.configuration) {
+        component = (
+          <ZebulonTableAndConfiguration
+            functions={functions}
+            params={params}
+            data={data}
+            meta={meta}
+            filters={filters}
+            updatedRows={updatedRows}
+            status={status}
+            sizes={sizes}
+            keyEvent={keyEvent}
+            errorHandler={this.errorHandler}
+            navigationKeyHandler={this.navigationKeyHandler}
+          />
+        );
+      } else {
+        component = (
+          <ZebulonTable
+            key="dataset"
+            id="dataset"
+            visible={true}
+            data={data}
+            meta={meta}
+            filters={filters}
+            updatedRows={updatedRows}
+            status={status}
+            sizes={sizes}
+            functions={functions}
+            params={params}
+            keyEvent={keyEvent}
+            errorHandler={this.errorHandler}
+            navigationKeyHandler={this.navigationKeyHandler}
+          />
+        );
+      }
     }
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">

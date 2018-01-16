@@ -37,7 +37,8 @@ export class ZebulonTableAndConfiguration extends Component {
 			propertiesUpdatedRows: {},
 			functionsUpdatedRows: {},
 			functions: f,
-			sizes: props.sizes
+			sizes: props.sizes,
+			filters: props.filters
 		};
 		this.zoomValue = props.sizes.zoom || 1;
 		this.state.propertiesMeta = metaDescriptions(
@@ -84,12 +85,14 @@ export class ZebulonTableAndConfiguration extends Component {
 		if (
 			nextProps.data !== this.props.data ||
 			nextProps.meta !== this.props.meta ||
+			nextProps.filters !== this.props.filters ||
 			nextProps.functions !== this.props.functions
 		) {
 			this.setState({
 				data: nextProps.data,
 				meta: nextProps.meta,
-				functions: nextProps.functions
+				functions: nextProps.functions,
+				filters: nextProps.filters
 			});
 		}
 		if (
@@ -171,6 +174,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						visible={this.state.selectedTab === 0}
 						data={this.state.data}
 						meta={this.state.meta}
+						filters={this.state.filters}
 						updatedRows={this.state.updatedRows}
 						sizes={this.sizes}
 						functions={this.state.functions}

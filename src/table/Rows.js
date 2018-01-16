@@ -6,7 +6,8 @@ import { cellData } from "./utils";
 console.log("constants", constants);
 export class Rows extends ScrollableGrid {
   getRatios = props => {
-    const { height, width, meta, rowHeight, scroll, data } = props;
+    const { height, width, rowHeight, scroll, data } = props;
+    const meta = props.meta.properties;
     const lastColumn = meta[meta.length - 1];
     const columnsWidth = lastColumn.position + lastColumn.computedWidth;
     // const verticalDisplay=height / (data.length * rowHeight);
@@ -194,7 +195,7 @@ export class Rows extends ScrollableGrid {
         this.rowRenderer(
           data[index],
           updatedRows,
-          meta,
+          meta.properties,
           this.props.scroll.columns.startIndex,
           this.props.scroll.columns.shift,
           visibleWidth,

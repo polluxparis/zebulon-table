@@ -28,14 +28,39 @@ export const computeMetaPositions = meta => {
 };
 export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
-
-  meta.visibleLength = 0;
+  // table
+  meta.visibleIndexes = [];
+  meta.table.selectFunction = getFunction(
+    functions,
+    meta.table.object,
+    "dml",
+    meta.table.onSave
+  );
+  meta.table.onSaveFunction = getFunction(
+    functions,
+    meta.table.object,
+    "dml",
+    meta.table.onSave
+  );
+  meta.table.onSaveBeforeFunction = getFunction(
+    functions,
+    meta.table.object,
+    "dml",
+    meta.table.onSaveBefore
+  );
+  meta.table.onSaveAfterFunction = getFunction(
+    functions,
+    meta.table.object,
+    "dml",
+    meta.table.onSaveAfter
+  );
   meta.row.descriptorFunction = getFunction(
     functions,
     meta.table.object,
     "accessor",
     meta.row.descriptor
   );
+  // row
   meta.row.onQuitFunction = getFunction(
     functions,
     meta.table.object,
@@ -56,6 +81,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       action.enable
     );
   });
+  // properties
   meta.properties.forEach((column, index) => {
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
@@ -65,7 +91,10 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     column.position = position;
     column.index_ = index;
     position += width;
-    meta.visibleLength += width !== 0;
+    if (width !== 0) {
+      column.visibleIndex_ = meta.visibleIndexes.length;
+      meta.visibleIndexes.push(column.index_);
+    }
     column.editableFunction = getFunction(
       functions,
       meta.table.object,
@@ -271,7 +300,8 @@ export const functionsTable = functions => {
 // -----------------------------------------------------------
 // Error management
 // -----------------------------------------------------------
-export const manageRowError = (status, object, type, error) => {
+export const manageRowError = (updatedRows, index, object, type, error) => {
+  const status = updatedRows[index];
   const existsErrors = !utils.isNullOrUndefined(status.errors);
   const errors = status.errors || {};
   const existsObject = !utils.isNullOrUndefined(errors[object]);
@@ -281,13 +311,14 @@ export const manageRowError = (status, object, type, error) => {
     objectErrors[type] = error;
     if (!existsType) {
       objectErrors.n_ = (objectErrors.n_ || 0) + 1;
-    }
-    if (!existsObject) {
-      errors[object] = objectErrors;
-    }
-    errors.n_ = (errors.n_ || 0) + 1;
-    if (!existsErrors) {
-      status.errors = errors;
+      if (!existsObject) {
+        errors[object] = objectErrors;
+      }
+      errors.n_ = (errors.n_ || 0) + 1;
+      if (!existsErrors) {
+        status.errors = errors;
+      }
+      updatedRows.nErrors = (updatedRows.nErrors || 0) + 1;
     }
   } else {
     if (existsType) {
@@ -304,7 +335,7 @@ export const manageRowError = (status, object, type, error) => {
 // Export configuration
 // -----------------------------------------------------------
 const excludeProperties = {
-  visibleLength: true,
+  visibleIndexes: true,
   selectItems: true,
   selectFilter: true,
   // accessorFunction: true,
@@ -312,7 +343,8 @@ const excludeProperties = {
   // defaultFunction: true,
   // alignement: true,
   position: true,
-  index_: true
+  index_: true,
+  visibleIndex_: true
 };
 // const hasFunction = {
 //   editable: true,
@@ -411,6 +443,75 @@ export const cellData = (row, column, status, data, params, focused) => {
     } else select = Object.values(select);
   }
   return { editable, select, value };
+};
+// ----------------------------
+//  filters
+//  ---------------------------
+export const filterFunction = (column, params, data) => {
+  const facc = row =>
+    (column.accessorFunction || (row => row[column.id]))(row, params, {}, data);
+  if (column.filterType === "values") {
+    column.f = row => column.v[facc(row)] !== undefined;
+  } else if (column.dataType === "boolean") {
+    column.f = row => (facc(row) || false) === column.v;
+  } else if (column.filterType === "=") {
+    column.f = row => facc(row) === column.v;
+  } else if (column.filterType === ">=") {
+    column.f = row => facc(row) >= column.v;
+  } else if (column.filterType === "between") {
+    column.f = row => {
+      return (
+        (column.vTo !== null ? facc(row) <= column.vTo : true) &&
+        (column.v !== null ? facc(row) >= column.v : true)
+      );
+    };
+  } else if (column.filterType === "<=") {
+    column.f = row => facc(row) <= column.v;
+  } else {
+    column.f = row =>
+      String(facc(row) || "").startsWith(String(column.v || ""));
+  }
+};
+export const filtersFunction = (filters, params, data) => {
+  if (!filters) {
+    return x => x;
+  }
+  const f = Object.values(filters)
+    .filter(filter => {
+      return (
+        filter.v !== null ||
+        (filter.filterType === "between" && filter.vTo !== null)
+      );
+    })
+    .map(filter => {
+      filterFunction(filter, params, data);
+      return filter;
+    });
+  if (!f.length) {
+    return x => x;
+  }
+  return row => {
+    return f.reduce((acc, filter) => acc && filter.f(row), true);
+  };
+};
+export const getFilters = (columns, filters) => {
+  if (!columns.length) {
+    return filters;
+  }
+  return columns.reduce((acc, column) => {
+    if (
+      !utils.isNullOrUndefined(column.v) ||
+      (column.filterType === "between" && !utils.isNullOrUndefined(column.vTo))
+    ) {
+      acc[column.id] = {
+        id: column.id,
+        filterType: column.filterType,
+        v: column.v,
+        vTo: column.vTo
+      };
+    }
+    return acc;
+  }, {});
 };
 // ----------------------------
 //  aggregations

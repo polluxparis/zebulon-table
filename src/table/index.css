@@ -1,13 +1,11 @@
 .zebulon-table-input {
   font: inherit;
-  border: solid rgba(0, 0, 0, 0.2) 0.02em;
+  height: inherit;
+  width: inherit;
+  border: unset;
   box-sizing: border-box;
-  /*padding: 3px;*/
   background-color: inherit;
-  min-width: 150px;
   vertical-align: middle;
-  /*line-height: inherit;*/
-  height: 25px;
 }
 .zebulon-input-label: {
   /*border: solid lightgrey thin;
@@ -67,8 +65,8 @@
 }
 .zebulon-table-filter {
   padding: 0;
-  /*border: 0;*/
-  /*width: inherit;*/
+  margin: 0.01em;
+  border: solid rgba(0, 0, 0, 0.2) 0.05em;
 }
 .zebulon-table-filter-empty {
   background-color: white;

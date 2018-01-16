@@ -127,7 +127,8 @@ export class Input extends Component {
       onClick,
       onMouseOver,
       onFocus,
-      filterTo
+      filterTo,
+      tabIndex
     } = this.props;
     let input;
     const { dataType, format } = column;
@@ -152,6 +153,7 @@ export class Input extends Component {
       };
       if (inputType === "filter") {
         innerStyle.padding = ".4em";
+        innerStyle.height = "inherit";
       }
 
       let type = "text";
@@ -195,6 +197,7 @@ export class Input extends Component {
             disabled={false}
             onChange={this.handleChange}
             onFocus={onClick}
+            tabIndex={tabIndex}
           />
         );
       } else {
@@ -202,15 +205,12 @@ export class Input extends Component {
         if (isNullOrUndefined(value) || value === "") {
           value = "";
         }
-        // else if (focused && editable && dataType === "number") {
-        //   value = this.state.value.toString();
-        // }
         input = (
           <input
             type="text"
             key={column.id}
             id={column.index_ + 1000 * (filterTo || 0)}
-            className={className || "zebulon-input"}
+            className={"zebulon-table-input"}
             autoFocus={hasFocus && inputType !== "filter"}
             style={innerStyle}
             // draggable={false}
@@ -218,9 +218,10 @@ export class Input extends Component {
             disabled={disabled}
             onChange={this.handleChange}
             // onBlur={this.handleBlur}
-            tabIndex={0}
+            // tabIndex={0}
             onFocus={this.handleFocus}
             onBlur={this.handleBlur}
+            tabIndex={tabIndex}
           />
         );
       }
