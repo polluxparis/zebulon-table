@@ -34,7 +34,11 @@ class ZebulonTableDemo extends Component {
       updatedRows: {},
       params: {},
       status: {},
-      filters: { qty: { id: "qty", filterType: "between", v: 123, vTo: 256 } }
+      filters: { qty: { id: "qty", filterType: "between", v: 123, vTo: 256 } },
+      sorts: {
+        d: { id: "d", direction: "asc", sortOrder: 0 },
+        toto: { id: "toto", direction: "desc", sortOrder: 1 }
+      }
     };
     this.state.meta = metaDescriptions("dataset", this.state.functions);
   }
@@ -127,6 +131,7 @@ class ZebulonTableDemo extends Component {
         data,
         meta,
         filters,
+        sorts,
         updatedRows,
         sizes,
         keyEvent,
@@ -146,6 +151,7 @@ class ZebulonTableDemo extends Component {
           data={countries}
           meta={metaCountries}
           filters={filters}
+          sorts={sorts}
           updatedRows={updatedRows}
           status={status}
           sizes={sizes}
@@ -165,6 +171,7 @@ class ZebulonTableDemo extends Component {
             data={data}
             meta={meta}
             filters={filters}
+            sorts={sorts}
             updatedRows={updatedRows}
             status={status}
             sizes={sizes}
@@ -182,6 +189,7 @@ class ZebulonTableDemo extends Component {
             data={data}
             meta={meta}
             filters={filters}
+            sorts={sorts}
             updatedRows={updatedRows}
             status={status}
             sizes={sizes}

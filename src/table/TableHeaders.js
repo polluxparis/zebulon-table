@@ -57,7 +57,8 @@ const filter = (
   onChange,
   openFilter,
   handleDragOver,
-  handleDrop
+  handleDrop,
+  focusedId
 ) => {
   const className = classnames({
     "zebulon-table-cell": true,
@@ -81,8 +82,9 @@ const filter = (
   } else if (column.filterType === "values") {
     value = "";
   }
-  const a =
-    document.activeElement.id === String(column.index_ + 1000 * filterTo);
+  const focused =
+    (focusedId || document.activeElement.id) ===
+    String(column.index_ + 1000 * filterTo);
 
   return (
     <Input
@@ -96,9 +98,8 @@ const filter = (
         textAlign
       }}
       editable={true}
-      focused={
-        document.activeElement.id === String(column.index_ + 1000 * filterTo)
-      }
+      focused={focused}
+      // autofocus={focused}
       inputType="filter"
       tabIndex={column.index_ * 2 + (filterTo || 0) + 100}
       value={value}
@@ -186,7 +187,7 @@ const filterEmpty = (id, position, width) => {
 export class Headers extends Component {
   // constructor(props) {
   //   super(props);
-  //   this.state = { type: this.props.type };
+  //   console.log("constructor");
   // }
   handleClick = (column, double) => {
     const { onSort } = this.props;
@@ -208,18 +209,10 @@ export class Headers extends Component {
     this.dragMessage = { type, index: e.target.id, x: e.pageX };
     e.dataTransfer.setData("text", JSON.stringify(this.dragMessage));
     e.stopPropagation();
-
-    console.log(
-      "drag start",
-      type,
-      e.target,
-      e.pageX,
-      e.dataTransfer.getData("text")
-    );
   };
 
   handleDragOver = e => {
-    console.log("dragover", e.target, e.dataTransfer.getData("text"));
+    // console.log("dragover", e.target, e.dataTransfer.getData("text"));
     if (
       this.dragMessage.type === "move" ||
       (this.dragMessage.type === "resize" &&
@@ -235,7 +228,7 @@ export class Headers extends Component {
   handleDrop = e => {
     e.preventDefault();
     const msg = JSON.parse(e.dataTransfer.getData("text"));
-    console.log("drop", e.target.id, msg);
+    // console.log("drop", e.target.id, msg);
     const { meta } = this.props;
     if (msg.type) {
       if (
@@ -273,7 +266,8 @@ export class Headers extends Component {
       onChange,
       openFilter,
       filterTo,
-      type
+      type,
+      focusedId
     } = this.props;
     // const type = this.state.type;
     const cells = [
@@ -328,7 +322,8 @@ export class Headers extends Component {
               onChange,
               column.filterType === "values" ? openFilter : () => {},
               this.handleDragOver,
-              this.handleDrop
+              this.handleDrop,
+              focusedId
             );
           }
         }
@@ -359,6 +354,9 @@ export class Headers extends Component {
   }
 }
 export class Status extends Component {
+  shouldComponentUpdate(nextProps) {
+    return !nextProps.status.loadingPage;
+  }
   onClick = index =>
     this.props.selectRange({
       end: { rows: index, columns: 0 },
@@ -377,22 +375,30 @@ export class Status extends Component {
       scroll,
       updatedRows,
       selectedIndex,
-      handleErrors
+      handleErrors,
+      dataLength
     } = this.props;
-    let index = 0;
-
+    let index = 0,
+      indexPage = 0,
+      rows = data;
+    if (typeof data === "object" && data.page) {
+      rows = data.page;
+      indexPage = data.pageStartIndex;
+    }
     // const shift = scroll.shift;
     const cells = [];
-    while (index < Math.min(data.length, Math.ceil(height / rowHeight))) {
+    while (
+      index < Math.min(dataLength || data.length, Math.ceil(height / rowHeight))
+    ) {
       const style = {
         position: "absolute",
         top: scroll.shift + index * rowHeight,
         width: rowHeight,
         height: rowHeight
       };
-      if (index + scroll.startIndex < data.length) {
+      if (index + scroll.startIndex - indexPage < (dataLength || data.length)) {
         const updatedRow = updatedRows[
-          data[index + scroll.startIndex].index_
+          rows[index + scroll.startIndex - indexPage].index_
         ] || { errors: {} };
         const className = classnames({
           "zebulon-table-status": true,

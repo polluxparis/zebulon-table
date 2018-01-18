@@ -9,7 +9,8 @@ import {
   functionsTable,
   getFunction,
   filterFunction,
-  getFilters
+  getFilters,
+  getSorts
 } from "./utils";
 
 // import { utils.isPromise, isDate } from "./utils/generic";
@@ -31,19 +32,19 @@ export class ZebulonTable extends Component {
     } else {
       this.state.functions = functionsTable(props.functions);
     }
+    this.sorts = props.sorts;
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
     this.errorHandler = this.props.errorHandler || {};
   }
-  getFilters = (filters, columns) => {
+  setFilters = (filters, columns) => {
     columns.forEach(column => {
       if (filters[column.id]) {
         column.filterType = filters[column.id].filterType;
         column.v = filters[column.id].v;
         column.vTo = filters[column.id].vTo;
-        // filterFunction(column, params, data);
         filters[column.id] = column;
       } else if (
         !utils.isNullOrUndefined(column.v) ||
@@ -55,9 +56,45 @@ export class ZebulonTable extends Component {
     });
     return filters;
   };
-  getData = props => {
+  setSorts = (sorts, columns) => {
+    columns.forEach(column => {
+      if (sorts[column.id]) {
+        column.sortOrder = sorts[column.id].sortOrder;
+        column.sort = sorts[column.id].direction;
+      } else {
+        column.sortOrder = undefined;
+        column.sort = undefined;
+      }
+    });
+  };
+  getData = (props, sorts) => {
     let { data, meta, params, filters } = props,
       status = { loaded: false, loading: true };
+    if (typeof data === "function") {
+      this.select = data;
+      data = data({
+        params,
+        filters: getFilters(meta.properties, filters),
+        sorts: this.sorts
+          ? Object.values(this.sorts)
+          : getSorts(meta.properties)
+      });
+    } else if (meta && meta.table.select) {
+      data = getFunction(
+        this.state.functions,
+        meta.table.object || "dataset",
+        "dml",
+        meta.table.select
+      );
+      this.select = data;
+      data = data({
+        params,
+        filters: getFilters(meta.properties, filters),
+        sorts: this.sorts
+          ? Object.values(this.sorts)
+          : getSorts(meta.properties)
+      });
+    }
     if (Array.isArray(data)) {
       this.initData(
         data,
@@ -65,64 +102,69 @@ export class ZebulonTable extends Component {
         this.zoomValue,
         this.state.functions,
         0,
-        filters
+        filters,
+        sorts
       );
       status = { loaded: true, loading: false };
-    } else {
-      if (typeof data === "function") {
-        this.select = data;
-        data = data({ params, filters: getFilters(meta.properties, filters) });
-      } else if (meta && meta.table.select) {
-        data = getFunction(
-          this.state.functions,
-          meta.table.object || "dataset",
-          "dml",
-          meta.table.select
-        );
-        this.select = data;
-        data = data({ params, filters: getFilters(meta.properties, filters) });
-      }
-      if (Array.isArray(data)) {
-        this.initData(
-          data,
-          meta,
-          this.zoomValue,
-          this.state.functions,
-          0,
-          filters
-        );
-        status = { loaded: true, loading: false };
-      } else if (utils.isPromise(data)) {
-        this.resolvePromise(data);
-      } else if (utils.isObservable(data)) {
-        this.subscribeObservable(data);
-        data = [];
-      }
+    } else if (utils.isPromise(data)) {
+      this.resolvePromise(data);
+    } else if (utils.isObservable(data)) {
+      this.subscribeObservable(data);
+      data = [];
     }
-    return { data, status, filters };
+    // }
+    return { data, status, filters, sorts };
   };
   initData = (data, meta, zoom, functions, startIndex, filters) => {
     if (data) {
-      data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
+      if (data[0] && data[0].index_ === undefined) {
+        data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
+      }
       if (meta.properties.length === 0) {
         computeMetaFromData(data, meta, zoom, functions);
       }
     }
     if (filters && meta.properties.length !== 0) {
-      this.getFilters(filters, meta.properties);
+      this.setFilters(filters, meta.properties);
+    }
+    // sorts are applied only the first time
+    if (this.sorts && meta.properties.length !== 0) {
+      this.setSorts(this.sorts, meta.properties);
+      this.sorts = null;
     }
   };
   resolvePromise = data => {
     data
       .then(data => {
-        this.initData(
-          data,
-          this.state.meta,
-          this.zoomValue,
-          this.state.functions,
-          0,
-          this.state.filters
-        );
+        if (!this.state.meta.serverPagination) {
+          this.initData(
+            data,
+            this.state.meta,
+            this.zoomValue,
+            this.state.functions,
+            0,
+            this.state.filters
+          );
+        } else if (this.state.meta.properties.length === 0) {
+          data({ startIndex: 0 }).then(page => {
+            this.initData(
+              page.page,
+              this.state.meta,
+              this.zoomValue,
+              this.state.functions,
+              0,
+              this.state.filters
+            );
+            // computeMetaFromData(
+            //   page.page,
+            //   this.state.meta,
+            //   this.zoomValue,
+            //   this.state.functions
+            // );
+          });
+          this.setState({ data, status: { loaded: true, loading: false } });
+          return data;
+        }
         this.setState({ data, status: { loaded: true, loading: false } });
         return data;
       })

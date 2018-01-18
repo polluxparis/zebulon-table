@@ -5,24 +5,28 @@ import { Input } from "./Input";
 import { cellData } from "./utils";
 console.log("constants", constants);
 export class Rows extends ScrollableGrid {
+  shouldComponentUpdate(nextProps) {
+    return !nextProps.status.loadingPage;
+  }
   getRatios = props => {
-    const { height, width, rowHeight, scroll, data } = props;
+    const { height, width, rowHeight, scroll, data, dataLength } = props;
     const meta = props.meta.properties;
     const lastColumn = meta[meta.length - 1];
     const columnsWidth = lastColumn.position + lastColumn.computedWidth;
-    // const verticalDisplay=height / (data.length * rowHeight);
     const horizontalDisplay =
       (width -
-        (data.length * rowHeight > height ? constants.ScrollbarSize : 0)) /
+        ((dataLength || data.length) * rowHeight > height
+          ? constants.ScrollbarSize
+          : 0)) /
       columnsWidth;
     const verticalDisplay =
       (height - (columnsWidth > width ? constants.ScrollbarSize : 0)) /
-      (data.length * rowHeight);
+      ((dataLength || data.length) * rowHeight);
     return {
       vertical: {
         display: verticalDisplay,
         position: Math.min(
-          scroll.rows.startIndex / data.length,
+          scroll.rows.startIndex / (dataLength || data.length),
           1 - verticalDisplay
         )
       },
@@ -88,7 +92,7 @@ export class Rows extends ScrollableGrid {
   };
   rowRenderer = (
     row,
-    updatedRows,
+    status,
     meta,
     startIndex,
     shift,
@@ -107,9 +111,14 @@ export class Rows extends ScrollableGrid {
       if (!column.hidden) {
         let textAlign = column.alignement || "left";
         if (!column.alignement) {
-          if (column.dataType === "number") textAlign = "right";
-          else if (column.dataType === "date" || column.dataType === "boolean")
+          if (column.dataType === "number") {
+            textAlign = "right";
+          } else if (
+            column.dataType === "date" ||
+            column.dataType === "boolean"
+          ) {
             textAlign = "center";
+          }
         }
         const columnIndex = index;
         const selectedRange = this.selectedRange();
@@ -142,7 +151,7 @@ export class Rows extends ScrollableGrid {
           this.cell(
             row,
             column,
-            updatedRows[row.index_],
+            status,
             this.props.data,
             this.props.params,
             {
@@ -176,8 +185,6 @@ export class Rows extends ScrollableGrid {
 
   getContent = () => {
     const items = [];
-    let i = 0,
-      index = this.props.scroll.rows.startIndex;
     const {
       data,
       meta,
@@ -187,14 +194,28 @@ export class Rows extends ScrollableGrid {
       selectedCell,
       selectCell,
       updatedRows,
-      hasFocus
+      hasFocus,
+      dataLength
     } = this.props;
+    let i = 0,
+      index = this.props.scroll.rows.startIndex,
+      indexPage = 0,
+      rows = data;
+    if (typeof data === "object" && data.page) {
+      rows = data.page;
+      indexPage = data.pageStartIndex;
+    }
     const visibleWidth = width - this.scrollbars.vertical.width;
-    while (index < data.length && i < height / rowHeight) {
+    while (index < (dataLength || data.length) && i < height / rowHeight) {
+      let row = rows[index - indexPage];
+      const status = updatedRows[row.index_];
+      if (meta.serverPagination && status && status.rowUpdated) {
+        row = status.rowUpdated;
+      }
       items.push(
         this.rowRenderer(
-          data[index],
-          updatedRows,
+          row,
+          status,
           meta.properties,
           this.props.scroll.columns.startIndex,
           this.props.scroll.columns.shift,

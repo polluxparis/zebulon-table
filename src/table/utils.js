@@ -235,7 +235,11 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
         } else {
           dataType = "object";
         }
-        // format = dateToString;
+      } else if (
+        dataType === "string" &&
+        row[key] === new Date(row[key]).toJSON()
+      ) {
+        dataType = "date";
       }
       let alignement = "unset";
       if (dataType === "string") {
@@ -418,6 +422,9 @@ export const cellData = (row, column, status, data, params, focused) => {
   let value = column.accessorFunction
     ? column.accessorFunction(row, params, status, data)
     : row[column.id];
+  if (column.dataType === "date" && typeof value === "string") {
+    value = new Date(value);
+  }
   // if (column.formatFunction && !(editable && focused)) {
   //   value = column.formatFunction(value, row, params, status, data);
   // }
@@ -472,6 +479,7 @@ export const filterFunction = (column, params, data) => {
       String(facc(row) || "").startsWith(String(column.v || ""));
   }
 };
+// -----------------------------
 export const filtersFunction = (filters, params, data) => {
   if (!filters) {
     return x => x;
@@ -494,6 +502,7 @@ export const filtersFunction = (filters, params, data) => {
     return f.reduce((acc, filter) => acc && filter.f(row), true);
   };
 };
+// -----------------------------
 export const getFilters = (columns, filters) => {
   if (!columns.length) {
     return filters;
@@ -512,6 +521,50 @@ export const getFilters = (columns, filters) => {
     }
     return acc;
   }, {});
+};
+// ----------------------------
+//  sorts
+//  ---------------------------
+export const sortsFunction = sorts => {
+  return (rowA, rowB) =>
+    sorts.reduce((acc, sort) => {
+      const accessor = sort.accessor || (row => row[sort.id]);
+      if (acc === 0) {
+        acc =
+          ((accessor(rowA) > accessor(rowB)) -
+            (accessor(rowB) > accessor(rowA))) *
+          (sort.direction === "asc" ? 1 : -1);
+      }
+      return acc;
+    }, 0);
+};
+// -----------------------------------------
+export const getSorts = columns => {
+  const sorts = columns
+    .filter(column => column.sort !== undefined)
+    .map(column => {
+      let nullValue = "";
+      if (column.dataType === "number" || column.dataType === "boolean") {
+        nullValue = null;
+      } else if (column.dataType === "date") {
+        nullValue = new Date(null);
+      }
+      return {
+        id: column.id,
+        sortOrder: column.sortOrder,
+        direction: column.sort,
+        accessor:
+          column.accessorFunction ||
+          (row =>
+            utils.isNullOrUndefined(row[column.id])
+              ? nullValue
+              : row[column.id])
+      };
+    });
+  sorts.sort(
+    (a, b) => (a.sortOrder > b.sortOrder) - (b.sortOrder > a.sortOrder)
+  );
+  return sorts;
 };
 // ----------------------------
 //  aggregations

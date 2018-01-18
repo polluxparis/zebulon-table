@@ -102,6 +102,7 @@ export class Input extends Component {
       onFocus((e, row, column));
     } else if (inputType === "filter") {
       this.focused = true;
+      console.log("focus", this.state.value);
       const formatedValue = formatValue(
         this.props,
         this.state.value,

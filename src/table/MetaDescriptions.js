@@ -1,17 +1,19 @@
 import React from "react";
+import { Observable } from "rx-lite";
 import { utils } from "zebulon-controls";
 import {
 	computeData,
 	buildObject,
 	exportFunctions,
 	aggregations,
-	filtersFunction
+	filtersFunction,
+	sortsFunction
 } from "./utils";
 import { Property } from "./Property";
 import {
-	getMockDatasource,
+	getMockDatasource
 	// getPromiseMockDatasource,
-	getObservableMockDatasource
+	// getObservableMockDatasource
 } from "../demo/mock";
 
 // const propertyValidator = (row, data, meta, status, params) => {
@@ -28,8 +30,97 @@ const get_p = ({ params, filters }) => {
 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => data);
 };
 // observable
-const get_o = ({ params, filters }) =>
-	getObservableMockDatasource(1, 200, 40, 3);
+const get_o = ({ params, filters, sorts }) => {
+	const data = getMockDatasource(1, 200, 40, 3);
+	if (sorts) {
+		data.sort(sortsFunction(sorts));
+	}
+	const data2 = [];
+	let i = 0;
+	while (i < data.length) {
+		data2.push(data.slice(i, (i += 1000)));
+	}
+	return Observable.interval(100)
+		.take(data2.length)
+		.map(i => data2[i]);
+};
+// server pagination
+const get_bypage = e => {
+	const data = getMockDatasource(1, 200, 40, 3);
+	data.forEach((row, index) => (row.index_ = `id${index}`));
+	const pageLength = 100;
+	let filteredData = data;
+	let { filters, sorts, params, startIndex, stopIndex } = e;
+
+	if (sorts) {
+		data.sort(sortsFunction(sorts));
+	}
+	if (filters) {
+		filteredData = data.filter(filtersFunction(filters, params, data));
+	}
+	const sort = sorts => {
+		if (sorts.length) {
+			filteredData.sort(sortsFunction(sorts));
+		} else if (filters) {
+			filteredData = data.filter(filtersFunction(filters, params, data));
+		}
+	};
+	const filter = filters => {
+		if (Object.keys(filters).length) {
+			filteredData = data.filter(filtersFunction(filters, params, data));
+		} else {
+			if (sorts) {
+				data.sort(sortsFunction(sorts));
+			}
+			filteredData = data;
+		}
+	};
+
+	const paginationManager = page => {
+		if (page.filters) {
+			filter(page.filters);
+		}
+		if (page.sorts) {
+			sort(page.sorts);
+		}
+		const dataLength = filteredData.length;
+		let start =
+				page.startIndex === undefined ? startIndex : page.startIndex,
+			stop = page.stopIndex === undefined ? stopIndex : page.stopIndex,
+			pageStartIndex;
+
+		if (start >= dataLength) {
+			start = 0;
+		}
+		pageStartIndex = start - start % pageLength;
+		if (stop >= pageStartIndex + pageLength) {
+			pageStartIndex = Math.max(0, start - 10);
+		}
+		if (pageStartIndex + pageLength >= dataLength) {
+			pageStartIndex = Math.max(0, dataLength - pageLength);
+			// startIndex == index - pageStartIndex;
+		}
+		const pageData = JSON.parse(
+			JSON.stringify(
+				filteredData.slice(pageStartIndex, pageStartIndex + pageLength)
+			)
+		);
+		startIndex = start;
+		stopIndex = stop;
+		return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+			return {
+				page: pageData,
+				pageStartIndex,
+				pageLength: Math.min(dataLength, pageLength),
+				dataLength
+			};
+		});
+	};
+
+	return new Promise(resolve => setTimeout(resolve, 20)).then(
+		() => paginationManager
+	);
+};
 const set = () => {};
 const functionToString = row => {
 	if (typeof row.functionJS === "function") {
@@ -41,9 +132,9 @@ const stringToFunction = (row, status) => {
 	let f;
 	try {
 		eval("f = " + row.functionJS);
-		console.log("function", f);
+		// console.log("function", f);
 	} catch (e) {
-		console.log("function error", e);
+		// console.log("function error", e);
 		const error = status.errors.functionJS || {};
 		error.JS = e.message;
 		status.errors.functionJS = error;
@@ -166,6 +257,7 @@ export const functions = {
 			get_a,
 			get_p,
 			get_o,
+			get_bypage,
 			set
 		}
 	},
@@ -274,10 +366,12 @@ export const metaDescriptions = (
 	// const fg = functions.globals;
 	if (object === "dataset") {
 		return {
+			serverPagination: true,
 			table: {
 				object,
 				editable: true,
-				select: "get_o",
+				select: "get_bypage",
+				// select: "get_p",
 				primaryKey: "id",
 				onSave: "set",
 				actions: [

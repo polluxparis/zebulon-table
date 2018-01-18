@@ -3,17 +3,38 @@ import { Headers, Status } from "./TableHeaders";
 import { Rows } from "./Rows";
 import { utils, Filter } from "zebulon-controls";
 // import { Filter } from "./controls-o/Filter";
-import { manageRowError, filtersFunction } from "./utils";
+import {
+  manageRowError,
+  filtersFunction,
+  getSorts,
+  sortsFunction
+} from "./utils";
 
 // import { utils } from "zebulon-controls";
 export class Table extends Component {
   constructor(props) {
     super(props);
+
+    let filteredData = this.filters(props.data, props.filters);
+    let status = props.status;
+    if (props.meta.serverPagination && status.loaded) {
+      status = { loaded: false, loading: true };
+      props.data({ startIndex: 0 }).then(filteredData => {
+        this.setState({
+          filteredData,
+          dataLength: filteredData.dataLength,
+          status: { loaded: true, loading: false }
+        });
+        // this.indexPage = filteredData.pageStartIndex;
+      });
+    }
+    this.sorts(filteredData, props.meta.properties);
     this.state = {
       data: props.data,
-      filteredData: this.filters(props.data, props.filters),
+      filteredData,
       meta: props.meta,
       filters: props.filters || {},
+      status,
       updatedRows: props.updatedRows,
       scroll: {
         rows: {
@@ -31,8 +52,6 @@ export class Table extends Component {
           position: 0
         }
       },
-
-      sorts: {},
       selectedRange: { start: {}, end: {} },
       detail: {},
       text: {}
@@ -50,11 +69,29 @@ export class Table extends Component {
       nextProps.status !== this.props.status ||
       nextProps.updatedRows !== this.props.updatedRows
     ) {
+      // const filteredData = this.filters(nextProps.data, nextProps.filters);
+      let filteredData = [];
+      let status = nextProps.status;
+      if (nextProps.meta.serverPagination) {
+        if (status.loaded && !this.props.status.loaded) {
+          status = { loaded: false, loading: true };
+          nextProps.data({ startIndex: 0 }).then(filteredData => {
+            this.setState({
+              filteredData,
+              dataLength: filteredData.dataLength,
+              status: { loaded: true, loading: false }
+            });
+          });
+        }
+      } else {
+        filteredData = this.filters(nextProps.data, nextProps.filters);
+        this.sorts(filteredData, nextProps.meta.properties);
+      }
       this.setState({
         data: nextProps.data,
-        filteredData: this.filters(nextProps.data, this.state.filters),
+        filteredData,
         meta: nextProps.meta,
-        status: nextProps.status,
+        status,
         updatedRows: nextProps.updatedRows
       });
     }
@@ -67,6 +104,15 @@ export class Table extends Component {
   componentWillUnmount() {
     this.onTableClose();
   }
+  // componentDidUpdate() {
+  //   // if (this.focusedId) {
+  //   //   const element = document.getElementById(this.focusedId);
+  //   //   element.focus();
+  //   //   console.log(element);
+  //   //   this.focus = null;
+  //   // }
+  //   this.focusedId = null;
+  // }
   // ------------------------------------
   // Navigation
   // ------------------------------------
@@ -84,10 +130,7 @@ export class Table extends Component {
       this.setState({ toolTip: undefined });
     }
   };
-  onScroll = scroll => {
-    this.closeOpenedWindows();
-    this.setState({ scroll });
-  };
+
   hasParent(element, id) {
     if (!element.parentElement) {
       return false;
@@ -154,7 +197,7 @@ export class Table extends Component {
     const rowIndex = this.state.selectedRange.end.rows;
     let row = {};
     if (rowIndex !== undefined) {
-      row = this.state.filteredData[rowIndex];
+      row = this.getRow(rowIndex);
     }
     if (
       this.state.selectedRange ||
@@ -272,29 +315,16 @@ export class Table extends Component {
   // ----------------------------------------
   // filtering
   // ----------------------------------------
-  filters = (data, filters) => {
-    if (!Array.isArray(data)) {
-      return [];
-    }
-    const filter = filtersFunction(filters, this.props.params, data);
-    // const f = Object.values(filters).filter(filter => {
-    //   return (
-    //     filter.v !== null ||
-    //     (filter.filterType === "between" && filter.vTo !== null)
-    //   );
-    // });
-    // if (!f.length) return data;
-    // const filter = row => f.reduce((acc, filter) => acc && filter.f(row), true);
-    const filteredData = data.filter(filter);
+  adjustScroll = dataLength => {
     if (
       this.state &&
-      filteredData.length !== this.state.filteredData.length &&
+      dataLength !== this.getDataLength &&
       this.state.scroll.rows.startIndex !== 0 &&
       this.state.scroll.rows.index +
         (this.state.scroll.rows.direction === 1
           ? this.rowsHeight / this.rowHeight
           : 0) >
-        filteredData.length
+        dataLength
     ) {
       this.setState({
         scroll: {
@@ -309,6 +339,26 @@ export class Table extends Component {
         }
       });
     }
+  };
+  filters = (data, filters, noFocus) => {
+    if (!Array.isArray(data)) {
+      if (this.state && this.state.meta.serverPagination) {
+        // const focusedId = noFocus ? document.activeElement.id : null;
+        // this.focusedId = focusedId;
+        return this.pagination({
+          filters,
+          callbackAfter: page => {
+            this.selectRange_(this.range, undefined, "enter", noFocus);
+            this.adjustScroll(page.dataLength);
+            // this.focusedId = focusedId;
+          }
+        });
+      }
+      return [];
+    }
+    const filter = filtersFunction(filters, this.props.params, data);
+    const filteredData = data.filter(filter);
+    this.adjustScroll(filteredData.length);
     return filteredData;
   };
   openFilter = (e, column) => {
@@ -368,116 +418,58 @@ export class Table extends Component {
       } else {
         column.v = v;
       }
-      // filterFunction(column, this.props.params, this.state.data);
-      // const facc = row =>
-      //   (column.accessorFunction || (row => row[column.id]))(
-      //     row,
-      //     this.props.params,
-      //     {},
-      //     this.state.data
-      //   );
-      // if (column.dataType === "boolean") {
-      //   column.f = row => (facc(row) || false) === v;
-      // } else if (column.filterType === "=") {
-      //   column.f = row => facc(row) === v;
-      // } else if (column.filterType === ">=") {
-      //   column.f = row => facc(row) >= v;
-      // } else if (column.filterType === "between" && filterTo) {
-      //   column.f = row => {
-      //     return (
-      //       (v !== null ? facc(row) <= v : true) &&
-      //       (column.v !== null ? facc(row) >= column.v : true)
-      //     );
-      //   };
-      // } else if (column.filterType === "between" && !filterTo) {
-      //   column.f = row =>
-      //     (v !== null ? facc(row) >= v : true) &&
-      //     (column.vTo !== null ? facc(row) <= column.vTo : true);
-      // } else if (column.filterType === "<=") {
-      //   column.f = row => facc(row) <= v;
-      // } else {
-      //   column.f = row => String(facc(row) || "").startsWith(String(v || ""));
-      // }
-
-      // const filters = { ...this.state.filters, [column.id]: column };
-      // this.filtersOut[column.id] = column;
       const filters = this.state.filters;
       filters[column.id] = column;
-      const filteredData = this.filters(this.state.data, filters);
-
-      // if (filteredData === false) return false;
-
-      this.sorts(filteredData, this.state.sorts);
-      if (range.end.rows > filteredData.length - 1) {
-        this.selectRange({ end: {}, start: {} }, undefined, "enter");
-        this.hasFocus = false;
-      } else this.selectRange(range, undefined, "enter");
-      this.setState({
-        // filters,
-        filteredData
-      });
+      const filteredData = this.filters(this.state.data, filters, true);
+      if (!this.state.meta.serverPagination) {
+        this.sorts(filteredData, this.state.meta.properties);
+        this.setState({ filteredData });
+        this.selectRange(range, undefined, "enter", true);
+        // this.hasFocus = false;
+      }
+      // if (range.end.rows > filteredData.length - 1) {
+      //   this.selectRange({ end: {}, start: {} }, undefined, "enter");
+      //   this.hasFocus = false;
+      // } else this.selectRange(range, undefined, "enter");
     }
   };
   onChangeFilterValues = filter => {
     const id = this.state.openedFilter;
     const column = this.state.filters[this.state.openedFilter];
-    // const facc = row =>
-    //   (column.accessorFunction || (row => row[column.id]))(
-    //     row,
-    //     this.props.params,
-    //     {},
-    //     this.state.data
-    //   );
-    // column.f = row => filter[facc(row)] !== undefined;
     column.v = filter;
     const filters = this.state.filters;
     filters[column.id] = column;
-    // this.filtersOut[column.id] = column;
     const filteredData = this.filters(this.state.data, filters);
-    this.sorts(filteredData, this.state.sorts);
-    const range = this.state.selectedRange;
-    if (range.end.rows > filteredData.length - 1)
-      this.selectRange({ end: {}, start: {} }, undefined, "enter");
-    else this.selectRange(range, undefined, "enter");
-    this.setState({
-      // filters,
-      filteredData,
-      openedFilter: undefined
-    });
+    if (!this.state.meta.serverPagination) {
+      this.sorts(filteredData, this.state.meta.properties);
+      this.setState({ filteredData, openedFilter: undefined });
+      // const range = this.state.selectedRange;
+      // if (range.end.rows > filteredData.length - 1)
+      //   this.selectRange({ end: {}, start: {} }, undefined, "enter");
+      this.selectRange(this.range, undefined, "enter");
+    } else {
+      this.setState({ openedFilter: undefined });
+    }
   };
 
   // ----------------------------------------
   //sorting
   // ----------------------------------------
-  sorts = (data, sorting) => {
-    const sorts = Object.values(sorting)
-      .filter(sort => sort !== undefined)
-      .map(sort => {
-        let nullValue = "";
-        if (sort.dataType === "number" || sort.dataType === "boolean") {
-          nullValue = null;
-        } else if (sort.dataType === "date") {
-          nullValue = new Date(null);
-        }
-        // if (sort.dataType==="number"){nullValue=null}
-        sort.accessorFunction =
-          sort.accessorFunction ||
-          (row =>
-            utils.isNullOrUndefined(row[sort.id]) ? nullValue : row[sort.id]);
-        return sort;
-      });
-    if (sorts.length) {
-      const sort = (rowA, rowB) =>
-        sorts.reduce((acc, sort) => {
-          if (acc === 0) {
-            acc =
-              ((sort.accessorFunction(rowA) > sort.accessorFunction(rowB)) -
-                (sort.accessorFunction(rowB) > sort.accessorFunction(rowA))) *
-              (sort.direction === "asc" ? 1 : -1);
+  sorts = (data, columns) => {
+    const sorts = getSorts(columns);
+    if (!Array.isArray(data)) {
+      if (this.state && this.state.meta.serverPagination) {
+        return this.pagination({
+          sorts,
+          callbackAfter: () => {
+            this.selectRange_(this.range, undefined, "enter");
           }
-          return acc;
-        }, 0);
-      data.sort(sort);
+        });
+      }
+      return [];
+    }
+    if (sorts.length) {
+      data.sort(sortsFunction(sorts));
     }
   };
   onSort = (column, doubleClick) => {
@@ -485,35 +477,39 @@ export class Table extends Component {
     if (this.selectRange(this.range, this.row) === false) {
       return false;
     }
-    // if (this.state.filteredData===this.state.data)
-    let sorts = { ...this.state.sorts };
-    if (doubleClick) {
-      Object.keys(sorts).forEach(
-        columnId =>
-          (this.props.meta.properties[sorts[columnId].index].sort = undefined)
-      );
-      sorts = {};
+    const columns = this.state.meta.properties;
+    let sorts = [];
+    columns.forEach(col => {
+      if (doubleClick && col.id !== column.id) {
+        col.sort = undefined;
+        col.sortOrder = undefined;
+      }
+      if (col.id === column.id) {
+        if (col.sort === undefined) {
+          col.sort = "asc";
+        } else if (col.sort === "asc") {
+          col.sort = "desc";
+        } else if (col.sort === "desc") {
+          col.sort = undefined;
+          col.sortOrder = undefined;
+        }
+      }
+      if (col.sort !== undefined) {
+        sorts.push({
+          index: col.index_,
+          sortOrder: col.sortOrder === undefined ? 1000 : col.sortOrder
+        });
+      }
+    });
+    sorts.sort(
+      (a, b) => (a.sortOrder > b.sortOrder) - (b.sortOrder > a.sortOrder)
+    );
+    sorts.forEach((col, index) => (columns[col.index].sortOrder = index));
+    this.sorts(this.state.filteredData, columns);
+    if (!this.state.meta.serverPagination) {
+      this.selectRange(this.range, undefined, "enter");
+      this.setState({ filteredData: this.state.filteredData });
     }
-    // console.log("click", column, doubleClick);
-    if (column.sort === undefined) {
-      column.sort = "asc";
-    } else if (column.sort === "asc") {
-      column.sort = "desc";
-    } else if (column.sort === "desc") {
-      column.sort = undefined;
-    }
-    sorts[column.id] = {
-      index: column.index_,
-      direction: column.sort,
-      id: column.id,
-      accessorFunction: column.accessorFunction,
-      dataType: column.dataType
-    };
-    if (column.sort === undefined) {
-      delete sorts[column.id];
-    }
-    this.sorts(this.state.filteredData, sorts, column);
-    this.setState({ filteredData: this.state.filteredData, sorts });
   };
   // handleSave = () => {
   //   let ok = true;
@@ -556,10 +552,112 @@ export class Table extends Component {
   // ------------------------------------------------------
   // selection and validations
   // ------------------------------------------------------
-  selectRange = (range, row, type) => {
+  pagination = ({
+    startIndex,
+    stopIndex,
+    callbackBefore,
+    callbackAfter,
+    filters,
+    sorts
+  }) => {
+    this.setState({
+      status: { loaded: false, loading: false, loadingPage: true }
+    });
+    this.state
+      .data({
+        startIndex,
+        stopIndex,
+        filters,
+        sorts
+      })
+      .then(data => {
+        if (callbackBefore) {
+          callbackBefore(data);
+        }
+        const filteredData = this.state.filteredData;
+        filteredData.page = data.page;
+        filteredData.pageLength = data.pageLength;
+        filteredData.dataLength = data.dataLength;
+        filteredData.pageStartIndex = data.pageStartIndex;
+        console.log("page", filteredData);
+        if (callbackAfter) {
+          callbackAfter(data);
+        }
+        this.setState({
+          dataLength: filteredData.dataLength,
+          status: { loaded: true, loading: false, loadingPage: false }
+        });
+      });
+  };
+  getDataLength = () =>
+    this.state.meta.serverPagination
+      ? this.state.filteredData.dataLength
+      : this.state.filteredData.length;
+  getRow = index => {
+    const rows = this.state.filteredData;
+    if (typeof rows === "object" && rows.page) {
+      // console.log("getrow", index, rows);
+      return rows.page[index - rows.pageStartIndex];
+    } else {
+      return rows[index];
+    }
+  };
+  paginationIsRequired = ({ startIndex, stopIndex }) => {
+    return (
+      this.state.meta.serverPagination &&
+      (startIndex < this.state.filteredData.pageStartIndex ||
+        stopIndex >=
+          this.state.filteredData.pageStartIndex +
+            this.state.filteredData.pageLength)
+    );
+  };
+  onScroll = (scroll, cell, extention) => {
+    const startIndex = scroll.rows.startIndex;
+    const stopIndex =
+      startIndex + Math.ceil(this.rowsHeight / this.rowHeight) - 1;
+    // console.log("scroll", scroll.rows.startIndex, stopIndex, cell.rows);
+    if (this.paginationIsRequired({ startIndex, stopIndex })) {
+      this.pagination({
+        startIndex,
+        stopIndex,
+        callbackAfter: () => this.onScroll_(scroll, cell, extention)
+      });
+    } else {
+      this.onScroll_(scroll, cell, extention);
+    }
+  };
+  onScroll_ = (scroll, cell, extension) => {
+    this.closeOpenedWindows();
+    if (cell) {
+      const range = { ...this.state.range };
+      range.end = cell;
+      if (!extension) {
+        range.start = cell;
+      }
+      this.selectRange_(range);
+    }
+    this.setState({ scroll });
+  };
+  selectRange = (range, row, type, noFocus) => {
+    const startIndex = range.end.rows,
+      stopIndex = range.end.rows;
+    if (this.paginationIsRequired({ startIndex, stopIndex })) {
+      this.pagination({
+        startIndex,
+        stopIndex,
+        callbackAfter: () => this.selectRange_(range, row, type, noFocus)
+      });
+    } else {
+      this.selectRange_(range, row, type, noFocus);
+    }
+  };
+  selectRange_ = (range, row, type, noFocus) => {
     // avoid focus on cell when changing filters (set to false on changed filter ok)
-    this.hasFocus = true;
-
+    this.hasFocus = !noFocus;
+    if (range.end.rows > this.getDataLength() - 1) {
+      (range.end = {}), (range.start = {});
+      this.hasFocus = false;
+    }
     const prevEnd = this.state.selectedRange.end;
     const prevStart = this.state.selectedRange.start;
     const endChanged =
@@ -593,7 +691,7 @@ export class Table extends Component {
       if (prevEnd.rows !== range.end.rows || type === "enter") {
         this.rowUpdated = false;
         if (range.end.rows !== undefined) {
-          this.row = row || this.state.filteredData[range.end.rows];
+          this.row = row || this.getRow(range.end.rows);
           this.previousRow = { ...this.row };
         } else {
           this.row = undefined;
@@ -661,7 +759,7 @@ export class Table extends Component {
     if (!b && this.props.errorHandler.onChange) {
       b = this.props.errorHandler.onChange(message);
     }
-    console.log("onChange", message);
+    // console.log("onChange", message);
     return b;
   };
   onChange_ = message => {
@@ -695,7 +793,7 @@ export class Table extends Component {
     if (!b && this.props.errorHandler.onCellQuit) {
       b = this.props.errorHandler.onCellQuit(message);
     }
-    console.log("onCellQuit", message);
+    // console.log("onCellQuit", message);
     return b;
   };
   onCellQuit_ = message => {
@@ -704,17 +802,6 @@ export class Table extends Component {
     if (this.updated && onCellQuit && onCellQuit(message) === false) {
       return false;
     }
-    // if (
-    //   message.column.onQuitFunction &&
-    //   this.updated &&
-    //   message.column.onQuitFunction(message) === false
-    // ) {
-    //   return false;
-    // }
-    // if (this.props.onCellQuit && this.props.onCellQuit(message) === false) {
-    //   return false;
-    // }
-
     return true;
   };
   onCellEnter = (value, row, column) => {
@@ -729,7 +816,7 @@ export class Table extends Component {
       params: this.props.params
     };
     if (this.props.onCellEnter) this.props.onCellEnter(row, column);
-    console.log("onCellEnter", message);
+    // console.log("onCellEnter", message);
   };
   // -------------------------------
   //  row events
@@ -756,7 +843,7 @@ export class Table extends Component {
     ) {
       b = this.props.errorHandler.onRowQuit(message);
     }
-    console.log("onRowQuit", message);
+    // console.log("onRowQuit", message);
     return b;
   };
   onRowQuit_ = message => {
@@ -797,7 +884,7 @@ export class Table extends Component {
     if (this.props.onRowEnter) {
       this.props.onRowEnter(message);
     }
-    console.log("onRowEnter", message);
+    // console.log("onRowEnter", message);
   };
   onRowNew = row => {
     const message = {
@@ -808,7 +895,7 @@ export class Table extends Component {
     };
     if (this.props.onRowNew)
       if (this.props.onRowNew(message) === false) return false;
-    console.log("onRowNew", message);
+    // console.log("onRowNew", message);
     return true;
   };
   // -------------------------------
@@ -827,7 +914,7 @@ export class Table extends Component {
     if (this.props.onTableEnter) {
       this.props.onTableEnter(message);
     }
-    console.log("onTableEnter", message);
+    // console.log("onTableEnter", message);
   };
   canQuit = () => {
     if (this.onTableQuit(true)) {
@@ -850,7 +937,7 @@ export class Table extends Component {
     if (!b && this.props.errorHandler.onTableQuit) {
       b = this.props.errorHandler.onTableQuit(message);
     }
-    console.log("onTableQuit", message);
+    // console.log("onTableQuit", message);
     return b;
   };
   onTableQuit_ = message => {
@@ -893,7 +980,7 @@ export class Table extends Component {
     if (this.props.onTableClose) {
       this.props.onTableClose(message);
     }
-    console.log("onTableQuit", message);
+    // console.log("onTableQuit", message);
   };
   handleErrors = (e, rowIndex, errors) => {
     if (errors.length || this.state.toolTip) {
@@ -989,16 +1076,16 @@ export class Table extends Component {
 
     if (!visible) {
       return null;
-    } else if (this.props.status.loading || this.props.status.loadingConfig) {
+    } else if (this.state.status.loading || this.state.status.loadingConfig) {
       return <div>Loading data...</div>;
-    } else if (this.props.status.error) {
-      if (this.props.status.error.message === "No rows retrieved") {
+    } else if (this.state.status.error) {
+      if (this.state.status.error.message === "No rows retrieved") {
         return <div style={{ width: "max-content" }}>No rows retrieved</div>;
       } else {
         return (
           <div style={{ color: "red", width: "max-content" }}>
-            <p>{this.props.status.error.type}</p>
-            <p>{this.props.status.error.message}</p>
+            <p>{this.state.status.error.type}</p>
+            <p>{this.state.status.error.message}</p>
           </div>
         );
       }
@@ -1012,10 +1099,12 @@ export class Table extends Component {
           this.doubleclickAction = action;
         }
         let enable = action.enable || false;
-        if (action.enableFunction) {
+        if (this.state.status.loadingPage) {
+          enable = false;
+        } else if (action.enableFunction) {
           const row =
             this.range.end.rows !== undefined
-              ? this.state.filteredData[this.range.end.rows]
+              ? this.getRow(this.range.end.rows)
               : { index_: undefined };
           const status = this.state.updatedRows[row.index_];
           enable = action.enableFunction({ row, status });
@@ -1050,6 +1139,7 @@ export class Table extends Component {
       betweens = (
         <Headers
           type="filter"
+          // focusedId={this.focusedId}
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           meta={this.state.meta.properties}
@@ -1066,7 +1156,9 @@ export class Table extends Component {
     // -----------------------------------
     const { openedFilter, filters } = this.state;
     if (openedFilter !== undefined) {
-      const { top, left, items, v, caption } = filters[openedFilter];
+      const { top, left, items, v, caption, computedWidth } = filters[
+        openedFilter
+      ];
       this.filter = (
         <Filter
           items={items}
@@ -1079,6 +1171,7 @@ export class Table extends Component {
             fontFamily: "inherit",
             top,
             left,
+            width: Math.max(computedWidth * 1.2, 150),
             zIndex: 3,
             opacity: 1
           }}
@@ -1130,7 +1223,7 @@ export class Table extends Component {
     if (detail) {
       const row =
         this.range.end.rows !== undefined
-          ? this.state.filteredData[this.range.end.rows]
+          ? this.getRow(this.range.end.rows)
           : {};
       const status = this.state.updatedRows[row.index_];
       //       top: (3 + rowIndex) * this.rowHeight + this.state.scroll.rows.shift,
@@ -1211,6 +1304,7 @@ export class Table extends Component {
         />
         <Headers
           type="filter"
+          // focusedId={this.focusedId}
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           meta={this.state.meta.properties}
@@ -1223,6 +1317,8 @@ export class Table extends Component {
         <div style={{ display: "-webkit-box" }}>
           <Status
             data={this.state.filteredData}
+            status={this.state.status}
+            dataLength={this.state.dataLength}
             height={this.rowsHeight}
             rowHeight={this.rowHeight}
             scroll={this.state.scroll.rows}
@@ -1233,9 +1329,11 @@ export class Table extends Component {
             handleErrors={this.handleErrors}
           />
           <Rows
+            // status={this.state.status}
             meta={this.state.meta}
-            // columnsVisibleIndex={this.state.meta.visibleIndexes}
             data={this.state.filteredData}
+            status={this.state.status}
+            dataLength={this.state.dataLength}
             height={this.rowsHeight}
             width={width - this.rowHeight}
             rowHeight={this.rowHeight}
