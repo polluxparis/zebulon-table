@@ -6,7 +6,7 @@ import { cellData } from "./utils";
 console.log("constants", constants);
 export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
-    return !nextProps.status.loadingPage;
+    return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   getRatios = props => {
     const { height, width, rowHeight, scroll, data, dataLength } = props;

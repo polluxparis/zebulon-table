@@ -22,7 +22,7 @@ export class Table extends Component {
       props.data({ startIndex: 0 }).then(filteredData => {
         this.setState({
           filteredData,
-          dataLength: filteredData.dataLength,
+          filteredDataLength: filteredData.filteredDataLength,
           status: { loaded: true, loading: false }
         });
         // this.indexPage = filteredData.pageStartIndex;
@@ -78,7 +78,7 @@ export class Table extends Component {
           nextProps.data({ startIndex: 0 }).then(filteredData => {
             this.setState({
               filteredData,
-              dataLength: filteredData.dataLength,
+              filteredDataLength: filteredData.filteredDataLength,
               status: { loaded: true, loading: false }
             });
           });
@@ -104,15 +104,6 @@ export class Table extends Component {
   componentWillUnmount() {
     this.onTableClose();
   }
-  // componentDidUpdate() {
-  //   // if (this.focusedId) {
-  //   //   const element = document.getElementById(this.focusedId);
-  //   //   element.focus();
-  //   //   console.log(element);
-  //   //   this.focus = null;
-  //   // }
-  //   this.focusedId = null;
-  // }
   // ------------------------------------
   // Navigation
   // ------------------------------------
@@ -130,7 +121,6 @@ export class Table extends Component {
       this.setState({ toolTip: undefined });
     }
   };
-
   hasParent(element, id) {
     if (!element.parentElement) {
       return false;
@@ -238,28 +228,45 @@ export class Table extends Component {
       updatedRow.deleted_ = !updatedRow.deleted_;
     }
     this.setState({
-      updatedRows: { ...this.state.updatedRows, [row.index_]: updatedRow }
+      updatedRows: {
+        ...this.state.updatedRows,
+        [row.index_]: updatedRow,
+        rowUpdated: row,
+        timeStamp: new Date().getTime()
+      }
     });
   };
-  handleNew = index => {
+  newRow = (row, index) => {
     const range = this.state.selectedRange;
     if (this.selectRange(range, this.row, "quit") === false) return false;
-    let filteredData = [...this.state.filteredData];
-    const row = { index_: this.state.data.length };
-    const status = { new_: true, errors: {}, rowUpdated: row };
-    // eslint-disable-next-line
-    this.state.updatedRows[this.state.data.length] = status;
+    let rows,
+      ix = index;
+    const status = {
+        new_: true,
+        errors: {},
+        rowUpdated: row,
+        timeStamp: new Date().getTime()
+      },
+      filteredData = this.state.filteredData;
 
-    this.state.meta.properties
-      .filter(column => column.defaultFunction)
-      .forEach(
-        column => (row[column.id] = column.defaultFunction({ row, status }))
-      );
-    this.state.data.push(row);
-    filteredData = filteredData
-      .slice(0, index)
+    this.state.updatedRows[this.getDataLength()] = status;
+    if (!this.state.meta.serverPagination) {
+      rows: filteredData;
+      this.state.data.push(row);
+    } else {
+      rows = filteredData.page;
+      ix = index - filteredData.pageStartIndex;
+      filteredData.pageLength++;
+      filteredData.filteredDataLength++;
+      filteredData.dataLength++;
+    }
+    rows = rows
+      .slice(0, ix)
       .concat(row)
-      .concat(filteredData.slice(index));
+      .concat(rows.slice(ix));
+    if (this.state.meta.serverPagination) {
+      filteredData.page = rows;
+    }
     this.setState({ filteredData });
     if (this.onRowNew(row)) {
       this.selectRange(
@@ -275,56 +282,33 @@ export class Table extends Component {
       );
     }
   };
+  handleNew = index => {
+    const row = { index_: this.getDataLength() };
+    //  default values
+    this.state.meta.properties
+      .filter(column => column.defaultFunction)
+      .forEach(column => (row[column.id] = column.defaultFunction({ row })));
+    this.newRow(row, index);
+  };
   handleDuplicate = index => {
     if (this.row) {
-      const range = this.state.selectedRange;
-      if (this.selectRange(range, this.row, "quit") === false) return false;
-
-      let filteredData = [...this.state.filteredData];
-
-      const row = { ...this.row, index_: this.state.data.length };
-      const status = { new_: true, errors: {}, rowUpdated: row };
-      // eslint-disable-next-line
-      this.state.updatedRows[this.state.data.length] = status;
-      this.state.meta.properties
-        .filter(column => column.defaultFunction)
-        .forEach(
-          column => (row[column.id] = column.defaultFunction({ row, status }))
-        );
-      this.state.data.push(row);
-      filteredData = filteredData
-        .slice(0, index)
-        .concat(row)
-        .concat(filteredData.slice(index));
-      this.setState({ filteredData });
-      if (this.onRowNew(row)) {
-        this.selectRange(
-          {
-            end: { rows: range.end.rows, columns: 0 },
-            start: {
-              rows: range.end.rows,
-              columns: this.state.meta.properties.length - 1
-            }
-          },
-          row,
-          "enter"
-        );
-      }
+      const row = { ...this.row, index_: this.getDataLength() };
+      this.newRow(row, index);
     }
   };
   // ----------------------------------------
   // filtering
   // ----------------------------------------
-  adjustScroll = dataLength => {
+  adjustScroll = filteredDataLength => {
     if (
       this.state &&
-      dataLength !== this.getDataLength &&
+      filteredDataLength !== this.getFilteredDataLength &&
       this.state.scroll.rows.startIndex !== 0 &&
       this.state.scroll.rows.index +
         (this.state.scroll.rows.direction === 1
           ? this.rowsHeight / this.rowHeight
           : 0) >
-        dataLength
+        filteredDataLength
     ) {
       this.setState({
         scroll: {
@@ -343,14 +327,11 @@ export class Table extends Component {
   filters = (data, filters, noFocus) => {
     if (!Array.isArray(data)) {
       if (this.state && this.state.meta.serverPagination) {
-        // const focusedId = noFocus ? document.activeElement.id : null;
-        // this.focusedId = focusedId;
         return this.pagination({
           filters,
           callbackAfter: page => {
             this.selectRange_(this.range, undefined, "enter", noFocus);
-            this.adjustScroll(page.dataLength);
-            // this.focusedId = focusedId;
+            this.adjustScroll(page.filteredDataLength);
           }
         });
       }
@@ -361,40 +342,51 @@ export class Table extends Component {
     this.adjustScroll(filteredData.length);
     return filteredData;
   };
-  openFilter = (e, column) => {
-    if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
-      return false;
-    let filter = this.state.filters[column.id];
-    if (!filter || !filter.items) {
-      const items = {};
-      this.props.data.forEach(row => {
-        const id = (column.accessorFunction || (row => row[column.id]))(
-          row,
-          this.props.params,
-          {},
-          this.state.data
-        ); // a voir status
-        // items[row[column.id]] = { id, label:id };
-        const label =
-          column.selectItems &&
-          !Array.isArray(column.selectItems) &&
-          typeof column.selectItems === "object"
-            ? (column.selectItems[id] || {}).caption
-            : id;
-        items[id] = {
-          id,
-          label: (column.formatFunction || utils.formatValue)(
-            label,
+  // a voir si pagination server ???
+  //
+  getFilterItems = (filter, column) => {
+    if (!this.state.meta.serverPagination) {
+      if (!filter || !filter.items) {
+        const items = {};
+        this.props.data.forEach(row => {
+          const id = (column.accessorFunction || (row => row[column.id]))(
             row,
             this.props.params,
             {},
             this.state.data
-          )
-        };
-      });
-      column.items = Object.values(items);
+          ); // a voir status
+          const label =
+            column.selectItems &&
+            !Array.isArray(column.selectItems) &&
+            typeof column.selectItems === "object"
+              ? (column.selectItems[id] || {}).caption
+              : id;
+          items[id] = {
+            id,
+            label: (column.formatFunction || utils.formatValue)(
+              label,
+              row,
+              this.props.params,
+              {},
+              this.state.data
+            )
+          };
+        });
+        column.items = Object.values(items);
+        filter = column;
+      }
+    } else {
+      column.items = [];
       filter = column;
+      // ????
     }
+    return filter;
+  };
+  openFilter = (e, column) => {
+    if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
+      return false;
+    let filter = this.state.filters[column.id];
+    filter = this.getFilterItems(filter, column);
     filter.top = 2 * this.rowHeight; // pourquoi 2?
     filter.left =
       column.position + this.rowHeight - this.state.scroll.columns.position;
@@ -402,7 +394,6 @@ export class Table extends Component {
       openedFilter: column.id,
       filters: { ...this.state.filters, [column.id]: filter }
     });
-    // this.filtersOut[column.id] = filter;
   };
 
   onChangeFilter = (e, row, column, filterTo) => {
@@ -560,6 +551,7 @@ export class Table extends Component {
     filters,
     sorts
   }) => {
+    const updatedRows = this.state.updatedRows;
     this.setState({
       status: { loaded: false, loading: false, loadingPage: true }
     });
@@ -568,7 +560,8 @@ export class Table extends Component {
         startIndex,
         stopIndex,
         filters,
-        sorts
+        sorts,
+        updatedRows
       })
       .then(data => {
         if (callbackBefore) {
@@ -577,30 +570,44 @@ export class Table extends Component {
         const filteredData = this.state.filteredData;
         filteredData.page = data.page;
         filteredData.pageLength = data.pageLength;
-        filteredData.dataLength = data.dataLength;
+        filteredData.filteredDataLength = data.filteredDataLength;
         filteredData.pageStartIndex = data.pageStartIndex;
-        console.log("page", filteredData);
+        console.log("page", startIndex, stopIndex, filteredData);
         if (callbackAfter) {
           callbackAfter(data);
         }
         this.setState({
-          dataLength: filteredData.dataLength,
+          filteredDataLength: filteredData.filteredDataLength,
           status: { loaded: true, loading: false, loadingPage: false }
         });
       });
   };
+  // getDataLength()this.state.data.length
   getDataLength = () =>
     this.state.meta.serverPagination
       ? this.state.filteredData.dataLength
+      : this.state.data.length;
+  getFilteredDataLength = () =>
+    this.state.meta.serverPagination
+      ? this.state.filteredData.filteredDataLength
       : this.state.filteredData.length;
   getRow = index => {
     const rows = this.state.filteredData;
-    if (typeof rows === "object" && rows.page) {
+    if (this.state.meta.serverPagination) {
       // console.log("getrow", index, rows);
-      return rows.page[index - rows.pageStartIndex];
+      return rows.page[index - rows.pageStartIndex] || { index_: undefined };
     } else {
       return rows[index];
     }
+  };
+  isInPage = scroll => {
+    return (
+      !this.state.meta.serverPagination ||
+      (scroll.startIndex >= this.state.filteredData.pageStartIndex &&
+        scroll.startIndex + Math.ceil(this.rowsHeight / this.rowHeight) - 1 <
+          this.state.filteredData.pageStartIndex +
+            this.state.filteredData.pageLength)
+    );
   };
   paginationIsRequired = ({ startIndex, stopIndex }) => {
     return (
@@ -615,7 +622,7 @@ export class Table extends Component {
     const startIndex = scroll.rows.startIndex;
     const stopIndex =
       startIndex + Math.ceil(this.rowsHeight / this.rowHeight) - 1;
-    // console.log("scroll", scroll.rows.startIndex, stopIndex, cell.rows);
+    console.log("scroll", scroll.rows.startIndex, stopIndex, cell);
     if (this.paginationIsRequired({ startIndex, stopIndex })) {
       this.pagination({
         startIndex,
@@ -639,16 +646,19 @@ export class Table extends Component {
     this.setState({ scroll });
   };
   selectRange = (range, row, type, noFocus) => {
-    const startIndex = range.end.rows,
-      stopIndex = range.end.rows;
-    if (this.paginationIsRequired({ startIndex, stopIndex })) {
-      this.pagination({
-        startIndex,
-        stopIndex,
-        callbackAfter: () => this.selectRange_(range, row, type, noFocus)
-      });
-    } else {
-      this.selectRange_(range, row, type, noFocus);
+    console.log("selectrange", range);
+    if (!this.state.status.loadingPage) {
+      const startIndex = range.end.rows,
+        stopIndex = range.end.rows;
+      if (this.paginationIsRequired({ startIndex, stopIndex })) {
+        this.pagination({
+          startIndex,
+          stopIndex,
+          callbackAfter: () => this.selectRange_(range, row, type, noFocus)
+        });
+      } else {
+        this.selectRange_(range, row, type, noFocus);
+      }
     }
   };
   selectRange_ = (range, row, type, noFocus) => {
@@ -737,12 +747,14 @@ export class Table extends Component {
         row: { ...row, [column.id]: this.previousValue },
         errors: {},
         updated_: true,
-        rowUpdated: row
+        rowUpdated: row,
+        timeStamp: new Date().getTime()
       };
       // eslint-disable-next-line
       this.state.updatedRows[row.index_] = updatedRow;
     } else if (!updatedRow.updated_) {
       updatedRow.updated_ = true;
+      updatedRow.timeStamp = new Date().getTime();
     }
     row[column.id] = value;
     const message = {
@@ -1275,6 +1287,7 @@ export class Table extends Component {
       );
     }
     // ----------------------------------
+    const noUpdate = !this.isInPage(this.state.scroll.rows);
     this.rowsHeight =
       height -
       (2 + (betweens !== null)) * this.rowHeight -
@@ -1318,7 +1331,7 @@ export class Table extends Component {
           <Status
             data={this.state.filteredData}
             status={this.state.status}
-            dataLength={this.state.dataLength}
+            dataLength={this.state.filteredDataLength}
             height={this.rowsHeight}
             rowHeight={this.rowHeight}
             scroll={this.state.scroll.rows}
@@ -1327,13 +1340,14 @@ export class Table extends Component {
             selectedIndex={this.state.selectedRange.end.rows}
             meta={this.state.meta.properties}
             handleErrors={this.handleErrors}
+            noUpdate={noUpdate}
           />
           <Rows
             // status={this.state.status}
             meta={this.state.meta}
             data={this.state.filteredData}
             status={this.state.status}
-            dataLength={this.state.dataLength}
+            dataLength={this.state.filteredDataLength}
             height={this.rowsHeight}
             width={width - this.rowHeight}
             rowHeight={this.rowHeight}
@@ -1348,6 +1362,7 @@ export class Table extends Component {
             params={this.props.params}
             navigationKeyHandler={this.props.navigationKeyHandler}
             ref={ref => (this.rows = ref)}
+            noUpdate={noUpdate}
           />
         </div>
         <div style={{ height: actions.length ? 30 : 0 }}>{actions}</div>

@@ -3,8 +3,9 @@ import { utils } from "zebulon-controls";
 const { dateToString, stringToDate, numberToString, isNullOrUndefined } = utils;
 
 const formatValue = (props, value, focused) => {
+  console.log(1);
   const { row, column, status, params, data, inputType, editable } = props;
-  const { dataType, formatFunction } = column;
+  const { dataType, formatFunction } = column || { dataType: props.dataType };
   let v = isNullOrUndefined(value) ? "" : value;
   if (
     formatFunction &&
@@ -46,7 +47,8 @@ export class Input extends Component {
   }
   validateInput = value => {
     let v = value;
-    const dataType = this.props.column.dataType;
+    const dataType = (this.props.column || { dataType: this.props.dataType })
+      .dataType;
     if (this.props.validateInput) {
       return this.props.validateInput(value);
     } else if (dataType === "number") {
@@ -64,7 +66,7 @@ export class Input extends Component {
 
   handleChange = e => {
     const { column, row, editable, inputType, onChange, filterTo } = this.props;
-    const { dataType, format } = column;
+    const { dataType, format } = column || { dataType: this.props.dataType };
     if (editable) {
       let value = e.target.value,
         validatedValue;
@@ -91,7 +93,6 @@ export class Input extends Component {
     }
   };
   handleBlur = () => {
-    // if (this.state.value !== undefined) {
     this.setState({
       formatedValue: formatValue(this.props, this.state.value, false)
     });
@@ -115,7 +116,6 @@ export class Input extends Component {
   };
   render() {
     const {
-      column,
       row,
       editable,
       inputType,
@@ -132,10 +132,17 @@ export class Input extends Component {
       tabIndex
     } = this.props;
     let input;
+    const column = this.props.column || {
+      dataType: this.props.dataType,
+      id: this.props.id,
+      index_: this.props.id,
+      caption: this.props.label
+    };
     const { dataType, format } = column;
     if (
       inputType !== "filter" &&
-      (!(this.focused && editable) && dataType !== "boolean")
+      (!((this.focused || this.props.column === undefined) && editable) &&
+        dataType !== "boolean")
     ) {
       input = (
         <div

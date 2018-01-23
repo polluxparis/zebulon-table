@@ -123,6 +123,7 @@
   border: 1px solid #aaa;
   text-align: center;
   border-radius: 5px 5px 0 0;
+  box-sizing: border-box;
   /*width: -webkit-fill-available;*/
   width: stretch;
   cursor: pointer;

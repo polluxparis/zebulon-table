@@ -1,126 +1,13 @@
 import React from "react";
-import { Observable } from "rx-lite";
 import { utils } from "zebulon-controls";
 import {
-	computeData,
+	// computeData,
 	buildObject,
 	exportFunctions,
-	aggregations,
-	filtersFunction,
-	sortsFunction
+	aggregations
 } from "./utils";
 import { Property } from "./Property";
-import {
-	getMockDatasource
-	// getPromiseMockDatasource,
-	// getObservableMockDatasource
-} from "../demo/mock";
 
-// const propertyValidator = (row, data, meta, status, params) => {
-// 	console.log("propertyValidator", row, status);
-// };
-// array
-const get_a = ({ params, filters }) => getMockDatasource(1, 200, 40, 3);
-// promise
-const get_p = ({ params, filters }) => {
-	let data = getMockDatasource(1, 200, 40, 3);
-	if (filters) {
-		data = data.filter(filtersFunction(filters, params, data));
-	}
-	return new Promise(resolve => setTimeout(resolve, 20)).then(() => data);
-};
-// observable
-const get_o = ({ params, filters, sorts }) => {
-	const data = getMockDatasource(1, 200, 40, 3);
-	if (sorts) {
-		data.sort(sortsFunction(sorts));
-	}
-	const data2 = [];
-	let i = 0;
-	while (i < data.length) {
-		data2.push(data.slice(i, (i += 1000)));
-	}
-	return Observable.interval(100)
-		.take(data2.length)
-		.map(i => data2[i]);
-};
-// server pagination
-const get_bypage = e => {
-	const data = getMockDatasource(1, 200, 40, 3);
-	data.forEach((row, index) => (row.index_ = `id${index}`));
-	const pageLength = 100;
-	let filteredData = data;
-	let { filters, sorts, params, startIndex, stopIndex } = e;
-
-	if (sorts) {
-		data.sort(sortsFunction(sorts));
-	}
-	if (filters) {
-		filteredData = data.filter(filtersFunction(filters, params, data));
-	}
-	const sort = sorts => {
-		if (sorts.length) {
-			filteredData.sort(sortsFunction(sorts));
-		} else if (filters) {
-			filteredData = data.filter(filtersFunction(filters, params, data));
-		}
-	};
-	const filter = filters => {
-		if (Object.keys(filters).length) {
-			filteredData = data.filter(filtersFunction(filters, params, data));
-		} else {
-			if (sorts) {
-				data.sort(sortsFunction(sorts));
-			}
-			filteredData = data;
-		}
-	};
-
-	const paginationManager = page => {
-		if (page.filters) {
-			filter(page.filters);
-		}
-		if (page.sorts) {
-			sort(page.sorts);
-		}
-		const dataLength = filteredData.length;
-		let start =
-				page.startIndex === undefined ? startIndex : page.startIndex,
-			stop = page.stopIndex === undefined ? stopIndex : page.stopIndex,
-			pageStartIndex;
-
-		if (start >= dataLength) {
-			start = 0;
-		}
-		pageStartIndex = start - start % pageLength;
-		if (stop >= pageStartIndex + pageLength) {
-			pageStartIndex = Math.max(0, start - 10);
-		}
-		if (pageStartIndex + pageLength >= dataLength) {
-			pageStartIndex = Math.max(0, dataLength - pageLength);
-			// startIndex == index - pageStartIndex;
-		}
-		const pageData = JSON.parse(
-			JSON.stringify(
-				filteredData.slice(pageStartIndex, pageStartIndex + pageLength)
-			)
-		);
-		startIndex = start;
-		stopIndex = stop;
-		return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
-			return {
-				page: pageData,
-				pageStartIndex,
-				pageLength: Math.min(dataLength, pageLength),
-				dataLength
-			};
-		});
-	};
-
-	return new Promise(resolve => setTimeout(resolve, 20)).then(
-		() => paginationManager
-	);
-};
 const set = () => {};
 const functionToString = row => {
 	if (typeof row.functionJS === "function") {
@@ -132,9 +19,7 @@ const stringToFunction = (row, status) => {
 	let f;
 	try {
 		eval("f = " + row.functionJS);
-		// console.log("function", f);
 	} catch (e) {
-		// console.log("function error", e);
 		const error = status.errors.functionJS || {};
 		error.JS = e.message;
 		status.errors.functionJS = error;
@@ -173,92 +58,6 @@ export const functions = {
 		actions: {
 			exportMeta: ({ meta }) =>
 				"meta = " + JSON.stringify(buildObject(meta))
-		}
-	},
-	dataset: {
-		selects: {
-			titi_lb: ({ row, params, status, data }) => [
-				"",
-				"titi_a",
-				"titi_b",
-				"titi_c",
-				"titi_d"
-			]
-		},
-		formats: {
-			"mm/yyyy": value =>
-				utils.isNullOrUndefined(value)
-					? ""
-					: utils.formatValue(value, "mm/yyyy"),
-			formatAmt: (value, row, params, status, data) => {
-				const v = utils.formatValue(value, null, 2);
-				if (
-					(value < 3000 && value > 1000) ||
-					utils.isNullOrUndefined(value)
-				) {
-					return v;
-				} else if (value >= 3000) {
-					return (
-						<div
-							style={{
-								color: "green",
-								justifyContent: "space-between",
-								display: "flex"
-							}}
-						>
-							<div>↑</div>
-							<div>{v}</div>
-						</div>
-					);
-				} else if (value <= 1000) {
-					return (
-						<div
-							style={{
-								color: "red",
-								justifyContent: "space-between",
-								display: "flex"
-							}}
-						>
-							<div>↓</div>
-							<div>{v}</div>
-						</div>
-					);
-				}
-			}
-		},
-		aggregations,
-		windows: {
-			from7d: x => {
-				const xx = new Date(x);
-				xx.setDate(xx.getDate() - 7);
-				return xx;
-			},
-			to5d: x => {
-				const xx = new Date(x);
-				xx.setDate(xx.getDate() + 5);
-				return xx;
-			}
-		},
-		accessors: {
-			qty3: row => row.qty / 3,
-			mth: row => {
-				if (utils.isNullOrUndefined(row.d)) {
-					return null;
-				}
-				const d = new Date(row.d);
-				d.setDate(1);
-				return d;
-			}
-		},
-		actions: {
-			computeData
-		},
-		dmls: {
-			get_a,
-			get_p,
-			get_o,
-			get_bypage,
-			set
 		}
 	},
 	functions: {
@@ -324,7 +123,6 @@ export const metaDescriptions = (
 	properties
 ) => {
 	const f = functions;
-
 	const getFunctions = (type, obj = object) => {
 		return f
 			.filter(
@@ -360,44 +158,6 @@ export const metaDescriptions = (
 	const getValidators = obj => () => getFunctions("validator", obj);
 	const getEditables = obj => () => getFunctions("editable", obj);
 	const getDefaults = obj => () => getFunctions("default", obj);
-	// // const availableAccessors = [""].concat(
-	// // 	Object.keys(accessors).concat(props.meta.map(column => column.id))
-	// // );
-	// const fg = functions.globals;
-	if (object === "dataset") {
-		return {
-			serverPagination: true,
-			table: {
-				object,
-				editable: true,
-				select: "get_bypage",
-				// select: "get_p",
-				primaryKey: "id",
-				onSave: "set",
-				actions: [
-					{ type: "insert", caption: "New", enable: true },
-					{
-						type: "delete",
-						caption: "Delete",
-						enable: "isSelected"
-					},
-					{
-						type: "duplicate",
-						caption: "Duplicate",
-						enable: "isSelected"
-					},
-					{
-						type: "action",
-						caption: "Compute",
-						action: "computeData",
-						enable: true
-					}
-				]
-			},
-			row: {},
-			properties: []
-		};
-	}
 	if (object === "properties") {
 		return {
 			table: {

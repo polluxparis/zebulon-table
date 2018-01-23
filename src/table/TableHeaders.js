@@ -355,7 +355,7 @@ export class Headers extends Component {
 }
 export class Status extends Component {
   shouldComponentUpdate(nextProps) {
-    return !nextProps.status.loadingPage;
+    return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   onClick = index =>
     this.props.selectRange({
