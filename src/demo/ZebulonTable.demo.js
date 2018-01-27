@@ -7,7 +7,8 @@ import "../table/index.css";
 import { Input, constants, utils } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
 import { functionsTable, getFilters } from "../table/utils";
-import { Layout, components, layout } from "./Layout";
+// import { Layout, components, layout } from "./Layout";
+import { MyLayout } from "./Layout.example";
 import { ResizableBox } from "react-resizable";
 
 // import { getMockDatasource } from "./mock";import { ResizableBox } from "react-resizable";
@@ -19,7 +20,7 @@ import {
   thirdparties,
   metaThirdparties
 } from "./meta.thirdparties";
-import { metaDataset, datasetFunctions } from "./meta.dataset";
+import { metaDataset, datasetFunctions, buildMeta } from "./meta.dataset";
 // const AxisType = utils.AxisType;
 class ZebulonTableDemo extends Component {
   constructor(props) {
@@ -144,6 +145,7 @@ class ZebulonTableDemo extends Component {
             functions={functions}
             params={params}
             keyEvent={keyEvent}
+            isActive={false}
             errorHandler={this.errorHandler}
           />
         );
@@ -165,10 +167,19 @@ class ZebulonTableDemo extends Component {
           width={this.state.sizes.width}
           onResize={this.onResize}
         >
-          {component}
+          {
+            null //component
+          }
         </ResizableBox>
 
-        <Layout layout={layout} components={components} keyEvent={keyEvent} />
+        <MyLayout
+          // layout={layout}
+          // components={components}
+          keyEvent={keyEvent}
+          // data={data}
+          // meta={buildMeta()}
+          functions={functions}
+        />
       </div>
     );
   }

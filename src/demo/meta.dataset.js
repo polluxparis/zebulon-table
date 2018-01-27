@@ -106,9 +106,10 @@ export const metaDataset = {
 		object: "dataset",
 		editable: true,
 		// select: "get_pagination_manager",
-		select: "get_promise",
+		select: "get_array",
 		primaryKey: "id",
 		onSave: "set",
+		noFilter: false,
 		actions: [
 			{ type: "insert", caption: "New", enable: true },
 			{
@@ -131,4 +132,22 @@ export const metaDataset = {
 	},
 	row: {},
 	properties: []
+};
+const metaDataset2 = {
+	// serverPagination: true,
+	table: {
+		object: "dataset",
+		editable: true,
+		select: "get_array",
+		primaryKey: "id",
+		onSave: "set",
+		actions: [],
+		noFilter: true,
+		noStatus: true
+	},
+	row: {},
+	properties: []
+};
+export const buildMeta = () => {
+	return metaDataset2;
 };

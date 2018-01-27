@@ -1,21 +1,248 @@
 import React, { Component, cloneElement } from "react";
 import classnames from "classnames";
 import {
-  // ScrollableGrid,
-  ContextualMenu,
-  ContextualMenuClient,
+  ScrollableGrid,
+  // ContextualMenu,
+  // ContextualMenuClient,
   utils
 } from "zebulon-controls";
 import { Input } from "../table/Input";
-// import { ZebulonTable } from "../table/ZebulonTable";
-// import { buildMeta } from "./meta.dataset";
+import { ZebulonTable } from "../table/ZebulonTable";
+import { buildMeta } from "./meta.dataset";
 // ------------------------------------
 // tests data
 // ------------------------------------
 // class Queries extends ScrollableGrid {}
 const resizeHandleSize = 5;
 const titleHeight = 20;
+export const layout = {
+  height: 500,
+  width: 1000,
+  display: "flex",
+  resizable: true,
+  layouts: [
+    {
+      height: 500,
+      width: 200,
+      display: "block",
+      resizable: true,
+      layouts: [
+        {
+          height: 200,
+          width: 200,
+          display: "flex",
+          resizable: true,
+          layouts: [],
+          content: "queries",
+          title: "Queries"
+        },
+        {
+          height: 300 - 40,
+          width: 200,
+          display: "flex",
+          resizable: true,
+          layouts: [],
+          content: "transformations",
+          title: "Transformations"
+        }
+      ],
+      content: null,
+      title: ""
+    },
+    {
+      height: 500,
+      width: 800,
+      display: "tabs",
+      resizable: true,
+      content: null,
+      title: "Definitions",
+      layouts: [
+        {
+          height: 200,
+          width: 200,
+          display: "block",
+          resizable: true,
+          layouts: [
+            {
+              height: 200,
+              width: 200,
+              display: "flex",
+              resizable: true,
+              layouts: [],
+              content: "aaa",
+              title: "AAA"
+            },
+            {
+              height: 200,
+              width: 200,
+              display: "flex",
+              resizable: true,
+              layouts: [],
+              content: "bbb",
+              title: "BBB"
+            },
+            {
+              height: 200,
+              width: 200,
+              display: "flex",
+              resizable: true,
+              layouts: [],
+              content: "ccc",
+              title: <div style={{ color: "red" }}>CCC</div>
+            }
+          ],
+          content: null,
+          title: "ABC"
+        },
+        {
+          height: 200,
+          width: 200,
+          display: "block",
+          resizable: true,
+          layouts: [],
+          content: "definitions",
+          title: "Defs"
+        },
+        {
+          height: 200,
+          width: 200,
+          display: "block",
+          resizable: true,
+          layouts: [
+            {
+              height: 200,
+              width: 200,
+              display: "flex",
+              resizable: true,
+              layouts: [],
+              content: "ddd",
+              title: "DDD"
+            },
+            {
+              height: 200,
+              width: 200,
+              display: "flex",
+              resizable: true,
+              layouts: [],
+              content: "eee",
+              title: "EEE"
+            }
+          ],
+          content: null,
+          title: "DE"
+        }
+      ]
+    }
+  ],
+  content: null,
+  title: "Query definition"
+};
 
+const getItems = (type, caption, zoom) => {
+  const items = [];
+  let i = 0;
+  while (i < 200) {
+    items.push(
+      <div
+        key={i}
+        id={i}
+        draggable={true}
+        style={{
+          height: titleHeight * zoom,
+          width: "inherit"
+          // backgroundColor: "rgba(0, 0, 0, 0.1)",
+          // border: "solid rgba(0, 0, 0, 0.3) 0.02em",
+          // boxSizing: "border-box"
+        }}
+        // onDragStart={this.handleDragStart}
+        // onDrop={this.handleDrop}
+        // onDragOver={this.handleDragOver}
+      >{`${caption} ${i}`}</div>
+    );
+    i++;
+  }
+  return items;
+};
+const getComponent = component => (height, width, zoom, props) => {
+  let element;
+  // const meta = {
+  //   ...props.meta,
+  //   table: { ...props.meta.table, noFilter: true, noStatus: true, actions: [] }
+  // };
+  if (component.id === "table") {
+    element = (
+      <ZebulonTable
+        key="dataset"
+        id="dataset"
+        visible={true}
+        data={props.dataTable}
+        meta={buildMeta()}
+        sizes={{ height: height - 2, width: width - 4, zoom }}
+        functions={props.functions}
+        // params={params}
+        // errorHandler={this.errorHandler}
+      />
+    );
+  } else {
+    element = (
+      <ScrollableGrid
+        data={getItems(component.id, component.caption, zoom)}
+        height={height - 2}
+        rowHeight={titleHeight * zoom}
+        width={width - 2}
+        rowWidth={width - 12 - 2}
+        zoom={zoom}
+        style={{ height: height - 2, width: width - 4 }}
+      />
+    );
+  }
+  const componentProps = {
+    ...(component.callbacks || {}),
+    ...(props || {})
+  };
+  if (component.callbacks || props) {
+    element = cloneElement(element, componentProps);
+  }
+  return element;
+};
+const getTitle = component => {
+  if (component.id === "table") {
+    return (height, width, zoom, props) => ({
+      height: 20,
+      title: <div style={{ color: "blue" }}>Zebulon table</div>
+    });
+  }
+  return null;
+};
+
+export const components = [
+  { id: "queries", caption: "Queries" },
+  { id: "transformations", caption: "Transformations" },
+  { id: "definitions", caption: "Definitions" },
+  {
+    id: "aaa",
+    caption: "aaa",
+    callbacks: {
+      selectRange: range => {
+        // this.contextualMenu.close();
+        console.log("range", range);
+        return true;
+      }
+    }
+  },
+  { id: "bbb", caption: "bbb" },
+  { id: "ccc", caption: "ccc" },
+  { id: "ddd", caption: "ddd" },
+  { id: "eee", caption: "eee" },
+  { id: "table", caption: "zebulon table", title: "table" }
+].map(component => {
+  component.component = getComponent(component);
+  component.title = getTitle(component);
+  return component;
+});
+// ------------------------------------
+// tests data
+// ------------------------------------
 // -----------------------------------------
 // component Layout
 // ---------------------------------------
@@ -57,8 +284,8 @@ export class Layout extends Component {
         this.setState({ keyEvent: nextProps.keyEvent });
         return;
       }
-      this.keyEvent = true;
     }
+    this.keyEvent = true;
   }
   shouldComponentUpdate(nextProps) {
     if (this.keyEvent) {
@@ -191,8 +418,6 @@ export class Layout extends Component {
       );
       layout.title = title.title;
       layout.titleHeight = title.height;
-    } else if (content) {
-      layout.title = components[content].title;
     }
     const heightBody =
         height -
@@ -203,6 +428,8 @@ export class Layout extends Component {
       display: "block",
       height: height,
       width: width
+      // border: "solid rgba(0, 0, 0, 0.3) 0.03em"
+      // boxSizing: "border-box"
     };
     const getHeader = (layouts, isTab, parentId) => {
       return layouts.map((layout, index) => {
@@ -293,8 +520,8 @@ export class Layout extends Component {
           ].component(heightBody, widthBody, layout.calculatedZoom, {
             keyEvent: this.state.keyEvent,
             isActive: this.state.activeLayout === layout.id,
-            // dataTable: this.props.data,
-            // meta: this.props.meta,
+            dataTable: this.props.data,
+            meta: this.props.meta,
             functions: this.props.functions
           })}
         </div>
@@ -313,7 +540,10 @@ export class Layout extends Component {
         </ContextualMenuClient>
       );
     }
-
+    // if (layout.parent.display === "tabs") {
+    //   header = <div style={{ display: "flex" }}>{header}</div>;
+    // }
+    //
     return (
       <div
         id={"layout: " + layout.id}
@@ -604,7 +834,42 @@ export class Layout extends Component {
         .getElementById("layout: " + e.target.id.slice(length + 4))
         .getBoundingClientRect();
       e.dataTransfer.setDragImage(this.div, 0, 0);
+      // this.resizeImage = { ...this.state.resizeImage };
+      // if (this.dragDirection === "vertical") {
+      //   this.resizeImage.height = rect.height;
+      //   this.resizeImage.top = rect.y;
+      //   this.resizeImage.width = 2;
+      //   this.resizeImage.left = e.pageX;
+      // } else {
+      //   this.resizeImage.height = 2;
+      //   this.resizeImage.top = rect.y;
+      //   this.resizeImage.width = 2;
+      //   this.resizeImage.left = rect.x;
+      // }
+      // this.setState({ resizeImage });
     }
+
+    //   // const root = ids.length === 1;
+    //   // const lastIndex = Number(ids.pop());
+    //   // const direction =
+    //   //   id.slice(length, length + 2) === "-V" ? "vertical" : "horizontal";
+    //   // let delta = 0;
+
+    // }
+    //   <div
+    //     style={{
+    //       position: "absolute",
+    //       height: 200,
+    //       width: 2,
+    //       backgroundColor: "green"
+    //     }}
+    //   />
+    // );
+    // this.div.height = "200px";
+    // let div=this.div.cloneElement(
+    // const div = this.div.cloneNode(true);
+    // div.style = this.resizeImage;
+
     this.dragId = e.target.id;
     this.pageX = e.pageX;
     this.pageY = e.pageY;
@@ -618,8 +883,16 @@ export class Layout extends Component {
     );
   };
   handleDragOver = e => {
+    // const dragId = e.dataTransfer.getData("text");
     console.log("dragover", this.dragId, e.target.id);
     if (this.dragId.startsWith("layout-resize-handle")) {
+      // let resizeImage = { ...this.resizeImage };
+      // if (this.dragDirection === "vertical") {
+      //   this.resizeImage.left = e.pageX;
+      // } else {
+      //   this.resizeImage.top = e.pageY;
+      // }
+      // this.setState({ resizeImage });
       e.preventDefault();
     } else if (
       this.dragId.startsWith("layout-title") &&
@@ -640,9 +913,11 @@ export class Layout extends Component {
   };
   handleDrop = e => {
     e.preventDefault();
+    // const msg = JSON.parse(e.dataTransfer.getData("text"));
     const id = e.dataTransfer.getData("text");
     if (id.startsWith("layout-resize-handle")) {
       const length = "layout-resize-handle".length;
+
       const ids = this.getIds(id); //id.slice(length + 4).split(" - ");
       const root = ids.length === 1;
       const lastIndex = Number(ids.pop());
@@ -680,6 +955,9 @@ export class Layout extends Component {
         const dragIds = this.getIds(id);
         const dropLayout = this.getLayout(dropIds);
         const dragLayout = this.getLayout(dragIds);
+        // if (dropLayout.parent.display === tabs) {
+        //   dropLayout = dropLayout.parent;
+        // }
         let rect;
         if (dropLayout.content === null && dropLayout.layouts.length === 0) {
           dropLayout.title = dragLayout.title;
@@ -712,8 +990,21 @@ export class Layout extends Component {
                 dropIndex + !left
               );
             }
+            // dropLayout.layouts[1].title = dropLayout.title;
+            // dropLayout.title = "???";
+            // const newLayout = dropLayout.layouts[0];
+            // newLayout.title = dragLayout.title;
+            // newLayout.content = dragLayout.content;
+            // newLayout.layouts = dragLayout.layouts;
+            // if (
+            //   (dropLayout.display === "block" && !top) ||
+            //   (dropLayout.display === "flex" && !left)
+            // ) {
+            //   dropLayout.layouts.reverse();
+            // }
           }
         }
+        //
         this.setState({ layout: this.state.layout });
         console.log(
           "dropbody",
@@ -729,6 +1020,7 @@ export class Layout extends Component {
     }
     console.log("drop", id, e.pageX, e.pageY, e.target);
     this.dragId = null;
+    // const { meta } = this.props;
   };
   //----------------------------------------
   // render

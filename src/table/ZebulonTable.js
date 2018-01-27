@@ -26,6 +26,7 @@ export class ZebulonTable extends Component {
       keyEvent: props.keyEvent
     };
     this.zoomValue = props.sizes.zoom || 1;
+    this.keyEvent = false;
     // functions
     if (Array.isArray(props.functions)) {
       this.state.functions = props.functions;
@@ -257,17 +258,22 @@ export class ZebulonTable extends Component {
     }
   }
   shouldComponentUpdate(nextProps, nextState) {
-    return this.props.keyEvent === nextProps.keyEvent;
+    if (this.keyEvent) {
+      this.keyEvent = false;
+      return false;
+    }
+    return true;
   }
   handleKeyEvent = e => {
     const zoom = utils.isZoom(e);
-    if (zoom) {
+    if (zoom && (this.props.isActive === undefined || this.props.isActive)) {
       e.preventDefault();
       this.zoomValue *= zoom === 1 ? 1.1 : 1 / 1.1;
-      this.setState({ ...this.props.sizes, zoom: this.zoomValue });
+      this.setState({ sizes: { ...this.props.sizes, zoom: this.zoomValue } });
       computeMeta(this.state.meta, this.zoomValue, this.state.functions);
       return;
     }
+    this.keyEvent = true;
     if (!this.table) return;
     else if (e.type === "copy") this.handleCopy(e);
     else if (e.type === "paste") this.handlepaste(e);
@@ -369,6 +375,8 @@ export class ZebulonTable extends Component {
           onTableEnter={this.props.onTableEnter}
           onTableQuit={this.props.onTableQuit}
           onTableClose={this.props.onTableClose}
+          onFilter={this.props.onFilter}
+          onSort={this.props.onSort}
           callbacks={this.props.callbacks}
           errorHandler={this.errorHandler}
           navigationKeyHandler={this.props.navigationKeyHandler}

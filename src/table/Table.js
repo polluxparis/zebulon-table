@@ -340,6 +340,9 @@ export class Table extends Component {
     const filter = filtersFunction(filters, this.props.params, data);
     const filteredData = data.filter(filter);
     this.adjustScroll(filteredData.length);
+    if (this.props.onFilter) {
+      this.props.onFilter({ filters, filteredData });
+    }
     return filteredData;
   };
   // a voir si pagination server ???
@@ -461,6 +464,9 @@ export class Table extends Component {
     }
     if (sorts.length) {
       data.sort(sortsFunction(sorts));
+    }
+    if (this.props.onSort) {
+      this.props.onSort({ sorts: columns, fiteredData: data });
     }
   };
   onSort = (column, doubleClick) => {
@@ -1142,16 +1148,15 @@ export class Table extends Component {
     // -----------------------------------
     // between
     // ----------------------------------
-    let betweens = null;
-    if (
-      this.props.meta.properties.findIndex(
-        column => column.filterType === "between"
-      ) !== -1
-    ) {
-      betweens = (
+    let filterHeaders;
+
+    if (this.state.meta.table.noFilter) {
+      filterHeaders = [];
+    } else {
+      filterHeaders = [
         <Headers
           type="filter"
-          // focusedId={this.focusedId}
+          key="filters"
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           meta={this.state.meta.properties}
@@ -1159,10 +1164,30 @@ export class Table extends Component {
           height={this.rowHeight}
           width={width}
           scroll={this.state.scroll.columns}
-          filterTo={true}
         />
-      );
+      ];
+      if (
+        this.state.meta.properties.findIndex(
+          column => column.filterType === "between"
+        ) !== -1
+      ) {
+        filterHeaders.push(
+          <Headers
+            type="filter"
+            key="filtersBetween"
+            openFilter={this.openFilter}
+            onChange={this.onChangeFilter}
+            meta={this.state.meta.properties}
+            data={this.state.data}
+            height={this.rowHeight}
+            width={width}
+            scroll={this.state.scroll.columns}
+            filterTo={true}
+          />
+        );
+      }
     }
+
     // -----------------------------------
     // Filter check list
     // -----------------------------------
@@ -1204,7 +1229,7 @@ export class Table extends Component {
             position: "absolute",
             border: "solid 0.1em rgba(0, 0, 0, 0.5)",
             backgroundColor: "white",
-            top: top + (betweens !== null) * this.rowHeight,
+            top: top + filterHeaders.length * this.rowHeight,
             left,
             zIndex: 3,
             opacity: 1
@@ -1249,8 +1274,8 @@ export class Table extends Component {
         status,
         params: this.props.params,
         top:
-          (4 +
-            (betweens !== null) +
+          (3 +
+            filterHeaders.length +
             this.state.selectedRange.end.rows -
             this.state.scroll.rows.startIndex) *
             this.rowHeight +
@@ -1287,11 +1312,33 @@ export class Table extends Component {
       );
     }
     // ----------------------------------
-    const noUpdate = !this.isInPage(this.state.scroll.rows);
+    // Status bar
+    // ----------------------------------
     this.rowsHeight =
       height -
-      (2 + (betweens !== null)) * this.rowHeight -
+      (1 + filterHeaders.length) * this.rowHeight -
       (actions.length ? 30 : 0);
+    const noUpdate = !this.isInPage(this.state.scroll.rows);
+    let statusBar = null;
+    if (this.state.meta.table.noStatus) {
+    } else {
+      statusBar = (
+        <Status
+          data={this.state.filteredData}
+          status={this.state.status}
+          dataLength={this.state.filteredDataLength}
+          height={this.rowsHeight}
+          rowHeight={this.rowHeight}
+          scroll={this.state.scroll.rows}
+          updatedRows={this.state.updatedRows}
+          selectRange={this.selectRange}
+          selectedIndex={this.state.selectedRange.end.rows}
+          meta={this.state.meta.properties}
+          handleErrors={this.handleErrors}
+          noUpdate={noUpdate}
+        />
+      );
+    }
     return (
       <div
         style={{
@@ -1314,34 +1361,11 @@ export class Table extends Component {
           width={width}
           scroll={this.state.scroll.columns}
           onMetaChange={this.onMetaChange}
+          statusBar={statusBar !== null}
         />
-        <Headers
-          type="filter"
-          // focusedId={this.focusedId}
-          openFilter={this.openFilter}
-          onChange={this.onChangeFilter}
-          meta={this.state.meta.properties}
-          data={this.state.data}
-          height={this.rowHeight}
-          width={width}
-          scroll={this.state.scroll.columns}
-        />
-        {betweens}
+        {filterHeaders}
         <div style={{ display: "-webkit-box" }}>
-          <Status
-            data={this.state.filteredData}
-            status={this.state.status}
-            dataLength={this.state.filteredDataLength}
-            height={this.rowsHeight}
-            rowHeight={this.rowHeight}
-            scroll={this.state.scroll.rows}
-            updatedRows={this.state.updatedRows}
-            selectRange={this.selectRange}
-            selectedIndex={this.state.selectedRange.end.rows}
-            meta={this.state.meta.properties}
-            handleErrors={this.handleErrors}
-            noUpdate={noUpdate}
-          />
+          {statusBar}
           <Rows
             // status={this.state.status}
             meta={this.state.meta}
@@ -1349,7 +1373,7 @@ export class Table extends Component {
             status={this.state.status}
             dataLength={this.state.filteredDataLength}
             height={this.rowsHeight}
-            width={width - this.rowHeight}
+            width={width - this.rowHeight * (statusBar !== null)}
             rowHeight={this.rowHeight}
             scroll={this.state.scroll}
             onScroll={this.onScroll}

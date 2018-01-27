@@ -1,27 +1,25 @@
 # Zebulon pivot grid
-React pivot grid component for large data sets.
-Manage measures (aggregated figures) by dimensions (axises) in rows or columns directly on the grid. 
-## Available demo at: http://polluxparis.github.io/zebulon-grid/
-#### Demo on demand for zebulon-grid connected to big data: thomas.bres@pollux.paris
+React editabled table component.
+## Available demo at: http://polluxparis.github.io/zebulon-table/
 ## Main features
-* Pivoting by drag & drop of dimensions.
-* Sorting and filtering.
-* Grand total and subtotals.
-* Expand/collapse of dimensions hierarchy.
-* Resizing of columns and rows.
-* Drilldown facilities.
-* Custom measures, formats, sorts and external functions in the configuration objects.
+* Sorting, filtering
+* Formats
+* Auto description
+* Computed columns
+* Server comunication
 ## Getting started
 
-Install `zebulon-grid` using npm.
+Install `zebulon-table` using npm.
 
 ```shell
-npm install zebulon-grid --save
+npm install zebulon-table --save
 ```
 
 And in your code:
 ```js
-import ZebulonGrid from 'zebulon-grid'
+import ZebulonTable from 'zebulon-table'
+// or 
+import ZebulonTableAndConfiguration from 'zebulon-table'
 ```
 
 ## Simple Example
@@ -29,7 +27,7 @@ import ZebulonGrid from 'zebulon-grid'
 ```js
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import ZebulonGrid from "zebulon-grid";
+import ZebulonTable from "zebulon-table";
 
 const buildData = (n0, n1, n2) => {
   let data = [];
@@ -49,63 +47,51 @@ const buildData = (n0, n1, n2) => {
   }
   return data;
 };
-const buildConfiguration = () => ({
-  measureHeadersAxis: "columns",
-  width: 1000,
-  height: 800,
-  cellHeight: 30,
-  cellWidth: 100,
-  dimensions: [
-    {
-      id: "toto",
-      caption: "Toto",
-      keyAccessor: "totoId",
-      labelAccessor: "totoLabel",
-      sort: {
-        keyAccessor: "totoLabel"
-      }
-    },
-    {
-      id: "titi",
-      caption: "Titi",
-      keyAccessor: "titi"
-    },
-    {
-      id: "tutu",
-      caption: "Tutu",
-      keyAccessor: "tutu"
-    }
-  ],
-  measures: [
-    {
-      valueAccessor: "qty",
-      id: "qty",
-      caption: "Quantity",
-      aggregation: "sum"
-    },
-    {
-      valueAccessor: "amt",
-      id: "amt",
-      caption: "Amount",
-      aggregation: "sum"
-    }
-  ],
-  columns: ["tutu"],
-  rows: ["toto", "titi"],
-  activeMeasures: ["qty", "amt"]
-});
-class MyPivotGrid extends Component {
+const buildMeta = () => {
+	return {
+		// serverPagination: true,
+		table: {
+			object: "dataset",
+			editable: true,
+			select: "get_promise",
+			primaryKey: "id",
+			onSave: "set",
+			actions: [
+				{ type: "insert", caption: "New", enable: true },
+				{
+					type: "delete",
+					caption: "Delete",
+					enable: "isSelected"
+				},
+				{
+					type: "duplicate",
+					caption: "Duplicate",
+					enable: "isSelected"
+				},
+				{
+					type: "action",
+					caption: "Compute",
+					action: "computeData",
+					enable: true
+				}
+			]
+		},
+		row: {},
+		properties: []
+	};
+};
+class MyEditableTable extends Component {
   constructor(props) {
     super(props);
     this.state = {};
   }
   data = buildData(20, 12, 7);
-  configuration = buildConfiguration();
+  meta = buildMeta();
   render() {
     return (
-      <ZebulonGrid
+      <ZebulonTable
         data={this.data}
-        configuration={this.configuration}
+        meta={this.meta}
         sizes={{
           height: 600,
           width: 1000,
@@ -118,20 +104,24 @@ class MyPivotGrid extends Component {
     );
   }
 }
-ReactDOM.render(<MyPivotGrid />, document.getElementById("root"));
+ReactDOM.render(<MyEditableTable  />, document.getElementById("root"));
 ```
-## React zebulon grid props
+## React zebulon table props
 | Property | Type | Description |
 |:---|:---|:---|
-| configuration| `PropTypes.object` | Meta description  of the multidimensional matrix linked to the data set|
-| menuFunctions| `PropTypes.object` | Custom functions callable from the data cell area contextual menu. |
-| configurationFunctions| `PropTypes.object` | Named custom formats, accessors, sorts and aggregations. |
-| data| `PropTypes.arrayOf(PropTypes.object)` | Data set as an array of objects or a promise. |
-| pushedData]| `PropTypes.arrayOf(PropTypes.object)` | Data set as an array of objects. |
+| data| `PropTypes.object` | Meta description  of the multidimensional matrix linked to the data set|
+| updatedRows | `PropTypes.object)` | Updated rows with status (new, updated, deleted), row image before (row value when loaded), row image after (row updated value) |
+| meta| `PropTypes.object` | Meta description of the dataset and the way the dataset is managed by the table |
+| functions| `PropTypes.object` | JS functions that can be referenced in the meta description|
+| filters | `PropTypes.object)` |  |
+| sorts | `PropTypes.object)` |  |
+| status | `PropTypes.object)` | dataset loading status |
 | sizes | `PropTypes.object)` | sizes of the grid (height, width), zoom, default cell sizes |
 
 ## Data set
-The data set (data property) can be either an array of similar objects or a promise that will be resolved as an array of objects.
+The data set (data property) can be:
+####
+* an array of similar objects 
 ```js
 [
     {
@@ -153,10 +143,11 @@ The data set (data property) can be either an array of similar objects or a prom
     ...
   ]
 ```
-Rows can be added dynamically to the data set using the pushedData property.
-Changed data cells will be highlighted using the corresponding CSS. 
-## Configuration
-The configuration property is an object describing the pivot grid objects as measure or dimensions and their links with the data set properties.
+* a promise (from the server) that will be resolved as an array of objects.
+* an observable (from the server) that will push by page arrays of objects (the full dataset will be loaded in background).
+* a pagination manager
+## Meta description
+The meta  property is an object describing the pivot grid objects as measure or dimensions and their links with the data set properties.
 ### Accessors
 Accessors are used to get the appropriate values from the data set.
 They can be :

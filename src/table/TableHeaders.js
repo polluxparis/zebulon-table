@@ -267,22 +267,25 @@ export class Headers extends Component {
       openFilter,
       filterTo,
       type,
-      focusedId
+      focusedId,
+      statusBar
     } = this.props;
     // const type = this.state.type;
-    const cells = [
-      <div
-        key="status"
-        className="zebulon-table-corner"
-        style={{
-          position: "absolute",
-          width: height,
-          left: 0,
-          border: "0.02em solid rgba(0, 0, 0, 0.3)"
-        }}
-      />
-    ];
-    let position = height;
+    const cells = statusBar
+      ? [
+          <div
+            key="status"
+            className="zebulon-table-corner"
+            style={{
+              position: "absolute",
+              width: height,
+              left: 0,
+              border: "0.02em solid rgba(0, 0, 0, 0.3)"
+            }}
+          />
+        ]
+      : [];
+    let position = height * statusBar;
     while (index < meta.length && position < width) {
       const column = meta[index];
       const columnWidth = Math.max(
@@ -305,7 +308,6 @@ export class Headers extends Component {
             this.handleDragStart,
             this.handleDragOver,
             this.handleDrop
-            // this.handleDragEnd
           );
         } else if (type === "filter") {
           if (

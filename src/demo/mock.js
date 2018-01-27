@@ -23,7 +23,7 @@ export function getMockDatasource(
           obj.titi = i;
           obj.titi_lb = `titi ${String(i)}`;
           obj.tutu = String(Math.round((nTutu - 1) * Math.random()));
-          obj.qty = Math.round(400 * Math.random()) + 125; // +9999999999.1234567890123456
+          obj.qty = Math.round(1000 * Math.random()) + 125; // +9999999999.1234567890123456
           obj.amt = Math.round(5000 * Math.random()) + 310; // +9999999999.1234567890123456
           obj.d = new Date(
             2017 + Math.round(2 * Math.random()),
