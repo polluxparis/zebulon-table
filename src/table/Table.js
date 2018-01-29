@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import { Headers, Status } from "./TableHeaders";
 import { Rows } from "./Rows";
 import { utils, Filter } from "zebulon-controls";
+import { getSelection, buildPasteArray } from "./utils";
+
 // import { Filter } from "./controls-o/Filter";
 import {
   manageRowError,
@@ -153,6 +155,30 @@ export class Table extends Component {
       }
       return this.rows.handleNavigationKeys(e);
     }
+  };
+  handleCopy = e => {
+    utils.copy(
+      getSelection(
+        "xls",
+        this.state.selectedRange,
+        this.state.meta.properties,
+        this.state.filteredData,
+        this.state.updatedRows,
+        this.state.data,
+        this.props.params
+      )
+    );
+  };
+  handlePaste = e => {
+    return buildPasteArray(
+      "xls",
+      e.clipboardData.getData("text"),
+      this.state.meta.properties,
+      this.state.selectedRange.end,
+      cell => this.selectRange_({ start: cell, end: cell }),
+      this.onChange,
+      this.state.filteredData
+    );
   };
   //-----------------------------------------
   // buttons and actions management
@@ -508,44 +534,6 @@ export class Table extends Component {
       this.setState({ filteredData: this.state.filteredData });
     }
   };
-  // handleSave = () => {
-  //   let ok = true;
-  //   let rows;
-  //   const updatedData = this.props.checkable
-  //     ? this.state.checkedData
-  //     : this.state.updatedData;
-  //   if (this.props.editable) {
-  //     rows = Object.keys(updatedData).map(key => {
-  //       const updatedRow = updatedData[key];
-  //       const row = this.props.metaColumn.reduce((acc, column) => {
-  //         acc[column.code] = column.setAccessor(updatedRow.row[column.code]);
-  //         return acc;
-  //       }, {});
-  //       row.index_ = updatedRow.row._index;
-  //       row.status_ = updatedRow.deleted
-  //         ? "deleted"
-  //         : updatedRow.inserted ? "inserted" : "updated";
-  //       const checked = this.rowCheck(updatedRow);
-  //       if (checked !== true) {
-  //         ok = false;
-  //       } else {
-  //         ok = true;
-  //       }
-  //       return row;
-  //     });
-  //   }
-  //   if (ok && this.props.save) {
-  //     if (this.props.editable) {
-  //       this.props.save({ updatedData: rows });
-  //       this.setState({ updatedData: {} });
-  //     } else {
-  //       console.log("handleSave", updatedData);
-  //       this.props.save({ checkedData: updatedData });
-  //     }
-  //   }
-  //   return ok;
-  // };
-
   // ------------------------------------------------------
   // selection and validations
   // ------------------------------------------------------
@@ -861,7 +849,6 @@ export class Table extends Component {
     ) {
       b = this.props.errorHandler.onRowQuit(message);
     }
-    // console.log("onRowQuit", message);
     return b;
   };
   onRowQuit_ = message => {
@@ -902,7 +889,6 @@ export class Table extends Component {
     if (this.props.onRowEnter) {
       this.props.onRowEnter(message);
     }
-    // console.log("onRowEnter", message);
   };
   onRowNew = row => {
     const message = {
@@ -913,7 +899,6 @@ export class Table extends Component {
     };
     if (this.props.onRowNew)
       if (this.props.onRowNew(message) === false) return false;
-    // console.log("onRowNew", message);
     return true;
   };
   // -------------------------------
@@ -932,7 +917,6 @@ export class Table extends Component {
     if (this.props.onTableEnter) {
       this.props.onTableEnter(message);
     }
-    // console.log("onTableEnter", message);
   };
   canQuit = () => {
     if (this.onTableQuit(true)) {
@@ -955,7 +939,6 @@ export class Table extends Component {
     if (!b && this.props.errorHandler.onTableQuit) {
       b = this.props.errorHandler.onTableQuit(message);
     }
-    // console.log("onTableQuit", message);
     return b;
   };
   onTableQuit_ = message => {
@@ -998,7 +981,6 @@ export class Table extends Component {
     if (this.props.onTableClose) {
       this.props.onTableClose(message);
     }
-    // console.log("onTableQuit", message);
   };
   handleErrors = (e, rowIndex, errors) => {
     if (errors.length || this.state.toolTip) {
@@ -1016,7 +998,6 @@ export class Table extends Component {
   // -------------------------------
   //  Save events
   //  -------------------------------
-
   onSave = () => {
     const message = {
       updatedRows: this.state.updatedRows,
@@ -1367,7 +1348,6 @@ export class Table extends Component {
         <div style={{ display: "-webkit-box" }}>
           {statusBar}
           <Rows
-            // status={this.state.status}
             meta={this.state.meta}
             data={this.state.filteredData}
             status={this.state.status}

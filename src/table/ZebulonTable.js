@@ -276,7 +276,7 @@ export class ZebulonTable extends Component {
     this.keyEvent = true;
     if (!this.table) return;
     else if (e.type === "copy") this.handleCopy(e);
-    else if (e.type === "paste") this.handlepaste(e);
+    else if (e.type === "paste") this.handlePaste(e);
     else if (e.type === "keydown") this.handleKeyDown(e);
   };
   handleKeyDown = e => {
@@ -342,10 +342,6 @@ export class ZebulonTable extends Component {
   };
 
   render() {
-    // this.id = `table-${this.props.id || 0}`;
-    // if (!Array.isArray(this.state.data)) {
-    //   return null;
-    // }
     let div = (
       <div>
         <Table

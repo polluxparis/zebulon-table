@@ -1031,7 +1031,7 @@ export class Layout extends Component {
       <div
         style={{ position: "relative" }}
         onDragStart={this.handleDragStart}
-        onDragOver={this.handleDragOver}
+        // onDragOver={this.handleDragOver}
         onDrop={this.handleDrop}
         onClick={e => {
           if (!e.defaultPrevented && !e.target.id.startsWith("menuRename")) {

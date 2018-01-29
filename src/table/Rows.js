@@ -3,7 +3,6 @@ import classnames from "classnames";
 import { ScrollableGrid, utils, constants } from "zebulon-controls";
 import { Input } from "./Input";
 import { cellData } from "./utils";
-console.log("constants", constants);
 export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;

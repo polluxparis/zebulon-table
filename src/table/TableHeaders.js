@@ -106,8 +106,8 @@ const filter = (
       filterTo={filterTo}
       onChange={onChange}
       onFocus={e => openFilter(e, column)}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
+      // onDragOver={handleDragOver}
+      // onDrop={handleDrop}
     />
   );
 };
@@ -185,10 +185,6 @@ const filterEmpty = (id, position, width) => {
 
 // ↑↓
 export class Headers extends Component {
-  // constructor(props) {
-  //   super(props);
-  //   console.log("constructor");
-  // }
   handleClick = (column, double) => {
     const { onSort } = this.props;
     if (!double) {
@@ -206,20 +202,19 @@ export class Headers extends Component {
   };
 
   handleDragStart = (e, type) => {
-    this.dragMessage = { type, index: e.target.id, x: e.pageX };
-    e.dataTransfer.setData("text", JSON.stringify(this.dragMessage));
+    this.dragId = e.target.id;
+    this.dragType = type;
+    this.dragX = e.pageX;
+    // e.dataTransfer.setData("text", JSON.stringify(this.dragMessage));
     e.stopPropagation();
   };
 
   handleDragOver = e => {
-    // console.log("dragover", e.target, e.dataTransfer.getData("text"));
+    console.log("dragover", e.target, e.dataTransfer.getData("text"));
     if (
-      this.dragMessage.type === "move" ||
-      (this.dragMessage.type === "resize" &&
-        this.props.meta[this.dragMessage.index].computedWidth +
-          e.pageX -
-          this.dragMessage.x >
-          20)
+      this.dragType === "move" ||
+      (this.dragType === "resize" &&
+        this.props.meta[this.dragId].computedWidth + e.pageX - this.dragX > 20)
     ) {
       e.preventDefault();
     }
@@ -227,34 +222,37 @@ export class Headers extends Component {
 
   handleDrop = e => {
     e.preventDefault();
-    const msg = JSON.parse(e.dataTransfer.getData("text"));
+    // const msg = JSON.parse(e.dataTransfer.getData("text"));
     // console.log("drop", e.target.id, msg);
     const { meta } = this.props;
-    if (msg.type) {
+    if (this.dragType) {
       if (
-        msg.type === "move" &&
-        !utils.isNullOrUndefined(msg.index) &&
-        msg.index !== e.target.id
+        this.dragType === "move" &&
+        !utils.isNullOrUndefined(this.dragId) &&
+        this.dragId !== e.target.id
       ) {
         // console.log("drag end", msg.index, e.target.id);
-        meta[msg.index].index_ = meta[e.target.id].index_ + 0.1;
+        meta[this.dragId].index_ = meta[e.target.id].index_ + 0.1;
         meta.sort((a, b) => (a.index_ > b.index_) - (a.index_ < b.index));
         computeMetaPositions(meta);
         this.props.onMetaChange();
         // console.log("drag end", e);
       } else if (
-        msg.type === "resize" &&
-        !utils.isNullOrUndefined(msg.x) &&
+        this.dragType === "resize" &&
+        !utils.isNullOrUndefined(this.dragX) &&
         !utils.isNullOrUndefined(e.pageX)
       ) {
-        const column = meta[msg.index];
+        const column = meta[this.dragId];
         const zoom = column.computedWidth / column.width;
-        column.computedWidth += e.pageX - msg.x;
+        column.computedWidth += e.pageX - this.dragX;
         column.width = column.computedWidth / zoom;
         computeMetaPositions(meta);
         this.props.onMetaChange();
       }
     }
+    this.dragId = null;
+    this.dragType = null;
+    this.dragX = null;
   };
 
   render() {
@@ -393,7 +391,7 @@ export class Status extends Component {
       index < Math.min(dataLength || data.length, Math.ceil(height / rowHeight))
     ) {
       const style = {
-        position: "absolute",
+        position: "relative",
         top: scroll.shift + index * rowHeight,
         width: rowHeight,
         height: rowHeight

@@ -91,23 +91,25 @@ export class MyLayout extends Component {
           key="dataset"
           id="dataset"
           visible={true}
+          // editable={true}
           data={this.data}
           meta={this.meta}
-          sizes={{ height: height - 2, width: width - 4, zoom }}
+          sizes={{ height: height - 3, width: width - 4, zoom }}
           functions={props.functions}
           filters={this.state.filters}
         />
       );
+      // element = <div>toto</div>;
     } else {
       element = (
         <ScrollableGrid
           data={this.getItems(component.id, component.caption, zoom)}
-          height={height - 2}
+          height={height - 3}
           rowHeight={titleHeight * zoom}
           width={width - 2}
           rowWidth={width - 12 - 2}
           zoom={zoom}
-          style={{ height: height - 2, width: width - 4 }}
+          style={{ height: height - 3, width: width - 4 }}
         />
       );
     }

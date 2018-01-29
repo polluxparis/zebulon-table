@@ -22,12 +22,13 @@ const titleHeight = 20;
 export class Layout extends Component {
   constructor(props) {
     super(props);
+    const components = props.components.reduce((acc, component) => {
+      acc[component.id] = component;
+      return acc;
+    }, {});
     this.state = {
       layout: props.layout,
-      components: props.components.reduce((acc, component) => {
-        acc[component.id] = component;
-        return acc;
-      }, {}),
+      components,
       selectedTabs: {},
       activeLayout: "0",
       resizeImage: {
@@ -36,8 +37,10 @@ export class Layout extends Component {
         height: 0,
         with: 0,
         backgroundColor: "blue"
-      }
+      },
+      dragPreviewStyle: { display: "none" }
     };
+    // this.state.layoutDiv = this.buildLayout(props.layout, null, 0, components);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -53,7 +56,11 @@ export class Layout extends Component {
         nextProps.keyEvent.preventDefault();
         return;
       }
-      if (utils.isNavigationKey(nextProps.keyEvent)) {
+      if (
+        utils.isNavigationKey(nextProps.keyEvent) ||
+        nextProps.keyEvent.type === "copy" ||
+        nextProps.keyEvent.type === "paste"
+      ) {
         this.setState({ keyEvent: nextProps.keyEvent });
         return;
       }
@@ -119,6 +126,7 @@ export class Layout extends Component {
     } = layout;
     layout.id = parent ? `${parent.id} - ${index}` : String(index);
     layout.parent = parent || {};
+    layout.layouts = layout.layouts || [];
     layout.index = index;
     layout.calculatedZoom =
       (parent ? parent.calculatedZoom : 1) * (layout.zoom || 1);
@@ -128,7 +136,7 @@ export class Layout extends Component {
         <div
           id={"layout-resize-handle-H: " + layout.id}
           style={{
-            width: width,
+            width: width - (parent ? 0 : resizeHandleSize),
             height: resizeHandleSize,
             cursor: "row-resize"
           }}
@@ -255,7 +263,9 @@ export class Layout extends Component {
                     e.stopPropagation();
                     // e.preventDefault();
                     if (this.state.activeLayout !== id) {
-                      this.setState({ activeLayout: id });
+                      this.setState({
+                        activeLayout: id
+                      });
                     }
                   }
                 )
@@ -591,10 +601,16 @@ export class Layout extends Component {
   handleDragStart = (e, type) => {
     this.contextualMenu.close();
     // this.dragMessage = { type, index: e.target.id, x: e.pageX };
+    this.pageX = e.pageX;
+    this.pageY = e.pageY;
+    // this.pageXStart = e.pageX;
+    // this.pageYStart = e.pageY;
     e.dataTransfer.setData("text", e.target.id);
+    this.dragId = e.target.id;
     if (e.target.id.startsWith("layout-resize-handle")) {
       const ids = this.getIds(e.target.id);
       const layout = this.getLayout(ids);
+      this.layout = layout;
       const length = "layout-resize-handle".length;
       this.dragDirection =
         e.target.id.slice(length, length + 2) === "-V"
@@ -603,163 +619,256 @@ export class Layout extends Component {
       const rect = document
         .getElementById("layout: " + e.target.id.slice(length + 4))
         .getBoundingClientRect();
-      e.dataTransfer.setDragImage(this.div, 0, 0);
+      const dragRect = this.dragLayer.getBoundingClientRect();
+      const dragPreviewStyle = {
+        position: "relative",
+        backgroundColor: "red"
+      };
+      // let x, y;
+      // if (this.dragDirection === "vertical") {
+      //   dragPreviewStyle.height = rect.height;
+      //   dragPreviewStyle.width = 4;
+      //   dragPreviewStyle.top = rect.top - dragRect.top;
+      //   dragPreviewStyle.left = rect.left - dragRect.left + rect.width - 4;
+      // } else {
+      //   dragPreviewStyle.height = 4;
+      //   dragPreviewStyle.width = rect.width;
+      //   dragPreviewStyle.top = rect.top - dragRect.top + rect.height - 4;
+      //   dragPreviewStyle.left = rect.left - dragRect.left;
+      // }
+      // this.dragPreviewStyle = dragPreviewStyle;
+      // e.dataTransfer.setDragImage(this.preview, 0, 0);
+      // this.setState({ dragPreviewStyle });
     }
-    this.dragId = e.target.id;
-    this.pageX = e.pageX;
-    this.pageY = e.pageY;
-    e.stopPropagation();
+    // e.stopPropagation();
     console.log(
       "dragstart",
       e.pageX,
       e.pageY,
       e.dataTransfer.getData("text"),
-      e.target
+      e.target,
+      e.clientOffset
     );
   };
   handleDragOver = e => {
-    console.log("dragover", this.dragId, e.target.id);
-    if (this.dragId.startsWith("layout-resize-handle")) {
+    // this.pageY2 = e.pageY;
+    // this.pageX2 = e.pageX;
+    if (this.dragId) {
       e.preventDefault();
-    } else if (
-      this.dragId.startsWith("layout-title") &&
-      (!e.target.id.startsWith("layout-title") ||
-        this.getLayout(this.getIds(e.target.id)).parent.display === "tabs")
-    ) {
-      // you cant drop a header on a child
-      const component = this.getParent(e.target, "layout-component");
-      if (
-        this.getParent(
-          component || e.target,
-          this.dragId.replace("-title", "")
-        ) === null
+      if (this.dragId.startsWith("layout-resize-handle")) {
+        // e.stopPropagation();
+        const dragPreviewStyle = { ...this.dragPreviewStyle };
+        if (this.dragDirection === "vertical") {
+          dragPreviewStyle.left += e.pageX - this.pageX;
+        } else {
+          dragPreviewStyle.top += e.pageY - this.pageY;
+        }
+        // this.pageX = e.pageX;
+        // this.pageY = e.pageY;
+        // this.setState({ dragPreviewStyle });
+        // const elt = this.preview.cloneNode(false);
+        // this.preview.remove();
+        // this.preview.style.left = `${dragPreviewStyle.left}px`;
+        // this.preview.style.top = `${dragPreviewStyle.top}px`;
+        // this.preview.transform = `translate(${dragPreviewStyle.left}px,${dragPreviewStyle.top}px)`;
+
+        // this.preview.transform = `translateY(${dragPreviewStyle.top}px)`;
+        // this.preview.style.height = `${dragPreviewStyle.height}px`;
+        // this.preview.style.width = `${dragPreviewStyle.width}px`;
+        // this.preview.style["background-color"] = "blue";
+        // this.preview.style.position = "relative";
+        // this.preview.style.display = "block";
+        // e.preventDefault();
+        // this.dragLayer.appendChild(this.preview);
+        console.log("dragover", this.dragId, dragPreviewStyle);
+      } else if (
+        this.dragId.startsWith("layout-title") &&
+        (!e.target.id.startsWith("layout-title") ||
+          this.getLayout(this.getIds(e.target.id)).parent.display === "tabs")
       ) {
-        e.preventDefault();
+        // you cant drop a header on a child
+        const component = this.getParent(e.target, "layout-component");
+        if (
+          this.getParent(
+            component || e.target,
+            this.dragId.replace("-title", "")
+          ) === null
+        ) {
+          e.preventDefault();
+        }
       }
     }
   };
   handleDrop = e => {
-    e.preventDefault();
-    const id = e.dataTransfer.getData("text");
-    if (id.startsWith("layout-resize-handle")) {
-      const length = "layout-resize-handle".length;
-      const ids = this.getIds(id); //id.slice(length + 4).split(" - ");
-      const root = ids.length === 1;
-      const lastIndex = Number(ids.pop());
-      const direction =
-        id.slice(length, length + 2) === "-V" ? "vertical" : "horizontal";
-      let delta = 0;
-      const layout = this.getLayout(ids);
-      if (root) {
-        if (direction === "horizontal") {
-          delta = e.pageY - this.pageY;
-          layout.height += delta;
+    // console.log("drop", id, e.pageX, e.pageY, e.target);
+    if (this.dragId) {
+      e.preventDefault();
+      const id = e.dataTransfer.getData("text");
+      if (id.startsWith("layout-resize-handle")) {
+        const length = "layout-resize-handle".length;
+        const ids = this.getIds(id); //id.slice(length + 4).split(" - ");
+        const root = ids.length === 1;
+        const lastIndex = Number(ids.pop());
+        const direction =
+          id.slice(length, length + 2) === "-V" ? "vertical" : "horizontal";
+        let delta = 0;
+        const layout = this.getLayout(ids);
+        if (root) {
+          if (direction === "horizontal") {
+            delta = e.pageY - this.pageY;
+            layout.height += delta;
+          } else {
+            delta = e.pageX - this.pageX;
+            layout.width += delta;
+          }
         } else {
-          delta = e.pageX - this.pageX;
-          layout.width += delta;
-        }
-      } else {
-        if (direction === "horizontal") {
-          delta = e.pageY - this.pageY;
-          layout.layouts[lastIndex].height += delta;
-          layout.layouts[lastIndex + 1].height -= delta;
-        } else {
-          delta = e.pageX - this.pageX;
-          layout.layouts[lastIndex].width += delta;
-          layout.layouts[lastIndex + 1].width -= delta;
-        }
-      }
-      this.setState({ layout: this.state.layout });
-    } else if (id.startsWith("layout-title")) {
-      const body = e.target.id.startsWith("layout-title")
-        ? e.target
-        : this.getParent(e.target, "layout-body");
-      if (body !== null) {
-        const dropIds = this.getIds(body.id);
-        const dropIndex = dropIds[dropIds.length - 1];
-        const dragIds = this.getIds(id);
-        const dropLayout = this.getLayout(dropIds);
-        const dragLayout = this.getLayout(dragIds);
-        let rect;
-        if (dropLayout.content === null && dropLayout.layouts.length === 0) {
-          dropLayout.title = dragLayout.title;
-          dropLayout.content = dragLayout.content;
-          dropLayout.layouts = dragLayout.layouts;
-          this.remove(dragLayout);
-        } else {
-          // const element = document.getElementById(body);
-          rect = body.getBoundingClientRect();
-          const top = e.clientY - rect.y < rect.height / 2;
-          const left = e.clientX - rect.x < rect.width / 2;
-
-          if (
-            dropLayout.content !== null ||
-            dropLayout.parent.display === "tabs"
-          ) {
-            if (
-              dropLayout.parent.display === "block" ||
-              dropLayout.parent.display === "tabs"
-            ) {
-              this.insertLayout(
-                dropLayout.parent,
-                dragLayout,
-                dropIndex + !top
-              );
-            } else if (dropLayout.parent.display === "flex") {
-              this.insertLayout(
-                dropLayout.parent,
-                dragLayout,
-                dropIndex + !left
-              );
-            }
+          if (direction === "horizontal") {
+            delta = e.pageY - this.pageY;
+            layout.layouts[lastIndex].height += delta;
+            layout.layouts[lastIndex + 1].height -= delta;
+          } else {
+            delta = e.pageX - this.pageX;
+            layout.layouts[lastIndex].width += delta;
+            layout.layouts[lastIndex + 1].width -= delta;
           }
         }
         this.setState({ layout: this.state.layout });
-        console.log(
-          "dropbody",
-          body,
-          e.pageX,
-          e.pageY,
-          rect,
-          dragIds,
-          dropIds,
-          e.target
-        );
+      } else if (id.startsWith("layout-title")) {
+        const body = e.target.id.startsWith("layout-title")
+          ? e.target
+          : this.getParent(e.target, "layout-body");
+        if (body !== null) {
+          const dropIds = this.getIds(body.id);
+          const dropIndex = dropIds[dropIds.length - 1];
+          const dragIds = this.getIds(id);
+          const dropLayout = this.getLayout(dropIds);
+          const dragLayout = this.getLayout(dragIds);
+          let rect;
+          if (dropLayout.content === null && dropLayout.layouts.length === 0) {
+            dropLayout.title = dragLayout.title;
+            dropLayout.content = dragLayout.content;
+            dropLayout.layouts = dragLayout.layouts;
+            this.remove(dragLayout);
+          } else {
+            // const element = document.getElementById(body);
+            rect = body.getBoundingClientRect();
+            const top = e.clientY - rect.y < rect.height / 2;
+            const left = e.clientX - rect.x < rect.width / 2;
+
+            if (
+              dropLayout.content !== null ||
+              dropLayout.parent.display === "tabs"
+            ) {
+              if (
+                dropLayout.parent.display === "block" ||
+                dropLayout.parent.display === "tabs"
+              ) {
+                this.insertLayout(
+                  dropLayout.parent,
+                  dragLayout,
+                  dropIndex + !top
+                );
+              } else if (dropLayout.parent.display === "flex") {
+                this.insertLayout(
+                  dropLayout.parent,
+                  dragLayout,
+                  dropIndex + !left
+                );
+              }
+            }
+          }
+          this.setState({ layout: this.state.layout });
+          console.log(
+            "dropbody",
+            body,
+            e.pageX,
+            e.pageY,
+            rect,
+            dragIds,
+            dropIds,
+            e.target
+          );
+        }
       }
+
+      this.dragId = null;
     }
-    console.log("drop", id, e.pageX, e.pageY, e.target);
-    this.dragId = null;
   };
   //----------------------------------------
   // render
   //----------------------------------------
+  computeLayout = (layout, active) =>
+    this.buildLayout(layout, null, 0, this.state.components);
+
   render() {
-    console.log("render");
+    // let resizePreview;
+    // if (this.state.dragId) {
+    //   const y = this.rect.y - this.dragRect.y,
+    //     x =
+    //       this.rect.x -
+    //       this.dragRect.x +
+    //       this.layout.width -
+    //       4 +
+    //       (this.pageX2 || this.pageX) -
+    //       this.pageX;
+    //   console.log(
+    //     "render layout",
+    //     x,
+    //     y,
+    //     this.rect.x,
+    //     this.dragRect.x,
+    //     this.layout.width,
+    //     this.pageX2,
+    //     this.pageX
+    //   );
+    //   const previewStyle = {
+    //     position: "absolute",
+    //     height: this.rect.height,
+    //     width: 4,
+    //     transform: `translate(${x}px,${y}px)`,
+    //     backgroundColor: "blue"
+    //   };
+    //   resizePreview = (
+    //     <div style={previewStyle} ref={ref => (this.div = ref)} />
+    //   );
+    // } else {
+    //   resizePreview = (
+    //     <div style={{ display: "none" }} ref={ref => (this.div = ref)} />
+    //   );
+    // }
+
     return (
+      // <div ref={ref => (this.dragLayer = ref)}>
       <div
         style={{ position: "relative" }}
         onDragStart={this.handleDragStart}
         onDragOver={this.handleDragOver}
+        onDragExit={e => console.log("exit", e)}
+        onDragLeave={e => console.log("leave", e)}
         onDrop={this.handleDrop}
         onClick={e => {
           if (!e.defaultPrevented && !e.target.id.startsWith("menuRename")) {
             this.contextualMenu.close();
           }
         }}
-        onKeyDown={e => {
-          console.log("keydown", e);
-        }}
         id="layout"
+        ref={ref => (this.dragLayer = ref)}
       >
-        {this.buildLayout(this.state.layout, null, 0, this.state.components)}
+        {this.computeLayout(this.state.layout, this.state.activeLayout)}
         <ContextualMenu
           key="layout-menu"
           getMenu={this.getMenu}
           componentId="layout"
           ref={ref => (this.contextualMenu = ref)}
         />
-        <div ref={ref => (this.div = ref)} />
       </div>
+      // (  <div
+      //     id="layout-preview"
+      //     style={{ display: "none" }}
+      //     ref={ref => (this.preview = ref)}
+      //   />
+      // </div>)
     );
+    // {resizePreview}
   }
 }

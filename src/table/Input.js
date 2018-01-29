@@ -3,7 +3,7 @@ import { utils } from "zebulon-controls";
 const { dateToString, stringToDate, numberToString, isNullOrUndefined } = utils;
 
 const formatValue = (props, value, focused) => {
-  console.log(1);
+  // console.log(1);
   const { row, column, status, params, data, inputType, editable } = props;
   const { dataType, formatFunction } = column || { dataType: props.dataType };
   let v = isNullOrUndefined(value) ? "" : value;

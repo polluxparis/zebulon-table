@@ -146,8 +146,25 @@ The data set (data property) can be:
 * a promise (from the server) that will be resolved as an array of objects.
 * an observable (from the server) that will push by page arrays of objects (the full dataset will be loaded in background).
 * a pagination manager
+
+## Available functions and callbacks
+### Visibility
+### Function types
+### Identifiers
+### Meta description and functions
+A lot of keys in the meta description prop can refer to a value, a function or an accessor to a function
+
+
 ## Meta description
-The meta  property is an object describing the pivot grid objects as measure or dimensions and their links with the data set properties.
+The meta property is an object describing how to manipulate the dataset, the way to display it, the controls and validation to apply when data are changed, the actions allowed...
+
+It contains 3 sections: table, row and properties.
+### table
+table
+### row
+
+### properties
+
 ### Accessors
 Accessors are used to get the appropriate values from the data set.
 They can be :

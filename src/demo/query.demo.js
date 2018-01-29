@@ -25,9 +25,9 @@ export class Query extends Component {
             border: "solid rgba(0, 0, 0, 0.3) 0.02em",
             boxSizing: "border-box"
           }}
-          onDragStart={this.handleDragStart}
-          onDrop={this.handleDrop}
-          onDragOver={this.handleDragOver}
+          // onDragStart={this.handleDragStart}
+          // onDrop={this.handleDrop}
+          // onDragOver={this.handleDragOver}
         >{`Query ${i}`}</div>
       );
       i++;
@@ -399,9 +399,9 @@ const get = (type, caption) => {
           border: "solid rgba(0, 0, 0, 0.3) 0.02em",
           boxSizing: "border-box"
         }}
-        onDragStart={this.handleDragStart}
-        onDrop={this.handleDrop}
-        onDragOver={this.handleDragOver}
+        // onDragStart={this.handleDragStart}
+        // onDrop={this.handleDrop}
+        // onDragOver={this.handleDragOver}
       >{`${caption} ${i}`}</div>
     );
     i++;
@@ -712,9 +712,9 @@ export class Query2 extends Component {
     return (
       <div
         style={{ position: "relative" }}
-        onDragStart={this.handleDragStart}
-        onDragOver={this.handleDragOver}
-        onDrop={this.handleDrop}
+        // onDragStart={this.handleDragStart}
+        // onDragOver={this.handleDragOver}
+        // onDrop={this.handleDrop}
         onClick={e => {
           if (!e.defaultPrevented) {
             this.contextualMenu.close();
