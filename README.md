@@ -1,4 +1,5 @@
 # Zebulon table
+IN PROGRESS
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
 ## Main features
