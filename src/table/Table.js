@@ -311,9 +311,14 @@ export class Table extends Component {
   handleNew = index => {
     const row = { index_: this.getDataLength() };
     //  default values
-    this.state.meta.properties
-      .filter(column => column.defaultFunction)
-      .forEach(column => (row[column.id] = column.defaultFunction({ row })));
+    this.state.meta.properties.filter(column => column.defaultFunction).forEach(
+      column =>
+        (row[column.id] = column.defaultFunction({
+          column,
+          row,
+          params: this.props.params
+        }))
+    );
     this.newRow(row, index);
   };
   handleDuplicate = index => {
@@ -1145,6 +1150,7 @@ export class Table extends Component {
           height={this.rowHeight}
           width={width}
           scroll={this.state.scroll.columns}
+          statusBar={!this.state.meta.table.noStatus}
         />
       ];
       if (
@@ -1164,6 +1170,7 @@ export class Table extends Component {
             width={width}
             scroll={this.state.scroll.columns}
             filterTo={true}
+            statusBar={!this.state.meta.table.noStatus}
           />
         );
       }
@@ -1300,8 +1307,9 @@ export class Table extends Component {
       (1 + filterHeaders.length) * this.rowHeight -
       (actions.length ? 30 : 0);
     const noUpdate = !this.isInPage(this.state.scroll.rows);
-    let statusBar = null;
+    let statusBar;
     if (this.state.meta.table.noStatus) {
+      statusBar = null;
     } else {
       statusBar = (
         <Status

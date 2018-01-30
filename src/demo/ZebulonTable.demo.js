@@ -11,7 +11,6 @@ import { functionsTable, getFilters } from "../table/utils";
 import { MyLayout } from "./Layout.example";
 import { ResizableBox } from "react-resizable";
 
-// import { getMockDatasource } from "./mock";import { ResizableBox } from "react-resizable";
 import {
   countries,
   metaCountries,
@@ -21,7 +20,6 @@ import {
   metaThirdparties
 } from "./meta.thirdparties";
 import { metaDataset, datasetFunctions, buildMeta } from "./meta.dataset";
-// const AxisType = utils.AxisType;
 class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);
@@ -45,7 +43,6 @@ class ZebulonTableDemo extends Component {
         toto: { id: "toto", direction: "desc", sortOrder: 1 }
       }
     };
-    // this.state.meta = metaDescriptions("dataset", this.state.functions);
     this.state.meta = metaDataset;
   }
   componentDidMount() {
@@ -167,9 +164,7 @@ class ZebulonTableDemo extends Component {
           width={this.state.sizes.width}
           onResize={this.onResize}
         >
-          {
-            null //component
-          }
+          {component}
         </ResizableBox>
 
         <MyLayout

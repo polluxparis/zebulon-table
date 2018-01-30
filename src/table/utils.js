@@ -413,6 +413,7 @@ export const cellData = (row, column, status, data, params, focused) => {
     // focused &&
     column.editableFunction
       ? column.editableFunction({
+          column,
           row,
           status,
           data,
@@ -420,7 +421,7 @@ export const cellData = (row, column, status, data, params, focused) => {
         })
       : column.editable;
   let value = column.accessorFunction
-    ? column.accessorFunction(row, params, status, data)
+    ? column.accessorFunction(column, row, params, status, data)
     : row[column.id];
   if (column.dataType === "date" && typeof value === "string") {
     value = new Date(value);
@@ -456,7 +457,7 @@ export const cellData = (row, column, status, data, params, focused) => {
 //  ---------------------------
 export const filterFunction = (column, params, data) => {
   const facc = row =>
-    (column.accessorFunction || (row => row[column.id]))(row, params, {}, data);
+    (column.accessorFunction || (row,column) => row[column.id]))(row, column, params, {}, data);
   if (column.filterType === "values") {
     column.f = row => column.v[facc(row)] !== undefined;
   } else if (column.dataType === "boolean") {

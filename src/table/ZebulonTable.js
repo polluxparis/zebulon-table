@@ -19,7 +19,6 @@ export class ZebulonTable extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      // data: daa,
       meta: props.meta,
       updatedRows: props.updatedRows || {},
       sizes: props.sizes,
@@ -74,19 +73,22 @@ export class ZebulonTable extends Component {
     if (typeof data === "function") {
       this.select = data;
       data = data({
+        dataObject: meta.table.object,
         params,
         filters: getFilters(meta.properties, filters),
         sorts: this.sorts
           ? Object.values(this.sorts)
           : getSorts(meta.properties)
       });
-    } else if (meta && meta.table.select) {
-      data = getFunction(
-        this.state.functions,
-        meta.table.object || "dataset",
-        "dml",
-        meta.table.select
-      );
+    } else if ((meta && props.onGetData) || meta.table.select) {
+      data =
+        props.onGetData ||
+        getFunction(
+          this.state.functions,
+          meta.table.object || "dataset",
+          "dml",
+          meta.table.select
+        );
       this.select = data;
       data = data({
         params,
@@ -111,6 +113,8 @@ export class ZebulonTable extends Component {
       this.resolvePromise(data);
     } else if (utils.isObservable(data)) {
       this.subscribeObservable(data);
+      data = [];
+    } else {
       data = [];
     }
     // }
@@ -373,6 +377,9 @@ export class ZebulonTable extends Component {
           onTableClose={this.props.onTableClose}
           onFilter={this.props.onFilter}
           onSort={this.props.onSort}
+          onGetData={this.props.onGetData}
+          onSaveBefore={this.props.onSaveBefore}
+          onSaveAfter={this.props.onSaveAfter}
           callbacks={this.props.callbacks}
           errorHandler={this.errorHandler}
           navigationKeyHandler={this.props.navigationKeyHandler}

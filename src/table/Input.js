@@ -12,7 +12,7 @@ const formatValue = (props, value, focused) => {
     inputType !== "filter" &&
     (!(focused && editable) && dataType !== "boolean")
   ) {
-    v = formatFunction(v, row, params, status, data);
+    v = formatFunction(v, row, column, params, status, data);
   } else if (dataType === "boolean" && value === "") {
     v = null;
   } else if (dataType === "date" && value !== null) {

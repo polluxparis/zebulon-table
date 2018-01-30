@@ -391,7 +391,7 @@ export class Status extends Component {
       index < Math.min(dataLength || data.length, Math.ceil(height / rowHeight))
     ) {
       const style = {
-        position: "relative",
+        // position: "relative",
         top: scroll.shift + index * rowHeight,
         width: rowHeight,
         height: rowHeight

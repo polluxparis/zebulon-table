@@ -1,14 +1,15 @@
-# Zebulon pivot grid
-React editabled table component.
+# Zebulon table
+Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
 ## Main features
 * Sorting, filtering
+* Copy, paste
 * Formats
-* Auto description
+* Validations
+* Self description
 * Computed columns
-* Server comunication
+* Server communication
 ## Getting started
-
 Install `zebulon-table` using npm.
 
 ```shell
@@ -53,9 +54,7 @@ const buildMeta = () => {
 		table: {
 			object: "dataset",
 			editable: true,
-			select: "get_promise",
-			primaryKey: "id",
-			onSave: "set",
+			select: buildData,
 			actions: [
 				{ type: "insert", caption: "New", enable: true },
 				{
@@ -67,12 +66,6 @@ const buildMeta = () => {
 					type: "duplicate",
 					caption: "Duplicate",
 					enable: "isSelected"
-				},
-				{
-					type: "action",
-					caption: "Compute",
-					action: "computeData",
-					enable: true
 				}
 			]
 		},
@@ -81,16 +74,10 @@ const buildMeta = () => {
 	};
 };
 class MyEditableTable extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {};
-  }
-  data = buildData(20, 12, 7);
   meta = buildMeta();
   render() {
     return (
       <ZebulonTable
-        data={this.data}
         meta={this.meta}
         sizes={{
           height: 600,
@@ -106,18 +93,23 @@ class MyEditableTable extends Component {
 }
 ReactDOM.render(<MyEditableTable  />, document.getElementById("root"));
 ```
-## React zebulon table props
-| Property | Type | Description |
+## Zebulon table props
+| Property | Type/required | Description |
 |:---|:---|:---|
-| data| `PropTypes.object` | Meta description  of the multidimensional matrix linked to the data set|
-| updatedRows | `PropTypes.object)` | Updated rows with status (new, updated, deleted), row image before (row value when loaded), row image after (row updated value) |
-| meta| `PropTypes.object` | Meta description of the dataset and the way the dataset is managed by the table |
-| functions| `PropTypes.object` | JS functions that can be referenced in the meta description|
-| filters | `PropTypes.object)` |  |
-| sorts | `PropTypes.object)` |  |
-| status | `PropTypes.object)` | dataset loading status |
-| sizes | `PropTypes.object)` | sizes of the grid (height, width), zoom, default cell sizes |
-
+| sizes | object required | sizes of the grid (height, width), zoom, default cell sizes |
+| [meta](#meta-description)| object | Meta description of the dataset and the way the dataset is managed by the table |
+| [functions](#available-functions-and-callbacks)| object or array | JS functions that can be referenced in the meta description|
+| params | object | Global parameters used for the dataset manipulation (user data by example) |
+| data| array |Datasource as an array, a promise, an observable or a "pagination manager"|
+| updatedRows | object | Updated rows with status (new, updated, deleted), row image before (row value when loaded), row image after (row updated value) |
+| filters | object | Initial or external filters  |
+| sorts | object |  Initial or external sorts|
+| status | object | Dataset loading status |
+| keyEvent | event | Dataset loading status |
+| navigationKeyHandler | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
+| isActive | boolean | Indicator that the component is active| 
+| errorHandler | object | Custom error management|
+###
 ## Data set
 The data set (data property) can be:
 ####
@@ -145,188 +137,171 @@ The data set (data property) can be:
 ```
 * a promise (from the server) that will be resolved as an array of objects.
 * an observable (from the server) that will push by page arrays of objects (the full dataset will be loaded in background).
-* a pagination manager
+* a pagination manager as a function to retrieve the appropriate pages from the server. In this case, the full dataset is not loaded locally, but only the diplayed page.
 
 ## Available functions and callbacks
-### Visibility
-### Function types
-### Identifiers
-### Meta description and functions
-A lot of keys in the meta description prop can refer to a value, a function or an accessor to a function
+In the manipulation of the dataset, you may need to call functions for data calculation, formating, validation...
+Those functions are passed (functions property) to the component as 
+* an object
+```js
+{
+  "myDatasetObjectId": {
+    "myFunctionType",: {
+      "myFunctionId":()=>{},
+      ...
+      },
+      ...
+    },
+    ...
+  }
+``` 
+* an array
+```js
+[
+  {
+    id: "myFunctionId",
+    visibility: "myDatasetObjectId",
+    tp: "myFunctionType",
+    caption: "myFunctionCaption",
+    functionJS: ()=>{})
+  },
+  ...
+]
+```
+##### Visibility
+As you may need to call several instances of the component for different dataset objects, the visibility identified the object concerned by the function. Visibility can be defined as "global_".
+##### Function types
+Function types determine the role of the function and then, the parameters used to call it.
+(data->not filtered dataset, 
+status-> updatedRows[currentRow.index_],
+column-> meta.properties[currentColumn.index_]).
+Available types are:
+###
+| Type | Parameters | Description |
+|:---|:---|:---|
+| accessor| (row, column, params, status, data) |returns a calculated value (computed column) for a given row. Accessors can be used to find a value, a sort key, aggregation components...|
+| format | (value, row, column, params, status, data)| returns the formated value (potentialy as JSX) |
+| editable|({column, row, params, status, data})| returns if the column is editable as a boolean |
+| default|({column, row, params})| returns the default value|
+| validator| ({value, previousValue or previousRow, column or meta, row, params, status or updatedRows, data})| returns as a boolean if the action ( changed value, cell quit, row quit, table quit, save...) can be continued. status or updatedRows errors entry can be updated|
+|dml|({dataObject, params, filters, sorts}) or ({dataObject, params, updatedRows, data})|select function (returns dataset) or insert, update, delete functions (returns new updatedRows)|
 
-
+#### Meta description, functions and callbacks
+A lot of keys in the meta description prop can refer to a value, a function or an accessor (function name) to a function.
+By example, an editable entry for a column X could take the values:
+###
+* true or false
+* ({column,row})=>row[column.id].isEditable
+* "isColumnEditable" name of a function (in the functions property with the global_ or object visibility and the type "editable") ({column,row})=>row[column.id].isEditable
+###
+The component is designed to be fully defined with the properties sizes, meta and, if necessary, functions and params. Nevertheless callbacks are 
+available (and will overwrite functions defined in the meta description) for validation and data manipulation functions:
+###
+* onChange
+* onCellEnter
+* onCellQuit
+* onRowNew
+* onRowEnter
+* onRowQuit
+* onTableEnter
+* onTableQuit
+* onTableClose
+* onFilter
+* onSort
+* onGetData
+* onSaveBefore
+* onSaveAfter
 ## Meta description
 The meta property is an object describing how to manipulate the dataset, the way to display it, the controls and validation to apply when data are changed, the actions allowed...
 
 It contains 3 sections: table, row and properties.
+```js
+{
+  serverPagination:false // default:false
+  table:{...}
+  row:{...}
+  properties:{...}
+}
+```
 ### table
-table
+```js
+{
+    object: "dataset",
+    editable: true, // default : false
+    select: "onSelect",
+    primaryKey: "id", // unused yet
+    onSave: "onSave",
+    onSaveBefore: null,
+    onSaveAfter: null,
+    noFilter: false, // Indicator if the filter bar is diplayed. default : false
+    noStatus: false, //  Indicator if the status bar is diplayed. default : false
+    actions: []
+}
+```
+##### DML functions  
+* select
+* onSave
+* onSaveBefore
+* onSaveAfter
+##### Actions  
 ### row
-
+It contains 3 sections: table, row and properties.
+```js
+{
+  onEnter:null,
+  onQuit:null
+}
+```
+##### Validators
+* onEnter : Function triggered when a row is entered. Parameters : ({ row, status, data, params}).
+* onQuit : Function triggered before change of focused row.  Parameters : ({ row, previousRow, status, data, params}).
 ### properties
-
-### Accessors
-Accessors are used to get the appropriate values from the data set.
-They can be :
-####
-* the name of a dataset property.
-* A function called with the data row as parameter.
-* A name of an accessor specified in the configurationFunctions property. 
-####
-Accessors can be defined for:
-####
-* dimension ids.
-* dimension labels.
-* dimension sorting keys.
-* measures values.
-### Formats
-Formats are functions used to format the displayed values
-They can be:
-####
-* undefined.
-* A function called with the value to format.
-* A name of a format specified in the configurationFunctions property. 
-####
-Formats can be defined for
-####
-* dimension labels.
-* measures values. 
-####
-### Aggregations
-Aggregation are functions used the calculate the measures called for each cell with an array of values returned by its accessor for each data rows to be computed (at the intersection of the dimension values in rows and columns).
-They can be:
-####
-* A name of an available precoded aggregation as sum, min, max...
-* An aggregation function.
-* A name of an aggregation function specified specified in the configurationFunctions property.
-####
-N.B. Aggregations (as weighted average) may require several data. In this case its accessor must return each needed data.
-### Sorts
-Sorts are objects thay may contains
-####
-* A sort key accessor
-* A sorting function.
-* A direction (ascending or descending).
-### Dimensions
-Dimensions are the dimensions of the multidimentional matrix managed by the component.
-Dimensions have:
-####
-* An id and a label (caption).
-* A keys accessor and a label accessor (by default the key accessor) for each dimension instances.
-* A facultative sorting.
-* A facultative format.
-```js
-  dimensions: [
-    {
-      id: "toto",
-      caption: "Toto",
-      keyAccessor: "totoId",
-      labelAccessor: "totoLabel",
-      sort: {
-        keyAccessor: "totoId"
-      },
-      format:x=>x.toUpperCase()
-    },
-    {
-      id: "titi",
-      caption: "Titi",
-      keyAccessor: "titi",
-    },
-    ...]
-```
-### Measures
-Measures are the calculations, using aggregation function, of the projections of the matrix on the required dimensions.
-Measures have:
-####
-* An id and a label (caption).
-* A value accessor.
-* An aggregation function.
-* A facultative format.
-```js
-  measures: [
-    {
-      valueAccessor: "qty",
-      id: "qty",
-      caption: "Quantity",
-      format: value =>(
-          <div style={{ color: "blue", textAlign: "right" }}>
-            {Number(value).toFixed(0)}
-          </div>
-        ),
-      aggregation: "sum"
-    },
-    {
-      valueAccessor: "amt",
-      id: "amt",
-      caption: "Amount",
-      aggregation: "sum",
-      format: "amount"
-    },...]
-```
-### Axis
-Displayed dimensions and measures are assigned (ordered) either in row or in column. All measures must be on the same axis.
 ```js
 {
-  columns: ["titi"],
-  rows: ["toto"],
-  activeMeasures: ["qty", "amt"],
-  measureHeadersAxis: "columns"
+    id: "id", // mandatory
+    caption: "Code", // default : id
+    width: 100, // default : props.sizes.cellWidth
+    hidden:false, // default : false
+    dataType: "string", // boolean, number, date, string, object. default : first datarow correponding property datatype
+    editable: true, //value (true, false) or function or function accessor. default table.editable
+    mandatory: true, // default false
+    default:"toto",
+    filterType:"between", // default 
+    select:["toto","tutu","titi"], // default null
+    accessor:null,
+    format:null,
+    onChange:null,
+    onEnter:null,
+    onQuit:null
 }
 ```
-### Features
-Features provided by the component are available by default on the grid. They can be disabled by changing the values from "enabled" to anything else. 
-```js
-features = {
-  dimensions: "enabled",
-  measures: "enabled",
-  resize: "enabled",
-  expandCollapse: "enabled",
-  totals: "enabled",
-  filters: "enabled",
-  sorting: "enabled",
-  configuration: "enabled"
-}
-```
-### Others
-Collapses, sizes and filters can be defined in the configuration property 
-## Configuration functions
-The configurationFunctions property can bu used to define named custom formats, accessors, sorts and aggregations
-```js
-{
-  formats: {amount:...},
-  accessors: {...},
-  sorts: {...},
-  aggregations: {...}
-}
-```
-## Menu functions
-Custom functions that can be dynamically added to contectual menus on the data cells area:
-### Cell functions
-Cell functions are called with a cell description object as parameter:
-####
-* rows and columns dimensions decription (ids, captions...) corresponding to the cell.
-* cell value.
-* rows from the dataset to calculate the value of the cell. 
-### Range functions
-Range functions are called with a range description object as parameter:
-####
-* Each rows and columns dimensions (ids, captions...) corresponding to the cell* Array of arrays of cell values.
-####
-Range functions are called with a range description object as parameter:
-### Grid functions
-Grid functions are called with a configuration object as parameter:
-####
-* Available dimensions and axis (rows or columns) where they are eventually used.
-* Available measures and axis where they are eventually used.
-```js
- {
-  dataCellFunctions: {
-    drilldown: cell => {...},
-    otherDrilldown: cell => {...}
-  },
-  rangeFunctions: { range: range => {...} },
-  gridFunctions: {...}
-}
-```
+##### Accessors
+* value accessor : Function (or function accessor) that returns a computed value. By default (row,column)=> row[column.id].
+* sort accessor : Function (or function accessor) that returns the elements needed by the sort function. By default value accessor.
+##### Format
+Formatting function that returns a formatted string or a JSX element. Parameters :(value, row, column, params, status, data).
+##### Sort function 
+Custom sort function. Parameters :(sortAccesor(rowA),sortAccesor(rowB)). 
+##### Filter type
+Filtering method used for the column.
+* starts : value.startsWith(filterValue) 
+* =
+* \>=
+* <=
+* between : value >= filterValueFrom && value <= filterValueTo 
+* values : value in existing dataset values. A checkable list is used to define filter.
+##### Select
+List of possible values. It can be an array of values, an object {id:caption,...}, or an object {id:{id:,caption:},...}
 
+##### Validators
+* onChange : Function triggered on cell changes. Parameters :({value,previousValue, row, status,column,data,params}).
+* onEnter : Function triggered when a cell is entered. Parameters :({value,previousValue, row, status,column,data,params}).
+* onQuit : Function triggered before change of focused cell.Parameters :({value,previousValue, row, status,column,data,params}).
+## Updated rows
+## Filtering and sorting
+## Pagination manager
+## Error handler
+## Key events and navigation key handler
+## Managing privileges
+## Self description
 
