@@ -22,6 +22,9 @@ export class Table extends Component {
     if (props.meta.serverPagination && status.loaded) {
       status = { loaded: false, loading: true };
       props.data({ startIndex: 0 }).then(filteredData => {
+        if (props.onGetPage) {
+          props.onGetPage(filteredData);
+        }
         this.setState({
           filteredData,
           filteredDataLength: filteredData.filteredDataLength,
@@ -78,6 +81,9 @@ export class Table extends Component {
         if (status.loaded && !this.props.status.loaded) {
           status = { loaded: false, loading: true };
           nextProps.data({ startIndex: 0 }).then(filteredData => {
+            if (nextProps.onGetPage) {
+              nextProps.onGetPage(filteredData);
+            }
             this.setState({
               filteredData,
               filteredDataLength: filteredData.filteredDataLength,
@@ -90,11 +96,28 @@ export class Table extends Component {
         this.sorts(filteredData, nextProps.meta.properties);
       }
       this.setState({
-        data: nextProps.data,
+        data: nextProps.data || [],
         filteredData,
         meta: nextProps.meta,
         status,
-        updatedRows: nextProps.updatedRows
+        updatedRows: nextProps.updatedRows,
+        selectedRange: { start: {}, end: {} },
+        scroll: {
+          rows: {
+            index: 0,
+            direction: 1,
+            startIndex: 0,
+            shift: 0,
+            position: 0
+          },
+          columns: {
+            index: 0,
+            direction: 1,
+            startIndex: 0,
+            shift: 0,
+            position: 0
+          }
+        }
       });
     }
     this.rowHeight = nextProps.rowHeight;
@@ -265,8 +288,7 @@ export class Table extends Component {
   newRow = (row, index) => {
     const range = this.state.selectedRange;
     if (this.selectRange(range, this.row, "quit") === false) return false;
-    let rows,
-      ix = index;
+
     const status = {
         new_: true,
         errors: {},
@@ -274,7 +296,8 @@ export class Table extends Component {
         timeStamp: new Date().getTime()
       },
       filteredData = this.state.filteredData;
-
+    let rows = filteredData,
+      ix = index;
     this.state.updatedRows[this.getDataLength()] = status;
     if (!this.state.meta.serverPagination) {
       rows: filteredData;
@@ -292,8 +315,11 @@ export class Table extends Component {
       .concat(rows.slice(ix));
     if (this.state.meta.serverPagination) {
       filteredData.page = rows;
+      this.setState({ filteredData });
+    } else {
+      this.setState({ filteredData: rows });
     }
-    this.setState({ filteredData });
+
     if (this.onRowNew(row)) {
       this.selectRange(
         {
@@ -355,7 +381,7 @@ export class Table extends Component {
       });
     }
   };
-  filters = (data, filters, noFocus) => {
+  filters = (data, filters, noFocus, updatedRows) => {
     if (!Array.isArray(data)) {
       if (this.state && this.state.meta.serverPagination) {
         return this.pagination({
@@ -368,11 +394,22 @@ export class Table extends Component {
       }
       return [];
     }
-    const filter = filtersFunction(filters, this.props.params, data);
+    const filter = filtersFunction(
+      filters,
+      this.props.params,
+      data,
+      updatedRows
+    );
     const filteredData = data.filter(filter);
     this.adjustScroll(filteredData.length);
     if (this.props.onFilter) {
-      this.props.onFilter({ filters, filteredData });
+      this.props.onFilter({
+        filters,
+        filteredData,
+        data,
+        params: this.props.params,
+        updatedRows
+      });
     }
     return filteredData;
   };
@@ -383,12 +420,14 @@ export class Table extends Component {
       if (!filter || !filter.items) {
         const items = {};
         this.props.data.forEach(row => {
-          const id = (column.accessorFunction || (row => row[column.id]))(
+          const id = (column.accessorFunction ||
+            (({ row }) => row[column.id]))({
             row,
-            this.props.params,
-            {},
-            this.state.data
-          ); // a voir status
+            column,
+            status: this.state.updatedRows[row.index_],
+            params: this.props.params,
+            data: this.state.data
+          }); // a voir status
           const label =
             column.selectItems &&
             !Array.isArray(column.selectItems) &&
@@ -397,13 +436,16 @@ export class Table extends Component {
               : id;
           items[id] = {
             id,
-            label: (column.formatFunction || utils.formatValue)(
-              label,
+            label: (column.formatFunction ||
+              (({ value }) =>
+                utils.formatValue(value, null, column.decimals)))({
+              value: label,
+              column,
               row,
-              this.props.params,
-              {},
-              this.state.data
-            )
+              params: this.props.params,
+              status: this.state.updatedRows[row.index_],
+              data: this.state.data
+            })
           };
         });
         column.items = Object.values(items);
@@ -421,7 +463,7 @@ export class Table extends Component {
       return false;
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
-    filter.top = 2 * this.rowHeight; // pourquoi 2?
+    filter.top = e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
     filter.left =
       column.position + this.rowHeight - this.state.scroll.columns.position;
     this.setState({
@@ -435,7 +477,10 @@ export class Table extends Component {
     const range = this.state.selectedRange;
     if (this.selectRange(range, this.row, "quit") === false) return false;
     this.closeOpenedWindows();
-    const v = e === undefined ? null : e;
+    const v = e;
+    if (v === undefined) {
+      return;
+    }
     // if (this.selectRange(this.range, this.row) === false) return false;
     if ((v !== column.v && !filterTo) || (v !== column.vTo && filterTo)) {
       if (column.filterType === "between" && filterTo) {
@@ -445,7 +490,12 @@ export class Table extends Component {
       }
       const filters = this.state.filters;
       filters[column.id] = column;
-      const filteredData = this.filters(this.state.data, filters, true);
+      const filteredData = this.filters(
+        this.state.data,
+        filters,
+        true,
+        this.state.updatedRows
+      );
       if (!this.state.meta.serverPagination) {
         this.sorts(filteredData, this.state.meta.properties);
         this.setState({ filteredData });
@@ -497,7 +547,12 @@ export class Table extends Component {
       data.sort(sortsFunction(sorts));
     }
     if (this.props.onSort) {
-      this.props.onSort({ sorts: columns, fiteredData: data });
+      this.props.onSort({
+        sorts: columns,
+        filteredData: data,
+        data: this.props.data,
+        params: this.props.params
+      });
     }
   };
   onSort = (column, doubleClick) => {
@@ -571,6 +626,9 @@ export class Table extends Component {
         filteredData.pageLength = data.pageLength;
         filteredData.filteredDataLength = data.filteredDataLength;
         filteredData.pageStartIndex = data.pageStartIndex;
+        if (this.props.onGetPage) {
+          this.props.onGetPage(data);
+        }
         console.log("page", startIndex, stopIndex, filteredData);
         if (callbackAfter) {
           callbackAfter(data);
@@ -596,7 +654,7 @@ export class Table extends Component {
       // console.log("getrow", index, rows);
       return rows.page[index - rows.pageStartIndex] || { index_: undefined };
     } else {
-      return rows[index];
+      return rows[index] || { index_: undefined };
     }
   };
   isInPage = scroll => {
@@ -755,7 +813,7 @@ export class Table extends Component {
       updatedRow.updated_ = true;
       updatedRow.timeStamp = new Date().getTime();
     }
-    row[column.id] = value;
+    // row[column.id] = value;
     const message = {
       value,
       previousValue: this.previousValue,
@@ -1057,7 +1115,7 @@ export class Table extends Component {
         this.state.scroll.rows.shift,
       left:
         column.position + this.rowHeight - this.state.scroll.columns.position,
-      v: (column.accessorFunction || (row => row[column.id]))(row),
+      v: (column.accessorFunction || (({ row }) => row[column.id]))({ row }),
       label,
       editable: column.editable,
       row,
@@ -1097,6 +1155,7 @@ export class Table extends Component {
     // -----------------------------
     //   action buttons
     // -----------------------------
+    const noUpdate = !this.isInPage(this.state.scroll.rows);
     const actions = (this.state.meta.table.actions || [])
       .map((action, index) => {
         if (!this.doubleclickAction && action.type === "detail") {
@@ -1107,8 +1166,8 @@ export class Table extends Component {
           enable = false;
         } else if (action.enableFunction) {
           const row =
-            this.range.end.rows !== undefined
-              ? this.getRow(this.range.end.rows)
+            this.state.selectedRange.end.rows !== undefined
+              ? this.getRow(this.state.selectedRange.end.rows)
               : { index_: undefined };
           const status = this.state.updatedRows[row.index_];
           enable = action.enableFunction({ row, status });
@@ -1175,6 +1234,7 @@ export class Table extends Component {
         );
       }
     }
+    this.nFilterRows = filterHeaders.length;
 
     // -----------------------------------
     // Filter check list
@@ -1247,8 +1307,8 @@ export class Table extends Component {
     let detail = this.state.detail.content;
     if (detail) {
       const row =
-        this.range.end.rows !== undefined
-          ? this.getRow(this.range.end.rows)
+        this.state.selectedRange.end.rows !== undefined
+          ? this.getRow(this.state.selectedRange.end.rows)
           : {};
       const status = this.state.updatedRows[row.index_];
       //       top: (3 + rowIndex) * this.rowHeight + this.state.scroll.rows.shift,
@@ -1306,7 +1366,7 @@ export class Table extends Component {
       height -
       (1 + filterHeaders.length) * this.rowHeight -
       (actions.length ? 30 : 0);
-    const noUpdate = !this.isInPage(this.state.scroll.rows);
+
     let statusBar;
     if (this.state.meta.table.noStatus) {
       statusBar = null;

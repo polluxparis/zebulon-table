@@ -3,7 +3,7 @@ import { constants, utils } from "zebulon-controls";
 // custom navigation handler
 // -> adapt following function and pass it as a prop (navigationKeyHandler)
 // ----------------------------------------------------------
-const navigationKeyHandler = (e, cells) => {
+export const navigationKeyHandler = (e, cells) => {
   if (!((e.which > 32 && e.which < 41) || e.which === 9)) {
     return false;
   }
@@ -26,7 +26,8 @@ const navigationKeyHandler = (e, cells) => {
     if (
       (document.activeElement.tagName === "INPUT" ||
         document.activeElement.tagName === "TEXTAREA") &&
-      e.key !== "Tab"
+      e.key !== "Tab" &&
+      !e.altKey
     ) {
       return false;
     }

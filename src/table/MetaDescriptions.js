@@ -112,7 +112,11 @@ export const functions = {
 		}
 	},
 	globals_: {
-		editables: { isSelected: ({ row }) => row.index_ !== undefined }
+		editables: { isSelected: ({ row }) => row.index_ !== undefined },
+		formats: {
+			decimals: ({ value, column }) =>
+				utils.formatValue(value, null, column.decimals || 2)
+		}
 	}
 };
 

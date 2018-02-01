@@ -1,7 +1,8 @@
 import React from "react";
 import { Observable } from "rx-lite";
-import { getMockDatasource } from "./mock";
+// import { getMockDatasource } from "./mock";
 import { filtersFunction, sortsFunction } from "../table/utils";
+import { utils } from "zebulon-controls";
 
 // -------------------------------------------
 // simulation of the different ways to provide
@@ -9,13 +10,163 @@ import { filtersFunction, sortsFunction } from "../table/utils";
 // -------------------------------------------
 // array
 // -------------------------------------------
-export const get_array = ({ params, filters }) =>
-	getMockDatasource(1, 200, 40, 3);
+export const countries = [
+	{ id: 0, code: "FR", label: "France", currencyId: 0 },
+	{ id: 1, code: "GB", label: "United kingdom", currencyId: 1 },
+	{ id: 2, code: "US", label: "United states of America", currencyId: 2 },
+	{ id: 3, code: "CA", label: "Canada", currencyId: 3 },
+	{ id: 4, code: "CN", label: "China", currencyId: 4 },
+	{ id: 5, code: "IT", label: "Italy", currencyId: 0 },
+	{ id: 6, code: "DE", label: "Germany", currencyId: 0 },
+	{ id: 7, code: "BE", label: "Belgium", currencyId: 0 },
+	{ id: 8, code: "IE", label: "Ireland", currencyId: 0 },
+	{ id: 9, code: "ES", label: "Spain", currencyId: 0 },
+	{ id: 10, code: "NL", label: "Netherland", currencyId: 0 },
+	{ id: 11, code: "JP", label: "Japan", currencyId: 5 },
+	{ id: 11, code: "CH", label: "Switzerland", currencyId: 6 }
+].reduce((acc, country) => {
+	acc[country.id] = country;
+	return acc;
+}, {});
+export const currencies = [
+	{ id: 0, code: "EUR", label: "Euro", symbol: "€", rate: 1 },
+	{ id: 1, code: "GBP", label: "British pound", symbol: "£", rate: 0.88 },
+	{ id: 2, code: "USD", label: "US dollar", symbol: "$", rate: 1.24 },
+	{ id: 3, code: "CAD", label: "Canadian dollar", symbol: "ca$", rate: 1.53 },
+	{ id: 4, code: "CNY", label: "Yuan", symbol: "cn¥", rate: 7.81 },
+	{ id: 5, code: "JPY", label: "Yen", symbol: "jp¥", rate: 136 },
+	{ id: 6, code: "CHF", label: "Swiss franc", symbol: "Fr.", rate: 1.15 }
+].reduce((acc, currency) => {
+	acc[currency.id] = currency;
+	return acc;
+}, {});
+export const shapes = [
+	"square",
+	"cube",
+	"rectangle",
+	"hexagon",
+	"octogon",
+	"circle",
+	"cube",
+	"disc",
+	"triangle",
+	"pyramid"
+];
+export const sizes = ["extra small", "small", "normal", "large", "extra large"];
+export const colors = [
+	"blue",
+	"yellow",
+	"red",
+	"green",
+	"cyan",
+	"magenta",
+	"orange",
+	"purple",
+	"white",
+	"pink",
+	"grey",
+	"black"
+];
+export const products = {};
+for (let i = 0; i < 200; i++) {
+	products[i] = {
+		id: i,
+		label: `Product ${i}`,
+		shape: shapes[Math.ceil(Math.random() * (shapes.length - 1.001))],
+		size: sizes[Math.ceil(Math.random() * (sizes.length - 1.001))],
+		price: 100 * Math.random() + 50,
+		currency_id: 0,
+		currency_sym: "€"
+	};
+}
+export const getMockDataset = nRow => {
+	// const data = (nRow, nProduct) => {
+
+	const d = [];
+	for (let i = 0; i < nRow; i++) {
+		const row = {};
+		row.product =
+			products[
+				Math.ceil(
+					Math.random() * (Object.keys(products).length - 1.001)
+				)
+			];
+		row.id = i;
+		row.country =
+			countries[
+				Math.ceil(
+					Math.random() * (Object.keys(countries).length - 1.001)
+				)
+			];
+		// const country = countries[row.country_id];
+		// row.country_cd = country.code;
+		// row.country_cur_id = country.currencyId;
+		row.currency = currencies[row.country.currencyId];
+		// row.rate = currency.rate;
+		// row.country_cur_cd = currency.code;
+		// row.country_cur_sym = currency.symbol;
+		row.color = colors[Math.ceil(Math.random() * (colors.length - 1.001))];
+		row.qty = Math.round(1000 * Math.random()) + 125;
+		row.d = new Date(
+			2017 + Math.round(2 * Math.random()),
+			Math.round(12 * Math.random()),
+			Math.round(31 * Math.random())
+		);
+		const x = d.push(row);
+	}
+	return {
+		data: d,
+		currencies,
+		countries,
+		products,
+		shapes,
+		sizes,
+		colors
+	};
+};
+// export function getMockDatasource(
+// 	dataRepetition = 1,
+// 	nToto = 10,
+// 	nTiti = 10,
+// 	nTutu = 2
+// ) {
+// 	let obj = [];
+// 	const res = [];
+// 	let ii = 0;
+// 	for (let k = 0; k < dataRepetition; k += 1) {
+// 		for (let o = 0; o < nToto; o += 1) {
+// 			for (let i = 0; i < nTiti; i += 1) {
+// 				for (let u = 0; u < nTutu; u += 1) {
+// 					obj = {};
+// 					obj.toto = o;
+// 					obj.toto_lb = `toto ${String(o)}`;
+// 					obj.toto_0 = `att0 ${String(o)}`;
+// 					obj.toto_1 = `att1 ${String(nToto - o)}`;
+// 					obj.titi = i;
+// 					obj.titi_lb = `titi ${String(i)}`;
+// 					obj.tutu = String(Math.round((nTutu - 1) * Math.random()));
+// 					obj.qty = Math.round(1000 * Math.random()) + 125; // +9999999999.1234567890123456
+// 					obj.amt = Math.round(5000 * Math.random()) + 310; // +9999999999.1234567890123456
+// 					obj.d = new Date(
+// 						2017 + Math.round(2 * Math.random()),
+// 						Math.round(12 * Math.random()),
+// 						Math.round(31 * Math.random())
+// 					);
+// 					obj.id = ii;
+// 					res.push(obj);
+// 					ii++;
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return res;
+// }
+export const get_array = ({ params, filters }) => getMockDataset(25000).data;
 // -------------------------------------------
 // promise
 // -------------------------------------------
 export const get_promise = ({ params, filters }) => {
-	let data = getMockDatasource(1, 200, 40, 3);
+	let data = get_array({ params, filters });
 	if (filters) {
 		data = data.filter(filtersFunction(filters, params, data));
 	}
@@ -25,7 +176,7 @@ export const get_promise = ({ params, filters }) => {
 // observable
 // -------------------------------------------
 export const get_observable = ({ params, filters, sorts }) => {
-	const data = getMockDatasource(1, 200, 40, 3);
+	const data = get_array({ params, filters });
 	if (sorts) {
 		data.sort(sortsFunction(sorts));
 	}
@@ -45,7 +196,7 @@ export const get_pagination_manager = e => {
 	// --------------------------------
 	// Simulation of a  server dataset:
 	// --------------------------------
-	const data = getMockDatasource(1, 200, 40, 3);
+	const data = get_array({});
 	// create a primary key and create an index on the primary key
 	const dataIndex = {};
 	data.forEach((row, index) => {
@@ -58,7 +209,7 @@ export const get_pagination_manager = e => {
 	let { filters, sorts, params, startIndex, stopIndex } = e;
 	let lastTimeStamp = new Date().getTime();
 	if (filters) {
-		filteredData = data.filter(filtersFunction(filters, params, data));
+		filteredData = data.filter(filtersFunction(filters, params, data, {}));
 	} else {
 		filteredData = data.map(row => row);
 	}
@@ -77,7 +228,18 @@ export const get_pagination_manager = e => {
 					dataIndex[row.index_] = data.length;
 					data.push(row);
 				} else {
-					data[dataIndex[key]] = row;
+					const previousRow = data[dataIndex[key]];
+					Object.keys(row).forEach(key => {
+						if (
+							utils.isDate(previousRow[key]) &&
+							typeof row[key] === "string"
+						) {
+							previousRow[key] = new Date(row[key]);
+						} else {
+							previousRow[key] = row[key];
+						}
+					});
+					// data[dataIndex[key]] = row;
 				}
 				timeStamp = Math.max(timeStamp, updatedRows[key].timeStamp);
 			}
@@ -91,13 +253,17 @@ export const get_pagination_manager = e => {
 		if (sorts.length) {
 			filteredData.sort(sortsFunction(sorts));
 		} else if (filters) {
-			filteredData = data.filter(filtersFunction(filters, params, data));
+			filteredData = data.filter(
+				filtersFunction(filters, params, data, {})
+			);
 		}
 	};
 	// filters
 	const filter = filters => {
 		if (Object.keys(filters).length) {
-			filteredData = data.filter(filtersFunction(filters, params, data));
+			filteredData = data.filter(
+				filtersFunction(filters, params, data, {})
+			);
 		} else {
 			filteredData = data.map(row => row);
 			if (sorts) {

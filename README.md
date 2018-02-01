@@ -1,5 +1,6 @@
 # Zebulon table
 IN PROGRESS
+##
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
 ## Main features
@@ -11,7 +12,7 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * Computed columns
 * Server communication
 ## Getting started
-Install `zebulon-table` using npm.
+Install `zebulon-table` using npm. (not available yet)
 
 ```shell
 npm install zebulon-table --save
@@ -224,7 +225,8 @@ It contains 3 sections: table, row and properties.
   properties:{...}
 }
 ```
-### table
+### table 
+N.B. if the table section is the only one defined, properties section will be initilalized using the first row of the dataset.
 ```js
 {
     object: "dataset",
@@ -246,7 +248,6 @@ It contains 3 sections: table, row and properties.
 * onSaveAfter
 ##### Actions  
 ### row
-It contains 3 sections: table, row and properties.
 ```js
 {
   onEnter:null,
@@ -257,6 +258,7 @@ It contains 3 sections: table, row and properties.
 * onEnter : Function triggered when a row is entered. Parameters : ({ row, status, data, params}).
 * onQuit : Function triggered before change of focused row.  Parameters : ({ row, previousRow, status, data, params}).
 ### properties
+N.B. width and properties order can be defined on the table by drag and drop.
 ```js
 {
     id: "id", // mandatory
@@ -299,10 +301,72 @@ List of possible values. It can be an array of values, an object {id:caption,...
 * onEnter : Function triggered when a cell is entered. Parameters :({value,previousValue, row, status,column,data,params}).
 * onQuit : Function triggered before change of focused cell.Parameters :({value,previousValue, row, status,column,data,params}).
 ## Updated rows
-## Filtering and sorting
-## Pagination manager
+The updatedRows prop is an object with an entry for each updated rows in the table. The value of the key is the absolute index (or the primary key) of the row (index can be found in row.index_).
+```js
+{
+  [absolute index]:{
+    updated_:true,
+    new_:false,
+    deleted_:false,
+    row:[before update row],
+    rowUpdated:[after update row],
+    errors:{[column]:{[type]:error text}}
+}
+```
+N.B. By default, errors are not blocking in the table. You'll have to manage the blocking yourself with the Error Handler.
+
+If you pass an updatedRows prop as an empty object, it will mutate at each update in the table. Validation functions should update the error entry if needed. In consequence, the component calling the table component can know at any time all the changes since the loading of data.  
+
 ## Error handler
+onQuit functions can be cancelled if the onQuit function returns false or if the function passed as the errorHandler prop returns false. Parameters are the same as for the onQuit function. To create interractions with the user, you'll have to block the UI thread as with window.alert or window.confirm.   
+
+## Filtering and sorting
+Filtering and sorting can be done directly in the table.
+The way used to filter can be defined at the filterType entry of the meta.properties prop.
+You can sort ascending or descending on one or several columns by clicking on it's header. Double click on a header will reset the previous orders.
+Filters and sorts objects are parameters of any calls to the server.
+filters and sorts objects can be used as props for initial definition.
+```js
+filters={
+  {
+  [columnId1]:{
+    id: columnId1, 
+    filterType: "between",
+    dataType:"number",
+    v:156,
+    vTo:562},
+  [columnId2]:{
+    id: columnId2,
+    filterType: "values", // in filter
+    dataType:"number", 
+    v:{[Id1]: "toto 3", [toto 4]id2]: "toto 4"}},
+  ...
+};
+sorts={
+  [columnId1]:{id: columnId1, direction: "asc", sortOrder: 0},
+  [columnId2]:{id: columnId2, direction: "desc", sortOrder: 1},
+  ...
+};
+## Pagination manager
 ## Key events and navigation key handler
+To manage correctly key events, specialy with several instances of the component, you can pass from an upper component the event as a prop. Only active component,considering the isActive prop will handle the event.
+Key events are used to navigate in the the grid, select a range of cells, zoom, copy or paste.
+The actual behaviour is 
+* ctrl + C, ctrl + V for copy paste,
+* ctrl -, ctrl +  for zoom in, zoom out,
+* shift to extend the selection,
+###
+For a not editable table :
+* left and righ arrows to select the previous or next cell in the row,
+* up and down arrows to select the same cell in previous or next row,
+* page up and page down to select the same cell at previous or next page,
+* alt + page up or page down to select on the same row the on previous next, page,
+* home and end to select the cell on the first or last row,
+* alt + home or end to select the first or last cell on the row,
+###
+For an editable grid left and righ arrow must keep the default behavior in the edditable cells. The alt key is used to force the navigation behavior.
+###
+You can overwrite the navigationKeyHandler functions setting your custom function in the navigationKeyHandler prop (see /demo/navigation.handler.js).
 ## Managing privileges
 ## Self description
 

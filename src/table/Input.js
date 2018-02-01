@@ -12,7 +12,7 @@ const formatValue = (props, value, focused) => {
     inputType !== "filter" &&
     (!(focused && editable) && dataType !== "boolean")
   ) {
-    v = formatFunction(v, row, column, params, status, data);
+    v = formatFunction({ value: v, row, column, params, status, data });
   } else if (dataType === "boolean" && value === "") {
     v = null;
   } else if (dataType === "date" && value !== null) {
@@ -71,7 +71,10 @@ export class Input extends Component {
       let value = e.target.value,
         validatedValue;
       if (!this.validateInput(value)) return;
-      if (dataType === "boolean") {
+      // selection of an object
+      if (column.reference) {
+        validatedValue = column.select[e.target.value];
+      } else if (dataType === "boolean") {
         if (inputType === "filter" && this.state.value === false)
           validatedValue = null;
         else {
@@ -88,7 +91,7 @@ export class Input extends Component {
       }
       if (onChange)
         if (onChange(validatedValue, row, column, filterTo) === false) return;
-      if (row) row[column.id] = validatedValue;
+      if (row) row[column.reference || column.id] = validatedValue;
       this.setState({ formatedValue: value, value: validatedValue });
     }
   };
@@ -100,7 +103,7 @@ export class Input extends Component {
   handleFocus = e => {
     const { column, inputType, onFocus, row } = this.props;
     if (inputType === "filter" && column.filterType === "values") {
-      onFocus((e, row, column));
+      onFocus(e, row, column);
     } else if (inputType === "filter") {
       this.focused = true;
       console.log("focus", this.state.value);
@@ -132,12 +135,15 @@ export class Input extends Component {
       tabIndex
     } = this.props;
     let input;
+    let value = this.state.formatedValue;
+
     const column = this.props.column || {
       dataType: this.props.dataType,
       id: this.props.id,
       index_: this.props.id,
       caption: this.props.label
     };
+
     const { dataType, format } = column;
     if (
       inputType !== "filter" &&
@@ -152,7 +158,7 @@ export class Input extends Component {
           onClick={onClick}
           onMouseOver={onMouseOver}
         >
-          {this.state.formatedValue}
+          {value}
         </div>
       );
     } else {
@@ -169,25 +175,43 @@ export class Input extends Component {
       let disabled = !editable || undefined;
       if (select) {
         let options = select;
+
         if (typeof options === "function") {
           options = options(row);
+        } else if (typeof options === "object") {
+          // const indexDot = column.accessor.indexOf(".");
+          if (column.reference) {
+            value = column.keyAccessorFunction({ row });
+            options = [{ id: undefined, label: "" }].concat(
+              Object.keys(select).map(key => ({
+                id: key,
+                caption: column.accessorFunction({
+                  row: { [column.reference]: select[key] }
+                })
+              }))
+            );
+          } else {
+            options = Object.values(options);
+          }
         }
         input = (
           <select
             className={className || "zebulon-input zebulon-input-select"}
             onChange={this.handleChange}
-            value={this.state.formatedValue}
+            value={value}
             style={innerStyle}
             autoFocus={true}
           >
-            {options.map((item, index) => (
-              <option
-                key={index}
-                value={typeof item === "object" ? item.id : item}
-              >
-                {typeof item === "object" ? item.caption : item}
-              </option>
-            ))}
+            {options.map((item, index) => {
+              return (
+                <option
+                  key={index}
+                  value={typeof item === "object" ? item.id : item}
+                >
+                  {typeof item === "object" ? item.caption : item}
+                </option>
+              );
+            })}
           </select>
         );
       } else if (dataType === "boolean") {
@@ -209,7 +233,7 @@ export class Input extends Component {
           />
         );
       } else {
-        let value = this.state.formatedValue;
+        // let value = this.state.formatedValue;
         if (isNullOrUndefined(value) || value === "") {
           value = "";
         }

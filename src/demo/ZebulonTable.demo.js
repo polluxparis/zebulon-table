@@ -8,9 +8,11 @@ import { Input, constants, utils } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
 import { functionsTable, getFilters } from "../table/utils";
 // import { Layout, components, layout } from "./Layout";
-import { MyLayout } from "./Layout.example";
+import { MyLayout } from "./layout.example";
+import { MyDataset } from "./dataset.example";
 import { ResizableBox } from "react-resizable";
-
+import { navigationKeyHandler } from "./navigation.handler";
+import cx from "classnames";
 import {
   countries,
   metaCountries,
@@ -28,8 +30,8 @@ class ZebulonTableDemo extends Component {
     this.state = {
       data: null, //getMockDatasource(1, ...this.options),
       sizes: {
-        height: 600,
-        width: 1000,
+        height: 2000,
+        width: 1200,
         rowHeight: 25
       },
       keyEvent: null,
@@ -41,9 +43,17 @@ class ZebulonTableDemo extends Component {
       sorts: {
         d: { id: "d", direction: "asc", sortOrder: 0 },
         toto: { id: "toto", direction: "desc", sortOrder: 1 }
-      }
+      },
+      selectedTab: 0,
+      radioDataset: "get_array",
+      dataLength: 0,
+      filteredDataLength: 0,
+      loadedDataLength: 0
     };
     this.state.meta = metaDataset;
+    this.text =
+      "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
+    // this.tabs = this.initTabs(props);
   }
   componentDidMount() {
     document.addEventListener("copy", this.handleKeyEvent);
@@ -75,46 +85,78 @@ class ZebulonTableDemo extends Component {
       return window.confirm(JSON.stringify(message.status));
     }
   };
-  render() {
-    let {
-        data,
-        meta,
-        filters,
-        sorts,
-        updatedRows,
-        sizes,
-        keyEvent,
-        functions,
-        params,
-        status
-      } = this.state,
-      component;
+  onSelectTab = index => {
+    // if (this[this.tabs[this.state.selectedTab].id].table.canQuit()) {
+    this.setState({ selectedTab: index });
+    // }
+  };
+  tabs = [
+    {
+      id: "dataset",
+      caption: "Dataset and server"
+    },
+    {
+      id: "selfConfig",
+      caption: "Self configuration",
+      disabled: true
+    },
+    {
+      id: "layout",
+      caption: "Multi instance and styles",
+      disabled: true
+    }
+  ];
 
-    if (false) {
-      component = (
-        <ZebulonTable
-          key="countries"
-          id="countries"
-          visible={true}
-          data={countries}
-          meta={metaCountries}
-          filters={filters}
-          sorts={sorts}
-          updatedRows={updatedRows}
-          status={status}
+  getTabContent = tabIndex => {
+    const {
+      data,
+      meta,
+      filters,
+      sorts,
+      updatedRows,
+      keyEvent,
+      functions,
+      params,
+      status,
+      selectedTab
+    } = this.state;
+    let header = null,
+      footer = null;
+    const sizes = { ...this.state.sizes };
+
+    if (tabIndex === 0) {
+      return (
+        <MyDataset
+          key="dataset"
+          id="dataset"
+          // visible={selectedTab === 0}
+          // isActive={selectedTab === 0}
+          // data={data}
+          // meta={meta}
+          // filters={filters}
+          // sorts={sorts}
+          // updatedRows={updatedRows}
+          // status={status}
           sizes={sizes}
           functions={functions}
-          params={params}
+          // params={params}
           keyEvent={keyEvent}
-          errorHandler={this.errorHandler}
+          // errorHandler={this.errorHandler}
+          // navigationKeyHandler={navigationKeyHandler}
+          // onFilter={this.getLengths}
+          // onSort={this.getLengths}
+          // onGetPage={this.getPageLengths}
         />
       );
-    } else {
-      if (this.state.configuration) {
-        component = (
+    } else if (tabIndex === 1) {
+      return (
+        <div style={{ fontFamily: "sans-serif" }} id="zebulon">
+          {header}
           <ZebulonTableAndConfiguration
             functions={functions}
             params={params}
+            visible={this.state.selectedTab === 1}
+            isActive={this.state.selectedTab === 1}
             data={data}
             meta={meta}
             filters={filters}
@@ -125,56 +167,64 @@ class ZebulonTableDemo extends Component {
             keyEvent={keyEvent}
             errorHandler={this.errorHandler}
           />
-        );
-      } else {
-        component = (
-          <ZebulonTable
-            key="dataset"
-            id="dataset"
-            visible={true}
-            data={data}
-            meta={meta}
-            filters={filters}
-            sorts={sorts}
-            updatedRows={updatedRows}
-            status={status}
-            sizes={sizes}
-            functions={functions}
-            params={params}
-            keyEvent={keyEvent}
-            isActive={false}
-            errorHandler={this.errorHandler}
-          />
-        );
-      }
-    }
-    return (
-      <div style={{ fontFamily: "sans-serif" }} id="zebulon">
-        <Input
-          style={{ height: 50 }}
-          dataType="boolean"
-          value={this.state.configuration}
-          label="configuration"
-          editable={true}
-          onChange={() =>
-            this.setState({ configuration: !this.state.configuration })}
-        />
-        <ResizableBox
-          height={this.state.sizes.height}
-          width={this.state.sizes.width}
-          onResize={this.onResize}
-        >
-          {component}
-        </ResizableBox>
-
+          {footer}
+        </div>
+      );
+    } else if (tabIndex === 2) {
+      return (
         <MyLayout
           // layout={layout}
           // components={components}
+          visible={selectedTab === 2}
+          isActive={selectedTab === 2}
           keyEvent={keyEvent}
           // data={data}
           // meta={buildMeta()}
           functions={functions}
         />
+      );
+    }
+  };
+
+  render() {
+    const zoomValue = 1;
+    return (
+      <div
+        style={{ fontSize: `${zoomValue * 100}%`, fontFamily: "sans-serif" }}
+      >
+        <ResizableBox
+          height={this.state.sizes.height}
+          width={this.state.sizes.width}
+          onResize={this.onResize}
+        >
+          <div
+            style={{
+              display: "flex",
+              height: 25 * zoomValue
+            }}
+            className="zebulon-tabs-list"
+          >
+            {this.tabs.map((tab, index) => (
+              <div
+                key={index}
+                className={cx({
+                  "zebulon-tabs-tab": true,
+                  "zebulon-tabs-tab-selected": index === this.state.selectedTab
+                })}
+                onClick={() => this.onSelectTab(index)}
+              >
+                {tab.caption}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              height: this.state.sizes.height - 30 * zoomValue
+            }}
+          >
+            {this.getTabContent(this.state.selectedTab)}
+          </div>
+        </ResizableBox>
       </div>
     );
   }

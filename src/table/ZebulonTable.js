@@ -125,9 +125,9 @@ export class ZebulonTable extends Component {
       if (data[0] && data[0].index_ === undefined) {
         data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
       }
-      if (meta.properties.length === 0) {
-        computeMetaFromData(data, meta, zoom, functions);
-      }
+      // if (meta.properties.length === 0) {
+      computeMetaFromData(data, meta, zoom, functions);
+      // }
     }
     if (filters && meta.properties.length !== 0) {
       this.setFilters(filters, meta.properties);
@@ -193,10 +193,12 @@ export class ZebulonTable extends Component {
           this.state.filters
         );
         console.log("observable", x.length);
-        this.setState({
-          data: this.state.data.concat(x),
-          status: { loaded: true, loading: false }
-        });
+        if (this.observable) {
+          this.setState({
+            data: this.state.data.concat(x),
+            status: { loaded: true, loading: false }
+          });
+        }
       },
       e =>
         this.setState({
@@ -237,7 +239,15 @@ export class ZebulonTable extends Component {
   //   }
   // }
   componentWillReceiveProps(nextProps) {
-    const { data, meta, sizes, keyEvent, updatedRows, filters } = nextProps;
+    const {
+      data,
+      meta,
+      sizes,
+      keyEvent,
+      updatedRows,
+      filters,
+      status
+    } = nextProps;
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
         if (this.zoomValue !== sizes.zoom) {
@@ -250,8 +260,10 @@ export class ZebulonTable extends Component {
     if (
       this.props.data !== data ||
       this.props.meta !== meta ||
+      this.props.status !== status ||
       this.props.filters !== filters
     ) {
+      this.observable = null;
       this.setState(this.getData(nextProps));
     }
     if (updatedRows && this.props.updatedRows !== updatedRows) {
@@ -347,7 +359,7 @@ export class ZebulonTable extends Component {
 
   render() {
     let div = (
-      <div>
+      <div style={{ fontSize: `${this.zoomValue * 100}%` }}>
         <Table
           id={this.props.id}
           status={this.state.status}
@@ -378,6 +390,7 @@ export class ZebulonTable extends Component {
           onFilter={this.props.onFilter}
           onSort={this.props.onSort}
           onGetData={this.props.onGetData}
+          onGetPage={this.props.onGetPage}
           onSaveBefore={this.props.onSaveBefore}
           onSaveAfter={this.props.onSaveAfter}
           callbacks={this.props.callbacks}

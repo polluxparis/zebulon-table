@@ -2,21 +2,32 @@ import { utils } from "zebulon-controls";
 export const getFunction = (functions, object, type, value) => {
   if (typeof value === "function") {
     return value;
+  } else if (typeof value === "string" && value.indexOf(".") !== -1) {
+    const keys = value.split(".");
+    return ({ row }) => {
+      return keys.reduce(
+        (acc, key, index) =>
+          acc[key] === undefined && index < keys.length - 1 ? {} : acc[key],
+        row
+      );
+    };
+  } else {
+    const v =
+      typeof value === "string"
+        ? functions
+            .filter(
+              f =>
+                f.id === value &&
+                f.tp === type &&
+                (f.visibility === "global" || f.visibility === object)
+            )
+            .sort(
+              (f0, f1) =>
+                (f0.visibility !== object) - (f1.visibility !== object)
+            )
+        : [];
+    return v.length ? v[0].functionJS : undefined;
   }
-  const v =
-    typeof value === "string"
-      ? functions
-          .filter(
-            f =>
-              f.id === value &&
-              f.tp === type &&
-              (f.visibility === "global" || f.visibility === object)
-          )
-          .sort(
-            (f0, f1) => (f0.visibility !== object) - (f1.visibility !== object)
-          )
-      : [];
-  return v.length ? v[0].functionJS : undefined;
 };
 export const computeMetaPositions = meta => {
   let position = 0;
@@ -127,11 +138,31 @@ export const computeMeta = (meta, zoom = 1, functions) => {
         } else column.selectItems = select || [""];
       } else column.selectItems = select || [""];
     }
+    // reference to an object
+    if (
+      column.accessor &&
+      typeof column.accessor === "string" &&
+      column.accessor.indexOf(".") !== -1
+    ) {
+      column.reference = column.accessor.slice(0, column.accessor.indexOf("."));
+      column.keyAccessorFunction = getFunction(
+        functions,
+        meta.table.object,
+        "accessor",
+        meta.properties.find(col => col.id === column.reference).accessor
+      );
+    }
     column.accessorFunction = getFunction(
       functions,
       meta.table.object,
       "accessor",
       column.accessor
+    );
+    column.sortAccessorFunction = getFunction(
+      functions,
+      meta.table.object,
+      "accessor",
+      column.sortAccessor || column.accessor
     );
     column.defaultFunction = getFunction(
       functions,
@@ -185,12 +216,6 @@ export const computeMeta = (meta, zoom = 1, functions) => {
         meta.table.object,
         "accessor",
         column.groupByAccessor
-      );
-      column.sortAccessorFunction = getFunction(
-        functions,
-        meta.table.object,
-        "accessor",
-        column.sortAccessor || column.accessor
       );
       column.comparisonAccessorFunction = getFunction(
         functions,
@@ -263,7 +288,7 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
         position,
         editable: !!meta.table.editable,
         index_: index,
-        formatFunction: x => x,
+        formatFunction: ({ value }) => value,
         selectFunction: undefined,
         filterType,
         v: null,
@@ -415,13 +440,13 @@ export const cellData = (row, column, status, data, params, focused) => {
       ? column.editableFunction({
           column,
           row,
-          status,
+          status: status || {},
           data,
           params
         })
       : column.editable;
   let value = column.accessorFunction
-    ? column.accessorFunction(column, row, params, status, data)
+    ? column.accessorFunction({ column, row, params, status, data })
     : row[column.id];
   if (column.dataType === "date" && typeof value === "string") {
     value = new Date(value);
@@ -444,8 +469,14 @@ export const cellData = (row, column, status, data, params, focused) => {
     });
   }
   //  map the data
-  if (select && !Array.isArray(select) && typeof select === "object") {
+  if (
+    select &&
+    !Array.isArray(select) &&
+    typeof select === "object" &&
+    !column.accessorFunction
+  ) {
     if (!(editable && focused)) {
+      // if (column.reference){value=
       value = (select[value] || {}).caption;
       select = null;
     } else select = Object.values(select);
@@ -455,9 +486,15 @@ export const cellData = (row, column, status, data, params, focused) => {
 // ----------------------------
 //  filters
 //  ---------------------------
-export const filterFunction = (column, params, data) => {
+export const filterFunction = (column, params, data, updatedRows) => {
   const facc = row =>
-    (column.accessorFunction || (row,column) => row[column.id]))(row, column, params, {}, data);
+    (column.accessorFunction || (({ row, column }) => row[column.id]))({
+      row,
+      column,
+      params,
+      status: (updatedRows || {})[row.index_],
+      data
+    });
   if (column.filterType === "values") {
     column.f = row => column.v[facc(row)] !== undefined;
   } else if (column.dataType === "boolean") {
@@ -469,8 +506,10 @@ export const filterFunction = (column, params, data) => {
   } else if (column.filterType === "between") {
     column.f = row => {
       return (
-        (column.vTo !== null ? facc(row) <= column.vTo : true) &&
-        (column.v !== null ? facc(row) >= column.v : true)
+        (!utils.isNullOrUndefined(column.vTo)
+          ? facc(row) <= column.vTo
+          : true) &&
+        (!utils.isNullOrUndefined(column.v) ? facc(row) >= column.v : true)
       );
     };
   } else if (column.filterType === "<=") {
@@ -481,7 +520,7 @@ export const filterFunction = (column, params, data) => {
   }
 };
 // -----------------------------
-export const filtersFunction = (filters, params, data) => {
+export const filtersFunction = (filters, params, data, updatedRows) => {
   if (!filters) {
     return x => x;
   }
@@ -493,7 +532,7 @@ export const filtersFunction = (filters, params, data) => {
       );
     })
     .map(filter => {
-      filterFunction(filter, params, data);
+      filterFunction(filter, params, data, updatedRows);
       return filter;
     });
   if (!f.length) {
@@ -529,12 +568,14 @@ export const getFilters = (columns, filters) => {
 export const sortsFunction = sorts => {
   return (rowA, rowB) =>
     sorts.reduce((acc, sort) => {
-      const accessor = sort.accessor || (row => row[sort.id]);
+      const accessor = sort.accessor || (({ row }) => row[sort.id]);
       if (acc === 0) {
-        acc =
-          ((accessor(rowA) > accessor(rowB)) -
-            (accessor(rowB) > accessor(rowA))) *
-          (sort.direction === "asc" ? 1 : -1);
+        const a = accessor({ row: rowA }),
+          b = accessor({ row: rowB });
+        // if (sort.id !== "d") {
+        //   console.log("sort", a, b);
+        // }
+        acc = ((a > b) - (b > a)) * (sort.direction === "asc" ? 1 : -1);
       }
       return acc;
     }, 0);
@@ -555,11 +596,11 @@ export const getSorts = columns => {
         sortOrder: column.sortOrder,
         direction: column.sort,
         accessor:
+          column.sortAccessorFunction ||
           column.accessorFunction ||
-          (row =>
-            utils.isNullOrUndefined(row[column.id])
-              ? nullValue
-              : row[column.id])
+          (({ row }) => {
+            return utils.nullValue(row[column.id], nullValue);
+          })
       };
     });
   sorts.sort(
@@ -633,6 +674,7 @@ export const computeData = ({ data, meta, updatedRows, params }) => {
   columns.forEach(column => {
     column.dataType = typeof column.accessorFunction({
       row: data[0],
+      column,
       status: updatedRows[data[0].index_],
       data,
       params

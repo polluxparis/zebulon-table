@@ -101,11 +101,9 @@ export const datasetFunctions = {
 	}
 };
 export const metaDataset = {
-	// serverPagination: true,
 	table: {
 		object: "dataset",
 		editable: true,
-		// select: "get_pagination_manager",
 		select: "get_array",
 		primaryKey: "id",
 		onSave: "set",
@@ -121,12 +119,6 @@ export const metaDataset = {
 				type: "duplicate",
 				caption: "Duplicate",
 				enable: "isSelected"
-			},
-			{
-				type: "action",
-				caption: "Compute",
-				action: "computeData",
-				enable: true
 			}
 		]
 	},
