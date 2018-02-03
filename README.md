@@ -1,9 +1,8 @@
 # Zebulon table
-IN PROGRESS
-##
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
 ## Main features
+* Key navigation
 * Sorting, filtering
 * Copy, paste
 * Formats
@@ -11,22 +10,19 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * Self description
 * Computed columns
 * Server communication
+## Help and suggestions would be welcome.
 ## Getting started
-Install `zebulon-table` using npm. (not available yet)
-
+Install `zebulon-table` using npm.
 ```shell
 npm install zebulon-table --save
 ```
-
 And in your code:
 ```js
 import ZebulonTable from 'zebulon-table'
 // or 
 import ZebulonTableAndConfiguration from 'zebulon-table'
 ```
-
 ## Simple Example
-
 ```js
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
@@ -102,15 +98,15 @@ ReactDOM.render(<MyEditableTable  />, document.getElementById("root"));
 | [meta](#meta-description)| object | Meta description of the dataset and the way the dataset is managed by the table |
 | [functions](#available-functions-and-callbacks)| object or array | JS functions that can be referenced in the meta description|
 | params | object | Global parameters used for the dataset manipulation (user data by example) |
-| data| array |Datasource as an array, a promise, an observable or a "pagination manager"|
-| updatedRows | object | Updated rows with status (new, updated, deleted), row image before (row value when loaded), row image after (row updated value) |
-| filters | object | Initial or external filters  |
-| sorts | object |  Initial or external sorts|
+| [data](#data-set)| array |Datasource as an array, a promise, an observable or a "pagination manager"|
+| [updatedRows](#updated-rows) | object | Updated rows with status (new, updated, deleted), row image before (row value when loaded), row image after (row updated value) |
+| [filters](#filtering-and-sorting) | object | Initial or external filters  |
+| [sorts](#filtering-and-sorting) | object |  Initial or external sorts|
 | status | object | Dataset loading status |
-| keyEvent | event | Dataset loading status |
-| navigationKeyHandler | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
+| [keyEvent](#key-events-and-navigation-key-handler) | event | Dataset loading status |
+| [navigationKeyHandler](#key-events-and-navigation-key-handler) | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
 | isActive | boolean | Indicator that the component is active| 
-| errorHandler | object | Custom error management|
+| [errorHandler](#error-handler) | object | Custom error management|
 ###
 ## Data set
 The data set (data property) can be:
@@ -130,7 +126,7 @@ The data set (data property) can be:
       totoId: 154,
       totoLabel: "toto154",
       titi: 12,
-      tutu: "tutuS",
+      tutu: "tutu",
       qty: 22,
       amt: 2539
     },
@@ -140,7 +136,8 @@ The data set (data property) can be:
 * a promise (from the server) that will be resolved as an array of objects.
 * an observable (from the server) that will push by page arrays of objects (the full dataset will be loaded in background).
 * a pagination manager as a function to retrieve the appropriate pages from the server. In this case, the full dataset is not loaded locally, but only the diplayed page.
-
+### Object properties and foreign keys
+A row entry can be an object, a pointer to an object or a foreign key referencing an object. Foreign keys can be used to retrieve an object using the accessor of and "object property".
 ## Available functions and callbacks
 In the manipulation of the dataset, you may need to call functions for data calculation, formating, validation...
 Those functions are passed (functions property) to the component as 
@@ -187,7 +184,6 @@ Available types are:
 | default|({column, row, params})| returns the default value|
 | validator| ({value, previousValue or previousRow, column or meta, row, params, status or updatedRows, data})| returns as a boolean if the action ( changed value, cell quit, row quit, table quit, save...) can be continued. status or updatedRows errors entry can be updated|
 |dml|({dataObject, params, filters, sorts}) or ({dataObject, params, updatedRows, data})|select function (returns dataset) or insert, update, delete functions (returns new updatedRows)|
-
 #### Meta description, functions and callbacks
 A lot of keys in the meta description prop can refer to a value, a function or an accessor (function name) to a function.
 By example, an editable entry for a column X could take the values:
@@ -215,8 +211,18 @@ available (and will overwrite functions defined in the meta description) for val
 * onSaveAfter
 ## Meta description
 The meta property is an object describing how to manipulate the dataset, the way to display it, the controls and validation to apply when data are changed, the actions allowed...
-
+### Using accessors
+An accessor is a descriptor(string) used to retrieve a function that returns data or execute different actions.
+####data accessors (on properties)
+* The default accessor function is ({row})=>row[property.id].
+* You can refer to an other property value :"row.<referenced property id>", eg row.quantity. N.B. "row." is mandatory in this case to make the distinction with function accessors. Accessor function is ({row})=>row[referenced property.id] 
+* 
+* You can refer to a key of an object stored in a property :<referenced property id>.<key>, eg product.price. Accessor function is ({row})=>row[referenced property.id].[key]
+* You can refer to a function accessor.
+####function accessors
+Functions can be defined directly in the meta description or referenced by accessors: f =typeof meta...x===function?meta...x:functions[object][function type][meta...x] 
 It contains 3 sections: table, row and properties.
+### meta object
 ```js
 {
   serverPagination:false // default:false
@@ -247,6 +253,7 @@ N.B. if the table section is the only one defined, properties section will be in
 * onSaveBefore
 * onSaveAfter
 ##### Actions  
+Not documented yet
 ### row
 ```js
 {
@@ -281,6 +288,7 @@ N.B. width and properties order can be defined on the table by drag and drop.
 ##### Accessors
 * value accessor : Function (or function accessor) that returns a computed value. By default (row,column)=> row[column.id].
 * sort accessor : Function (or function accessor) that returns the elements needed by the sort function. By default value accessor.
+* foreignKeyAccessor : (for object properties only) Function (or function accessor) that returns the value of the object primary key.
 ##### Format
 Formatting function that returns a formatted string or a JSX element. Parameters :(value, row, column, params, status, data).
 ##### Sort function 
@@ -347,7 +355,11 @@ sorts={
   [columnId2]:{id: columnId2, direction: "desc", sortOrder: 1},
   ...
 };
+```
 ## Pagination manager
+Not yet documented
+## Computed columns
+Not yet documented
 ## Key events and navigation key handler
 To manage correctly key events, specialy with several instances of the component, you can pass from an upper component the event as a prop. Only active component,considering the isActive prop will handle the event.
 Key events are used to navigate in the the grid, select a range of cells, zoom, copy or paste.
@@ -368,5 +380,6 @@ For an editable grid left and righ arrow must keep the default behavior in the e
 ###
 You can overwrite the navigationKeyHandler functions setting your custom function in the navigationKeyHandler prop (see /demo/navigation.handler.js).
 ## Managing privileges
+Not yet documented
 ## Self description
-
+Not yet documented
