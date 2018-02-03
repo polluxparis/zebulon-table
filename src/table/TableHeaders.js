@@ -283,19 +283,19 @@ export class Headers extends Component {
           />
         ]
       : [];
-    let position = height * statusBar;
+    let position = height * statusBar,
+      first = true;
     while (index < meta.length && position < width) {
       const column = meta[index];
       const columnWidth = Math.max(
         Math.min(
-          index === this.props.scroll.startIndex
-            ? column.computedWidth + shift
-            : column.computedWidth,
+          first ? column.computedWidth + shift : column.computedWidth,
           width - position
         ),
         0
       );
       if (!column.hidden && columnWidth) {
+        first = false;
         let div;
         if (type === "header") {
           div = header(

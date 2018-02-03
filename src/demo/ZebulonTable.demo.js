@@ -94,17 +94,18 @@ class ZebulonTableDemo extends Component {
     {
       id: "dataset",
       caption: "Dataset and server"
-    },
-    {
-      id: "selfConfig",
-      caption: "Self configuration",
-      disabled: true
-    },
-    {
-      id: "layout",
-      caption: "Multi instance and styles",
-      disabled: true
     }
+    // ,
+    // {
+    //   id: "selfConfig",
+    //   caption: "Self configuration",
+    //   disabled: true
+    // },
+    // {
+    //   id: "layout",
+    //   caption: "Multi instance and styles",
+    //   disabled: true
+    // }
   ];
 
   getTabContent = tabIndex => {

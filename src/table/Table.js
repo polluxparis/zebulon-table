@@ -9,7 +9,8 @@ import {
   manageRowError,
   filtersFunction,
   getSorts,
-  sortsFunction
+  sortsFunction,
+  computeData
 } from "./utils";
 
 // import { utils } from "zebulon-controls";
@@ -22,6 +23,7 @@ export class Table extends Component {
     if (props.meta.serverPagination && status.loaded) {
       status = { loaded: false, loading: true };
       props.data({ startIndex: 0 }).then(filteredData => {
+        computeData(filteredData.page, props.meta, 0);
         if (props.onGetPage) {
           props.onGetPage(filteredData);
         }
@@ -81,6 +83,7 @@ export class Table extends Component {
         if (status.loaded && !this.props.status.loaded) {
           status = { loaded: false, loading: true };
           nextProps.data({ startIndex: 0 }).then(filteredData => {
+            computeData(filteredData.page, nextProps.meta, 0);
             if (nextProps.onGetPage) {
               nextProps.onGetPage(filteredData);
             }
@@ -430,6 +433,7 @@ export class Table extends Component {
           }); // a voir status
           const label =
             column.selectItems &&
+            !column.reference &&
             !Array.isArray(column.selectItems) &&
             typeof column.selectItems === "object"
               ? (column.selectItems[id] || {}).caption
@@ -626,6 +630,7 @@ export class Table extends Component {
         filteredData.pageLength = data.pageLength;
         filteredData.filteredDataLength = data.filteredDataLength;
         filteredData.pageStartIndex = data.pageStartIndex;
+        computeData(data.page, this.state.meta, 0);
         if (this.props.onGetPage) {
           this.props.onGetPage(data);
         }

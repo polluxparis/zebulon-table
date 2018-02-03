@@ -11,23 +11,24 @@ import { utils } from "zebulon-controls";
 // array
 // -------------------------------------------
 export const countries = [
-	{ id: 0, code: "FR", label: "France", currencyId: 0 },
-	{ id: 1, code: "GB", label: "United kingdom", currencyId: 1 },
-	{ id: 2, code: "US", label: "United states of America", currencyId: 2 },
-	{ id: 3, code: "CA", label: "Canada", currencyId: 3 },
-	{ id: 4, code: "CN", label: "China", currencyId: 4 },
-	{ id: 5, code: "IT", label: "Italy", currencyId: 0 },
-	{ id: 6, code: "DE", label: "Germany", currencyId: 0 },
-	{ id: 7, code: "BE", label: "Belgium", currencyId: 0 },
-	{ id: 8, code: "IE", label: "Ireland", currencyId: 0 },
-	{ id: 9, code: "ES", label: "Spain", currencyId: 0 },
-	{ id: 10, code: "NL", label: "Netherland", currencyId: 0 },
-	{ id: 11, code: "JP", label: "Japan", currencyId: 5 },
-	{ id: 11, code: "CH", label: "Switzerland", currencyId: 6 }
+	{ id: 0, code: "FR", label: "France", currency_id: 0 },
+	{ id: 1, code: "GB", label: "United kingdom", currency_id: 1 },
+	{ id: 2, code: "US", label: "United states of America", currency_id: 2 },
+	{ id: 3, code: "CA", label: "Canada", currency_id: 3 },
+	{ id: 4, code: "CN", label: "China", currency_id: 4 },
+	{ id: 5, code: "IT", label: "Italy", currency_id: 0 },
+	{ id: 6, code: "DE", label: "Germany", currency_id: 0 },
+	{ id: 7, code: "BE", label: "Belgium", currency_id: 0 },
+	{ id: 8, code: "IE", label: "Ireland", currency_id: 0 },
+	{ id: 9, code: "ES", label: "Spain", currency_id: 0 },
+	{ id: 10, code: "NL", label: "Netherland", currency_id: 0 },
+	{ id: 11, code: "JP", label: "Japan", currency_id: 5 },
+	{ id: 11, code: "CH", label: "Switzerland", currency_id: 6 }
 ].reduce((acc, country) => {
 	acc[country.id] = country;
 	return acc;
 }, {});
+export const getCountry = id => countries[id];
 export const currencies = [
 	{ id: 0, code: "EUR", label: "Euro", symbol: "€", rate: 1 },
 	{ id: 1, code: "GBP", label: "British pound", symbol: "£", rate: 0.88 },
@@ -40,6 +41,8 @@ export const currencies = [
 	acc[currency.id] = currency;
 	return acc;
 }, {});
+export const getCurrency = id => currencies[id];
+
 export const shapes = [
 	"square",
 	"cube",
@@ -79,29 +82,25 @@ for (let i = 0; i < 200; i++) {
 		currency_sym: "€"
 	};
 }
+export const getProduct = id => products[id];
+
 export const getMockDataset = nRow => {
 	// const data = (nRow, nProduct) => {
 
 	const d = [];
 	for (let i = 0; i < nRow; i++) {
 		const row = {};
-		row.product =
-			products[
-				Math.ceil(
-					Math.random() * (Object.keys(products).length - 1.001)
-				)
-			];
+		row.product_id = Math.ceil(
+			Math.random() * (Object.keys(products).length - 1.001)
+		);
 		row.id = i;
-		row.country =
-			countries[
-				Math.ceil(
-					Math.random() * (Object.keys(countries).length - 1.001)
-				)
-			];
+		row.country_id = Math.ceil(
+			Math.random() * (Object.keys(countries).length - 1.001)
+		);
 		// const country = countries[row.country_id];
 		// row.country_cd = country.code;
 		// row.country_cur_id = country.currencyId;
-		row.currency = currencies[row.country.currencyId];
+		row.currency_id = countries[row.country_id].currency_id;
 		// row.rate = currency.rate;
 		// row.country_cur_cd = currency.code;
 		// row.country_cur_sym = currency.symbol;
@@ -185,7 +184,7 @@ export const get_observable = ({ params, filters, sorts }) => {
 	while (i < data.length) {
 		data2.push(data.slice(i, (i += 1000)));
 	}
-	return Observable.interval(100)
+	return Observable.interval(20)
 		.take(data2.length)
 		.map(i => data2[i]);
 };

@@ -6,6 +6,7 @@ import { utils } from "zebulon-controls";
 import {
   computeMeta,
   computeMetaFromData,
+  computeData,
   functionsTable,
   getFunction,
   filterFunction,
@@ -122,11 +123,12 @@ export class ZebulonTable extends Component {
   };
   initData = (data, meta, zoom, functions, startIndex, filters) => {
     if (data) {
-      if (data[0] && data[0].index_ === undefined) {
-        data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
-      }
+      // if (data[0] && data[0].index_ === undefined) {
+      //   data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
+      // }
       // if (meta.properties.length === 0) {
       computeMetaFromData(data, meta, zoom, functions);
+      computeData(data, meta, startIndex);
       // }
     }
     if (filters && meta.properties.length !== 0) {

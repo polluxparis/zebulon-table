@@ -115,7 +115,11 @@ export const functions = {
 		editables: { isSelected: ({ row }) => row.index_ !== undefined },
 		formats: {
 			decimals: ({ value, column }) =>
-				utils.formatValue(value, null, column.decimals || 2)
+				utils.formatValue(value, null, column.decimals || 2),
+			"mm/yyyy": ({ value }) =>
+				utils.isNullOrUndefined(value)
+					? ""
+					: utils.formatValue(value, "mm/yyyy")
 		}
 	}
 };

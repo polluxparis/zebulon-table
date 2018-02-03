@@ -9,6 +9,7 @@ import {
   colors,
   products
 } from "./datasources";
+import { computeAnalytic, computeMetaPositions } from "../table/utils";
 // import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
 // import { ZebulonTable } from "../table/ZebulonTable";
 // // import ZebulonTable from "../table/ZebulonTable";
@@ -32,23 +33,70 @@ import {
 //   metaThirdparties
 // } from "./meta.thirdparties";
 // import { metaDataset } from "./meta.dataset";
-const getCountryFlag = ({ row }) => {
-  if (
-    !row.country ||
-    row.country.code === "" ||
-    utils.isNullOrUndefined(row.country.code)
-  ) {
-    return null;
+// const getCountryFlag = ({ row }) => {
+//   if (
+//     !row.country ||
+//     row.country.code === "" ||
+//     utils.isNullOrUndefined(row.country.code)
+//   ) {
+//     return null;
+//   }
+//   return (
+//     <img
+//       height="100%"
+//       width="100%"
+//       padding="unset"
+//       src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
+//     />
+//   );
+// };
+const rollingAverage = {
+  id: "rolling_avg",
+  caption: "Rolling average",
+  width: 140,
+  dataType: "number",
+  editable: false,
+  aggregation: "avg",
+  groupByAccessor: "country.id",
+  accessor: ({ row }) => row.qty * (row.product || {}).price,
+  comparisonAccessor: "row.d",
+  sortAccessor: "row.d",
+  windowStart: "since30d",
+  hidden: true,
+  windowEnd: d => d,
+  format: ({ value, row }) => {
+    return (
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div>€</div>
+        <div style={{ textAlign: "right" }}>
+          {utils.formatValue(value, null, 2)}
+        </div>
+      </div>
+    );
   }
-  return (
-    <img
-      height="100%"
-      width="100%"
-      padding="unset"
-      src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
-    />
-  );
 };
+const totalAmount = {
+  id: "total_amt",
+  caption: "Total amount",
+  width: 140,
+  dataType: "number",
+  editable: false,
+  hidden: true,
+  aggregation: "sum",
+  groupByAccessor: "product.id",
+  accessor: ({ row }) => row.qty * (row.product || {}).price,
+  format: ({ value, row }) => {
+    return (
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div>€</div>
+        <div style={{ textAlign: "right" }}>
+          {utils.formatValue(value, null, 2)}
+        </div>
+      </div>
+    );
+  }
+};
+
 const meta = {
   table: {
     object: "dataset",
@@ -68,6 +116,11 @@ const meta = {
         type: "duplicate",
         caption: "Duplicate",
         enable: "isSelected"
+      },
+      {
+        type: "action",
+        caption: "Compute",
+        enable: true
       },
       {
         type: "save",
@@ -97,13 +150,22 @@ const meta = {
       filterType: "between"
     },
     {
+      id: "product_id",
+      caption: "product_id",
+      width: 100,
+      dataType: "number",
+      hidden: true
+    },
+    {
       id: "product",
       caption: "Product",
       width: 100,
       dataType: "object",
       mandatory: true,
       hidden: true,
-      accessor: "product.id"
+      accessor: "product",
+      foreignKeyAccessor: "product.id",
+      locked: true
     },
     {
       id: "product_lb",
@@ -112,7 +174,10 @@ const meta = {
       dataType: "string",
       editable: true,
       filterType: "values",
-      select: products,
+      select: ({ column }) =>
+        new Promise(resolve => setTimeout(resolve, 20)).then(
+          () => (column.selectItems = products)
+        ),
       accessor: "product.label",
       sortAccessor: "product.id"
     },
@@ -151,9 +216,23 @@ const meta = {
       dataType: "number",
       editable: false,
       accessor: "product.price",
-      format: "decimals",
-      decimals: 3,
+      format: ({ value }) => {
+        return (
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div>€</div>
+            <div style={{ textAlign: "right" }}>
+              {utils.formatValue(value, null, 2)}
+            </div>
+          </div>
+        );
+      },
       filterType: "between"
+    },
+    {
+      id: "country_id",
+      width: 100,
+      dataType: "number",
+      hidden: true
     },
     {
       id: "country",
@@ -161,7 +240,8 @@ const meta = {
       dataType: "object",
       mandatory: true,
       hidden: true,
-      accessor: "country.id"
+      accessor: "country",
+      foreignKeyAccessor: "country.id"
     },
     {
       id: "country_cd",
@@ -177,7 +257,13 @@ const meta = {
       id: "flag",
       caption: "Flag",
       width: 40,
-      accessor: getCountryFlag
+      accessor: "flag"
+    },
+    {
+      id: "currency_id",
+      width: 10,
+      dataType: "number",
+      hidden: true
     },
     {
       id: "currency",
@@ -185,7 +271,8 @@ const meta = {
       dataType: "object",
       mandatory: true,
       hidden: true,
-      accessor: "currency.id"
+      accessor: "currency",
+      foreignKeyAccessor: "currency.id"
     },
     {
       id: "currency_cd",
@@ -235,14 +322,17 @@ const meta = {
       format: ({ value, row }) => {
         return (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{row.country_cur_sym}</div>
+            <div>{row.currency.symbol}</div>
             <div style={{ textAlign: "right" }}>
               {utils.formatValue(value, null, 2)}
             </div>
           </div>
         );
       }
-    }
+    },
+
+    totalAmount,
+    rollingAverage
   ]
 };
 export class MyDataset extends Component {
@@ -261,10 +351,12 @@ export class MyDataset extends Component {
       filteredDataLength: 0,
       loadedDataLength: 0,
       meta,
-      updatedRows: {}
+      updatedRows: {},
+      totalAmount: false,
+      rollingAverage: false
     };
     this.text =
-      "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
+      "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
   }
   getLengths = ({ data, filteredData }) => {
     if (Array.isArray(data)) {
@@ -289,6 +381,29 @@ export class MyDataset extends Component {
       pageStartIndex
     });
   };
+  handleTotalAmount = () => {
+    totalAmount.hidden = this.state.totalAmount;
+    if (!totalAmount.hidden) {
+      computeAnalytic(this.table.state.data, totalAmount);
+    }
+    computeMetaPositions(meta.properties, this.table.zoomValue);
+    this.setState({
+      totalAmount: !this.state.totalAmount,
+      status: this.state.status
+    });
+  };
+  handleRollingAverage = () => {
+    rollingAverage.hidden = this.state.rollingAverage;
+    this.setState({ rollingAverage: !this.state.rollingAverage });
+    if (!rollingAverage.hidden) {
+      computeAnalytic(this.table.state.data, rollingAverage);
+    }
+    computeMetaPositions(meta.properties, this.table.zoomValue);
+    this.setState({
+      rollingAverage: !this.state.rollingAverage,
+      status: this.state.status
+    });
+  };
   render() {
     const {
       // updatedRows,
@@ -308,111 +423,159 @@ export class MyDataset extends Component {
       status
     } = this.state;
     let header = null,
-      footer = (
-        <textarea
-          readOnly
-          rows="6"
-          cols="120"
-          value={this.text}
-          style={{
-            fontFamily: "sans-serif",
-            border: "unset",
-            fontSize: "medium"
-          }}
-        />
-      );
+      footer = null;
     const sizes = { ...this.props.sizes };
 
     meta.serverPagination = radioDataset === "get_pagination_manager";
     meta.table.select = radioDataset;
     header = (
-      <div
-        style={{
-          display: "block",
-          padding: 5,
-          height: 50,
-          boxSizing: "border-box"
-        }}
-      >
+      <div>
         <div
           style={{
-            display: "flex",
-            width: 600,
-            justifyContent: "space-between"
+            display: "block",
+            padding: 5,
+            height: 30,
+            boxSizing: "border-box"
           }}
         >
-          Dataset as
-          <input
-            type="radio"
-            id="radioArray"
-            name="radioDataset"
-            value="get_array"
-            checked={radioDataset === "get_array"}
-            onChange={e => {
-              this.text =
-                "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
-              this.setState({
-                radioDataset: "get_array",
-                status: { loading: true }
-              });
-            }}
-          />
-          <label htmlFor="radioArray">an array </label>
-          <input
-            type="radio"
-            id="radioPromise"
-            name="radioDataset"
-            value="get_promise"
-            checked={radioDataset === "get_promise"}
-            onChange={e => {
-              this.text =
-                "\nA server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_array @ demo/datasources.";
-              this.setState({
-                radioDataset: "get_promise",
-                status: { loading: true }
-              });
-            }}
-          />
-          <label htmlFor="radioPromise"> a promise </label>
-          <input
-            type="radio"
-            id="radioObservable"
-            name="radioDataset"
-            value="get_observable"
-            checked={radioDataset === "get_observable"}
-            onChange={e => {
-              this.text =
-                "\nA server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
-              this.setState({
-                radioDataset: "get_observable",
-                status: { loading: true }
-              });
-            }}
-          />
-          <label htmlFor="radioObservable"> an observable </label>{" "}
-          <input
-            type="radio"
-            id="radioPagination"
-            name="radioDataset"
-            value="get_pagination_manager"
-            checked={radioDataset === "get_pagination_manager"}
-            onChange={e => {
-              this.text =
-                "\nA server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
-
-              this.setState({
-                radioDataset: "get_pagination_manager",
-                status: { loading: true }
-              });
-            }}
-          />
-          <label htmlFor="radioPagination"> a pagination manager </label>
+          Dummy dataset with 4 joined tables: orders (date,#,color,quantitiy),
+          products(id, shape, size, price), countries (id, code) and currencies
+          (id, code, symbol, rate).
         </div>
-        <div>
-          {`Dataset length : ${dataLength}, filtered : ${filteredDataLength}, loaded :  ${loadedDataLength} ${pageStartIndex !==
-          undefined
-            ? ", page start at " + String(pageStartIndex)
-            : ""}`}{" "}
+        <div style={{ display: "flex" }}>
+          <div
+            style={{
+              display: "block",
+              padding: 5,
+              height: 140,
+              boxSizing: "border-box"
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                width: 670,
+                justifyContent: "space-between"
+              }}
+            >
+              Dataset is generated as
+              <input
+                type="radio"
+                id="radioArray"
+                name="radioDataset"
+                value="get_array"
+                checked={radioDataset === "get_array"}
+                onChange={e => {
+                  this.text =
+                    "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
+                  this.setState({
+                    radioDataset: "get_array",
+                    status: { loading: true }
+                  });
+                }}
+              />
+              <label htmlFor="radioArray">an array </label>
+              <input
+                type="radio"
+                id="radioPromise"
+                name="radioDataset"
+                value="get_promise"
+                checked={radioDataset === "get_promise"}
+                onChange={e => {
+                  this.text =
+                    "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_array @ demo/datasources.";
+                  this.setState({
+                    radioDataset: "get_promise",
+                    status: { loading: true }
+                  });
+                }}
+              />
+              <label htmlFor="radioPromise"> a promise </label>
+              <input
+                type="radio"
+                id="radioObservable"
+                name="radioDataset"
+                value="get_observable"
+                checked={radioDataset === "get_observable"}
+                onChange={e => {
+                  this.text =
+                    "A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
+                  this.setState({
+                    radioDataset: "get_observable",
+                    status: { loading: true }
+                  });
+                }}
+              />
+              <label htmlFor="radioObservable"> an observable or </label>{" "}
+              <input
+                type="radio"
+                id="radioPagination"
+                name="radioDataset"
+                value="get_pagination_manager"
+                checked={radioDataset === "get_pagination_manager"}
+                onChange={e => {
+                  this.text =
+                    "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
+
+                  this.setState({
+                    radioDataset: "get_pagination_manager",
+                    status: { loading: true }
+                  });
+                }}
+              />
+              <label htmlFor="radioPagination"> a pagination manager </label>
+            </div>
+            <div>
+              {`Dataset length : ${dataLength}, filtered : ${filteredDataLength}, loaded :  ${loadedDataLength} ${pageStartIndex !==
+              undefined
+                ? ", page start at " + String(pageStartIndex)
+                : ""}.`}
+            </div>
+            <div style={{ marginTop: 5 }}>
+              Amount and Amount in € are computed on the fly as quantity*price
+              and quantity*price*rate.
+            </div>
+            <div style={{ marginTop: 5 }}>
+              Rolling amount and Total amount are computed initially then on
+              demand as :
+            </div>
+            <div style={{ display: "flex" }}>
+              <input
+                type="checkbox"
+                disabled={this.state.radioDataset === "get_pagination_manager"}
+                checked={
+                  this.state.rollingAverage &&
+                  this.state.radioDataset !== "get_pagination_manager"
+                }
+                onChange={this.handleRollingAverage}
+              />
+              rolling average of amounts in € order by date since 30 days.
+            </div>
+            <div style={{ display: "flex" }}>
+              <input
+                type="checkbox"
+                disabled={this.state.radioDataset === "get_pagination_manager"}
+                checked={
+                  this.state.totalAmount &&
+                  this.state.radioDataset !== "get_pagination_manager"
+                }
+                onChange={this.handleTotalAmount}
+              />sum of amounts in € by country.
+            </div>
+          </div>
+          <textarea
+            readOnly
+            rows="6"
+            cols="120"
+            value={this.text}
+            style={{
+              fontFamily: "sans-serif",
+              border: "unset",
+              fontSize: "medium",
+              color: "blue",
+              marginLeft: 30
+            }}
+          />
         </div>
       </div>
     );
@@ -441,6 +604,7 @@ export class MyDataset extends Component {
           onFilter={this.getLengths}
           onSort={this.getLengths}
           onGetPage={this.getPageLengths}
+          ref={ref => (this.table = ref)}
         />
         {footer}
       </div>

@@ -10,7 +10,10 @@ import {
 	get_array,
 	get_promise,
 	get_observable,
-	get_pagination_manager
+	get_pagination_manager,
+	getCountry,
+	getCurrency,
+	getProduct
 } from "./datasources";
 
 const set = () => {};
@@ -67,26 +70,47 @@ export const datasetFunctions = {
 	},
 	aggregations,
 	windows: {
-		from7d: x => {
+		since30d: x => {
 			const xx = new Date(x);
-			xx.setDate(xx.getDate() - 7);
-			return xx;
-		},
-		to5d: x => {
-			const xx = new Date(x);
-			xx.setDate(xx.getDate() + 5);
+			xx.setDate(xx.getDate() - 30);
 			return xx;
 		}
+		// ,
+		// to5d: x => {
+		// 	const xx = new Date(x);
+		// 	xx.setDate(xx.getDate() + 5);
+		// 	return xx;
+		// }
 	},
 	accessors: {
-		qty3: row => row.qty / 3,
-		mth: row => {
+		qty3: ({ row }) => row.qty / 3,
+		mth: ({ row }) => {
 			if (utils.isNullOrUndefined(row.d)) {
 				return null;
 			}
 			const d = new Date(row.d);
 			d.setDate(1);
 			return d;
+		},
+		country: ({ row }) => getCountry(row.country_id),
+		currency: ({ row }) => getCurrency(row.currency_id),
+		product: ({ row }) => getProduct(row.product_id),
+		flag: ({ row }) => {
+			if (
+				!row.country ||
+				row.country.code === "" ||
+				utils.isNullOrUndefined(row.country.code)
+			) {
+				return null;
+			}
+			return (
+				<img
+					height="100%"
+					width="100%"
+					padding="unset"
+					src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
+				/>
+			);
 		}
 	},
 	actions: {

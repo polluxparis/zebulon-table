@@ -28,7 +28,8 @@ export class Input extends Component {
     let value = props.value;
     this.state = {
       value,
-      formatedValue: formatValue(props, value, props.focused)
+      formatedValue: formatValue(props, value, props.focused),
+      loaded: true
     };
     this.focused = props.focused;
   }
@@ -181,7 +182,7 @@ export class Input extends Component {
         } else if (typeof options === "object") {
           // const indexDot = column.accessor.indexOf(".");
           if (column.reference) {
-            value = column.keyAccessorFunction({ row });
+            value = column.foreignKeyAccessorFunction({ row });
             options = [{ id: undefined, label: "" }].concat(
               Object.keys(select).map(key => ({
                 id: key,

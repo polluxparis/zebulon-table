@@ -4,6 +4,58 @@
 		"selected_items":
 		[
 			[
+				"group",
+				"groupByAccessor"
+			],
+			[
+				"tet",
+				"textarea"
+			],
+			[
+				"inde",
+				"indexDot"
+			],
+			[
+				"updated",
+				"updatedRows"
+			],
+			[
+				"updat",
+				"updatedRows"
+			],
+			[
+				"product",
+				"product_lb"
+			],
+			[
+				"nu",
+				"nullValue"
+			],
+			[
+				"new",
+				"newRow"
+			],
+			[
+				"fil",
+				"filteredData"
+			],
+			[
+				"text",
+				"textArea"
+			],
+			[
+				"radio",
+				"radioDataset"
+			],
+			[
+				"ra",
+				"radioDataset"
+			],
+			[
+				"rad",
+				"radioObservable"
+			],
+			[
 				"sele",
 				"selectCell"
 			],
@@ -18,10 +70,6 @@
 			[
 				"out",
 				"outputs"
-			],
-			[
-				"updated",
-				"updatedData"
 			],
 			[
 				"fi",
@@ -320,10 +368,6 @@
 				"handleFocus"
 			],
 			[
-				"nu",
-				"number"
-			],
-			[
 				"handl",
 				"handleBlur"
 			],
@@ -468,89 +512,38 @@
 				"inherit"
 			],
 			[
-				"text",
-				"textAlign"
-			],
-			[
 				"line",
 				"line-height"
-			],
-			[
-				"conf",
-				"configuration"
-			],
-			[
-				"key",
-				"keyEvent"
-			],
-			[
-				"updat",
-				"updatedRow"
-			],
-			[
-				"compo",
-				"componentWillReceiveProps"
-			],
-			[
-				"start",
-				"startIndex"
-			],
-			[
-				"Ana",
-				"Analytics"
-			],
-			[
-				"cl",
-				"closeOpenedWindows"
-			],
-			[
-				"getA",
-				"getAccessors"
-			],
-			[
-				"copute",
-				"computeData"
-			],
-			[
-				"stat",
-				"state"
 			]
 		]
 	},
 	"buffers":
 	[
 		{
-			"file": "src/demo/Layout.js",
+			"contents": "import React, { Component } from \"react\";\nimport { ZebulonTable } from \"../table/ZebulonTable\";\nimport { utils } from \"zebulon-controls\";\nimport {\n  countries,\n  currencies,\n  shapes,\n  sizes,\n  colors,\n  products\n} from \"./datasources\";\n// import { ZebulonTableAndConfiguration } from \"../table/ZebulonTableAndConfiguration\";\n// import { ZebulonTable } from \"../table/ZebulonTable\";\n// // import ZebulonTable from \"../table/ZebulonTable\";\n// import \"zebulon-controls/lib/index.css\";\n// import \"../table/index.css\";\n// import { Input, constants, utils } from \"zebulon-controls\";\n// import { metaDescriptions, functions } from \"../table/MetaDescriptions\";\n// import { functionsTable, getFilters } from \"../table/utils\";\n// // import { Layout, components, layout } from \"./Layout\";\n// import { MyLayout } from \"./layout.example\";\n// import { MyDataset } from \"./dataset.example\";\n// import { ResizableBox } from \"react-resizable\";\n// import { navigationKeyHandler } from \"./navigation.handler\";\n// import cx from \"classnames\";\n// import {\n//   countries,\n//   metaCountries,\n//   currencies,\n//   metaCurrencies,\n//   thirdparties,\n//   metaThirdparties\n// } from \"./meta.thirdparties\";\n// import { metaDataset } from \"./meta.dataset\";\nconst getCountryFlag = ({ row }) => {\n  if (\n    !row.country ||\n    row.country.code === \"\" ||\n    utils.isNullOrUndefined(row.country.code)\n  ) {\n    return null;\n  }\n  return (\n    <img\n      height=\"100%\"\n      width=\"100%\"\n      padding=\"unset\"\n      src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}\n    />\n  );\n};\nconst meta = {\n  table: {\n    object: \"dataset\",\n    editable: true,\n    select: \"get_array\",\n    primaryKey: \"id\",\n    onSave: \"set\",\n    noFilter: false,\n    actions: [\n      { type: \"insert\", caption: \"New\", enable: true },\n      {\n        type: \"delete\",\n        caption: \"Delete\",\n        enable: \"isSelected\"\n      },\n      {\n        type: \"duplicate\",\n        caption: \"Duplicate\",\n        enable: \"isSelected\"\n      },\n      {\n        type: \"action\",\n        caption: \"Compute\",\n        enable: true\n      },\n      {\n        type: \"save\",\n        caption: \"Save\",\n        enable: true\n      }\n    ]\n  },\n  row: {},\n  properties: [\n    {\n      id: \"d\",\n      caption: \"Date\",\n      width: 100,\n      dataType: \"date\",\n      editable: true,\n      mandatory: true,\n      filterType: \"between\"\n    },\n    {\n      id: \"id\",\n      caption: \"Order #\",\n      width: 100,\n      dataType: \"number\",\n      mandatory: true,\n      editable: ({ status }) => status.new_,\n      filterType: \"between\"\n    },\n    {\n      id: \"product\",\n      caption: \"Product\",\n      width: 100,\n      dataType: \"object\",\n      mandatory: true,\n      hidden: true,\n      accessor: \"product.id\",\n      locked: true\n    },\n    {\n      id: \"product_lb\",\n      caption: \"Product\",\n      width: 100,\n      dataType: \"string\",\n      editable: true,\n      filterType: \"values\",\n      select: ({ column }) =>\n        new Promise(resolve => setTimeout(resolve, 20)).then(\n          () => (column.selectItems = products)\n        ),\n      accessor: \"product.label\",\n      sortAccessor: \"product.id\"\n    },\n    {\n      id: \"shape\",\n      caption: \"Shape\",\n      width: 100,\n      dataType: \"string\",\n      editable: false,\n      accessor: \"product.shape\",\n      filterType: \"values\"\n    },\n    {\n      id: \"size\",\n      caption: \"Size\",\n      width: 100,\n      dataType: \"string\",\n      editable: false,\n      accessor: \"product.size\",\n      filterType: \"values\"\n    },\n    {\n      id: \"color\",\n      caption: \"Color\",\n      width: 100,\n      dataType: \"string\",\n      editable: true,\n      select: [\"\"].concat(colors),\n      filterType: \"values\"\n    },\n\n    {\n      id: \"price\",\n      caption: \"Price\",\n      width: 90,\n      dataType: \"number\",\n      editable: false,\n      accessor: \"product.price\",\n      format: ({ value }) => {\n        return (\n          <div style={{ display: \"flex\", justifyContent: \"space-between\" }}>\n            <div>€</div>\n            <div style={{ textAlign: \"right\" }}>\n              {utils.formatValue(value, null, 2)}\n            </div>\n          </div>\n        );\n      },\n      filterType: \"between\"\n    },\n    {\n      id: \"country\",\n      width: 100,\n      dataType: \"object\",\n      mandatory: true,\n      hidden: true,\n      accessor: \"country.id\"\n    },\n    {\n      id: \"country_cd\",\n      caption: \"Country\",\n      width: 100,\n      dataType: \"string\",\n      editable: true,\n      filterType: \"values\",\n      accessor: \"country.code\",\n      select: countries\n    },\n    {\n      id: \"flag\",\n      caption: \"Flag\",\n      width: 40,\n      accessor: getCountryFlag\n    },\n    {\n      id: \"currency\",\n      width: 10,\n      dataType: \"object\",\n      mandatory: true,\n      hidden: true,\n      accessor: \"currency.id\"\n    },\n    {\n      id: \"currency_cd\",\n      caption: \"Currency\",\n      width: 100,\n      dataType: \"string\",\n      accessor: \"currency.code\",\n      filterType: \"values\",\n      editable: true,\n      select: currencies\n    },\n    {\n      id: \"qty\",\n      caption: \"Quantity\",\n      width: 90,\n      dataType: \"number\",\n      editable: true,\n      filterType: \"between\"\n    },\n    {\n      id: \"amt_eur\",\n      caption: \"Amount in €\",\n      width: 120,\n      dataType: \"number\",\n      filterType: \">=\",\n      editable: false,\n      accessor: ({ row }) => row.qty * (row.product || {}).price,\n      format: ({ value }) => {\n        return (\n          <div style={{ display: \"flex\", justifyContent: \"space-between\" }}>\n            <div>€</div>\n            <div style={{ textAlign: \"right\" }}>\n              {utils.formatValue(value, null, 2)}\n            </div>\n          </div>\n        );\n      }\n    },\n    {\n      id: \"amt\",\n      caption: \"Amount\",\n      width: 120,\n      dataType: \"number\",\n      editable: false,\n      accessor: ({ row }) =>\n        row.qty * (row.product || {}).price * (row.currency || {}).rate,\n      format: ({ value, row }) => {\n        return (\n          <div style={{ display: \"flex\", justifyContent: \"space-between\" }}>\n            <div>{row.currency.symbol}</div>\n            <div style={{ textAlign: \"right\" }}>\n              {utils.formatValue(value, null, 2)}\n            </div>\n          </div>\n        );\n      }\n    },\n    {\n      id: \"total_amt\",\n      caption: \"Total amount\",\n      width: 120,\n      dataType: \"number\",\n      editable: false,\n      accessor: ({ row }) =>\n        row.qty * (row.product || {}).price * (row.currency || {}).rate,\n      format: ({ value, row }) => {\n        return (\n          <div style={{ display: \"flex\", justifyContent: \"space-between\" }}>\n            <div>{row.currency.symbol}</div>\n            <div style={{ textAlign: \"right\" }}>\n              {utils.formatValue(value, null, 2)}\n            </div>\n          </div>\n        );\n      }\n    }\n  ]\n};\nexport class MyDataset extends Component {\n  constructor(props) {\n    super(props);\n    this.state = {\n      status: {},\n      // filters: { qty: { id: \"qty\", filterType: \"between\", v: 123, vTo: 256 } },\n      sorts: {\n        d: { id: \"d\", direction: \"asc\", sortOrder: 0 },\n        product_lb: { id: \"product_lb\", direction: \"desc\", sortOrder: 1 },\n        id: { id: \"id\", direction: \"asc\", sortOrder: 1 }\n      },\n      radioDataset: \"get_array\",\n      dataLength: 0,\n      filteredDataLength: 0,\n      loadedDataLength: 0,\n      meta,\n      updatedRows: {}\n    };\n    this.text =\n      \"An array is build locally and used as dataset.\\nfunction: get_array @ demo/datasources.\";\n  }\n  getLengths = ({ data, filteredData }) => {\n    if (Array.isArray(data)) {\n      this.setState({\n        dataLength: data.length,\n        filteredDataLength: filteredData.length,\n        loadedDataLength: data.length,\n        pageStartIndex: undefined\n      });\n    }\n  };\n  getPageLengths = ({\n    pageLength,\n    filteredDataLength,\n    dataLength,\n    pageStartIndex\n  }) => {\n    this.setState({\n      dataLength,\n      filteredDataLength,\n      loadedDataLength: pageLength,\n      pageStartIndex\n    });\n  };\n  render() {\n    const {\n      // updatedRows,\n      keyEvent,\n      functions\n      // params,\n    } = this.props;\n    const {\n      filters,\n      sorts,\n      meta,\n      dataLength,\n      filteredDataLength,\n      loadedDataLength,\n      pageStartIndex,\n      radioDataset,\n      status\n    } = this.state;\n    let header = null,\n      footer = null;\n    const sizes = { ...this.props.sizes };\n\n    meta.serverPagination = radioDataset === \"get_pagination_manager\";\n    meta.table.select = radioDataset;\n    header = (\n      <div>\n        <div\n          style={{\n            display: \"block\",\n            padding: 5,\n            height: 30,\n            boxSizing: \"border-box\"\n          }}\n        >\n          Dummy dataset with 4 joined tables: orders (date,#,color,quantitiy),\n          products(id, shape, size, price), countries (id, code) and currencies\n          (id, code, symbol, rate).\n        </div>\n        <div style={{ display: \"flex\" }}>\n          <div\n            style={{\n              display: \"block\",\n              padding: 5,\n              height: 140,\n              boxSizing: \"border-box\"\n            }}\n          >\n            <div\n              style={{\n                display: \"flex\",\n                width: 670,\n                justifyContent: \"space-between\"\n              }}\n            >\n              Dataset is generated as\n              <input\n                type=\"radio\"\n                id=\"radioArray\"\n                name=\"radioDataset\"\n                value=\"get_array\"\n                checked={radioDataset === \"get_array\"}\n                onChange={e => {\n                  this.text =\n                    \"An array is build locally and used as dataset.\\nfunction: get_array @ demo/datasources.\";\n                  this.setState({\n                    radioDataset: \"get_array\",\n                    status: { loading: true }\n                  });\n                }}\n              />\n              <label htmlFor=\"radioArray\">an array </label>\n              <input\n                type=\"radio\"\n                id=\"radioPromise\"\n                name=\"radioDataset\"\n                value=\"get_promise\"\n                checked={radioDataset === \"get_promise\"}\n                onChange={e => {\n                  this.text =\n                    \"A server is simulated that returns a promise resolved as an array stored in the client.\\nFilters are managed by the server.\\nfunction: get_array @ demo/datasources.\";\n                  this.setState({\n                    radioDataset: \"get_promise\",\n                    status: { loading: true }\n                  });\n                }}\n              />\n              <label htmlFor=\"radioPromise\"> a promise </label>\n              <input\n                type=\"radio\"\n                id=\"radioObservable\"\n                name=\"radioDataset\"\n                value=\"get_observable\"\n                checked={radioDataset === \"get_observable\"}\n                onChange={e => {\n                  this.text =\n                    \"A server is simulated that returns an observable.\\nPages of 1000 rows are pushed by the server and loaded in background by the client .\\nSorting is managed by the server to avoid visible reorders.\\nfunction: get_observable @ demo/datasources.\";\n                  this.setState({\n                    radioDataset: \"get_observable\",\n                    status: { loading: true }\n                  });\n                }}\n              />\n              <label htmlFor=\"radioObservable\"> an observable or </label>{\" \"}\n              <input\n                type=\"radio\"\n                id=\"radioPagination\"\n                name=\"radioDataset\"\n                value=\"get_pagination_manager\"\n                checked={radioDataset === \"get_pagination_manager\"}\n                onChange={e => {\n                  this.text =\n                    \"A server is simulated that returns a pagination manager function.\\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\\nOnly the current page is stored by the client.\\nSorting and filtering are managed by the server.\\nfunction: get_pagination_manager @ demo/datasources.\";\n\n                  this.setState({\n                    radioDataset: \"get_pagination_manager\",\n                    status: { loading: true }\n                  });\n                }}\n              />\n              <label htmlFor=\"radioPagination\"> a pagination manager </label>\n            </div>\n            <div>\n              {`Dataset length : ${dataLength}, filtered : ${filteredDataLength}, loaded :  ${loadedDataLength} ${pageStartIndex !==\n              undefined\n                ? \", page start at \" + String(pageStartIndex)\n                : \"\"}.`}\n            </div>\n            <div style={{ marginTop: 5 }}>\n              Amount and Amount in € are computed on the fly as quantity*price\n              and quantity*price*rate.\n            </div>\n            <div style={{ marginTop: 5 }}>\n              Rolling amount and Total amount are computed initially then on\n              demand as :\n            </div>\n            <div>\n              - rolling average of amounts in € order by date since 30 days.\n            </div>\n            <div> - sum of amounts in € by product.</div>\n          </div>\n          <textarea\n            readOnly\n            rows=\"6\"\n            cols=\"120\"\n            value={this.text}\n            style={{\n              fontFamily: \"sans-serif\",\n              border: \"unset\",\n              fontSize: \"medium\",\n              color: \"blue\",\n              marginLeft: 30\n            }}\n          />\n        </div>\n      </div>\n    );\n\n    sizes.height = Math.min(sizes.height - 50, 700);\n    return (\n      <div style={{ fontFamily: \"sans-serif\" }} id=\"zebulon\">\n        {header}\n        <ZebulonTable\n          key=\"dataset\"\n          id=\"dataset\"\n          // visible={selectedTab === 0}\n          // isActive={selectedTab === 0}\n          // data={data}\n          meta={meta}\n          filters={filters}\n          sorts={sorts}\n          // updatedRows={updatedRows}\n          status={status}\n          sizes={sizes}\n          functions={functions}\n          // params={params}\n          keyEvent={keyEvent}\n          errorHandler={this.errorHandler}\n          // navigationKeyHandler={navigationKeyHandler}\n          onFilter={this.getLengths}\n          onSort={this.getLengths}\n          onGetPage={this.getPageLengths}\n        />\n        {footer}\n      </div>\n    );\n  }\n}\n",
+			"file": "src/demo/dataset.example.js",
+			"file_size": 15036,
+			"file_write_time": 131620349556700128,
 			"settings":
 			{
-				"buffer_size": 27189,
+				"buffer_size": 14522,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "src/demo/Layout.example.js",
+			"file": "src/table/MetaDescriptions.js",
 			"settings":
 			{
-				"buffer_size": 4533,
-				"encoding": "UTF-8",
+				"buffer_size": 14111,
 				"line_ending": "Windows"
 			}
 		},
 		{
-			"file": "src/demo/meta.dataset.js",
+			"file": "src/demo/ZebulonTable.demo.js",
 			"settings":
 			{
-				"buffer_size": 2662,
-				"encoding": "UTF-8",
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "src/table/ZebulonTable.js",
-			"settings":
-			{
-				"buffer_size": 11559,
+				"buffer_size": 6699,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -559,7 +552,16 @@
 			"file": "src/table/Table.js",
 			"settings":
 			{
-				"buffer_size": 40691,
+				"buffer_size": 42383,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/table/TableHeaders.js",
+			"settings":
+			{
+				"buffer_size": 11195,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -568,15 +570,7 @@
 			"file": "src/table/Input.js",
 			"settings":
 			{
-				"buffer_size": 7715,
-				"line_ending": "Windows"
-			}
-		},
-		{
-			"file": "src/table/utils.js",
-			"settings":
-			{
-				"buffer_size": 25777,
+				"buffer_size": 8533,
 				"encoding": "UTF-8",
 				"line_ending": "Windows"
 			}
@@ -590,10 +584,28 @@
 			}
 		},
 		{
-			"file": "src/demo/ZebulonTable.demo.js",
+			"file": "src/table/utils.js",
 			"settings":
 			{
-				"buffer_size": 5360,
+				"buffer_size": 27562,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/demo/datasources.js",
+			"settings":
+			{
+				"buffer_size": 9532,
+				"encoding": "UTF-8",
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "src/table/ZebulonTable.js",
+			"settings":
+			{
+				"buffer_size": 12080,
 				"line_ending": "Windows"
 			}
 		}
@@ -606,7 +618,7 @@
 	"command_palette":
 	{
 		"height": 490.0,
-		"last_filter": "prev",
+		"last_filter": "",
 		"selected_items":
 		[
 			[
@@ -763,30 +775,31 @@
 	],
 	"file_history":
 	[
-		"/C/Users/thomas/dev_js/table/src/demo/Layout.example2.js",
-		"/C/Users/thomas/dev_js/table/src/table/TableHeaders.js",
-		"/C/Users/thomas/dev_js/table/src/demo/Layout.example.js",
-		"/C/Users/thomas/dev_js/table/src/demo/query.demo.js",
+		"/C/Users/thomas/dev_js/table/src/demo/ZebulonTable.demo.js",
+		"/C/Users/thomas/dev_js/table/src/demo/datasources.js",
+		"/C/Users/thomas/dev_js/table/src/table/MetaDescriptions.js",
+		"/C/Users/thomas/dev_js/table/src/demo/meta.thirdparties.js",
+		"/C/Users/thomas/dev_js/table/src/table/utils.js",
 		"/C/Users/thomas/dev_js/table/src/table/Input.js",
 		"/C/Users/thomas/dev_js/table/src/table/Rows.js",
 		"/C/Users/thomas/dev_js/table/src/demo/meta.dataset.js",
-		"/C/Users/thomas/dev_js/table/src/demo/mock.js",
 		"/C/Users/thomas/dev_js/table/src/table/ZebulonTable.js",
-		"/C/Users/thomas/dev_js/table/src/table/Table.js",
-		"/C/Users/thomas/dev_js/table/src/table/utils.js",
-		"/C/Users/thomas/dev_js/table/src/demo/ZebulonTable.demo.js",
-		"/C/Users/thomas/dev_js/table/src/table/index.css",
-		"/C/Users/thomas/dev_js/table/README.md",
 		"/C/Users/thomas/dev_js/table/src/table/ZebulonTableAndConfiguration.js",
-		"/C/Users/thomas/dev_js/table/src/demo/demo.js",
-		"/C/Users/thomas/dev_js/table/src/demo/datasources.js",
-		"/C/Users/thomas/dev_js/table/src/demo/Layout.js",
-		"/C/Users/thomas/dev_js/table/src/table/ResizeHandle.js",
+		"/C/Users/thomas/dev_js/table/src/table/Table.js",
+		"/C/Users/thomas/dev_js/table/src/demo/layout.example.js",
+		"/C/Users/thomas/dev_js/table/src/table/TableHeaders.js",
+		"/C/Users/thomas/dev_js/table/README.md",
 		"/C/Users/thomas/dev_js/table/package.json",
-		"/C/Users/thomas/dev_js/table/src/demo/meta.thirdparties.js",
-		"/C/Users/thomas/dev_js/table/src/table/MetaDescriptions.js",
-		"/C/Users/thomas/dev_js/table/zebulon-table-1.0.0.tgz",
 		"/C/Users/thomas/dev_js/table/src/demo/navigation.handler.js",
+		"/C/Users/thomas/dev_js/table/src/table/index.css",
+		"/C/Users/thomas/dev_js/table/src/demo/Layout.js",
+		"/C/Users/thomas/dev_js/table/src/demo/Layout.example.js",
+		"/C/Users/thomas/dev_js/table/src/demo/Layout.example2.js",
+		"/C/Users/thomas/dev_js/table/src/demo/query.demo.js",
+		"/C/Users/thomas/dev_js/table/src/demo/mock.js",
+		"/C/Users/thomas/dev_js/table/src/demo/demo.js",
+		"/C/Users/thomas/dev_js/table/src/table/ResizeHandle.js",
+		"/C/Users/thomas/dev_js/table/zebulon-table-1.0.0.tgz",
 		"/C/Users/thomas/dev_js/table/node_modules/zebulon-controls/lib/ScrollableArea.js",
 		"/C/Users/thomas/dev_js/table/src/table/meta.dataset.js",
 		"/C/Users/thomas/dev_js/table/src/demo/metaThirdparties.js",
@@ -889,8 +902,7 @@
 		"/C/Users/thomas/dev_js/grid/src/pivotGrid/components/Headers/Headers.js",
 		"/C/Users/thomas/dev_js/grid/src/pivotGrid/components/Properties.js",
 		"/C/Users/thomas/dev_js/grid/src/pivotGrid/components/Controls/ToolTip.js",
-		"/C/Users/thomas/dev_js/grid/src/pivotGrid/components/PivotGrid/DragLayer.js",
-		"/C/Users/thomas/dev_js/grid/src/pivotGrid/containers/DataCells.js"
+		"/C/Users/thomas/dev_js/grid/src/pivotGrid/components/PivotGrid/DragLayer.js"
 	],
 	"find":
 	{
@@ -909,6 +921,114 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"comparisonAccessorFunction",
+			"groupByAccessorFunction",
+			"analy",
+			"\\nA",
+			"formatedValue",
+			"let value",
+			"getRow",
+			"object",
+			"select",
+			"status:",
+			"this.reference",
+			"value",
+			"onChange",
+			"formatV",
+			"Bounding",
+			"Rect",
+			"Bound",
+			"getElementById",
+			"openFilter",
+			"filterHeaders",
+			"filtersFunction",
+			"filterFunction",
+			"onChangeFi",
+			"filters",
+			"filtersFunction",
+			"filterFunction",
+			"sortAcce",
+			"sortaccessorFunction",
+			"sorts",
+			"country.cd",
+			"this.zoomValue",
+			"fontSize",
+			"zoom",
+			"getFunction",
+			"cellD",
+			"product_lb",
+			"sorts",
+			"accessorFunction",
+			"formatFunc",
+			"format",
+			"rows",
+			"formatFunction",
+			"fomatFunction",
+			"formats",
+			"0.001",
+			"Object.keys(",
+			"size",
+			"shape",
+			"countries[row.country_id]",
+			"\t\t\trow.country_cur_id = countries[row.country_id].currencyId;\n",
+			"countries[row.country_id]",
+			"shape",
+			"obj",
+			"computeMeta",
+			"radioDataset",
+			"this.state",
+			"serverPagination",
+			"sortAccessorFunction",
+			"getSorts",
+			"isDate",
+			"pagina",
+			"getPag",
+			"getPage",
+			"onFilter",
+			"selectTab",
+			"for",
+			"this.selectedRange",
+			"selectedRange",
+			"this.range",
+			"selectedRange",
+			"this.range",
+			"isInPage",
+			"inPage",
+			"props",
+			"zoomValue",
+			"this.tabs",
+			"manageRowError",
+			"rowqui",
+			"newRow",
+			"onInsert",
+			"onI",
+			"onInsert",
+			"formatFunction",
+			"accessorFunction",
+			"column.hidden",
+			"*",
+			"onChange",
+			"*",
+			":\n",
+			"errorHandler",
+			"navigationKeyHandler",
+			"errorHandler",
+			"Before",
+			"}",
+			"          ",
+			"getData",
+			"getFunction",
+			"dml",
+			"selectFunction",
+			"selectF",
+			"select",
+			"default",
+			"sortFunction",
+			"onChange",
+			"editableFunction",
+			"formatFunction",
+			"format",
+			"filters",
 			"replace",
 			"selectCell",
 			"onChange",
@@ -928,115 +1048,7 @@
 			"dragover",
 			"console.log",
 			"left",
-			"drag",
-			"cloneElement",
-			"clone",
-			"handleDragOver",
-			"drag",
-			"handleDrop",
-			"buildLayout",
-			"dragRect",
-			"rect",
-			"Rect",
-			"rect",
-			"this.div",
-			"drag",
-			"editable",
-			"resize",
-			"titi",
-			"toto",
-			"Toto",
-			"toto",
-			"filter",
-			"toto",
-			"component",
-			"buildLayout",
-			"components",
-			"getMockDatasource",
-			"4",
-			"noUpdate",
-			"status",
-			"filterHeaders",
-			"between",
-			"betweens",
-			"widthBody",
-			"keyEvent",
-			"isNavigationKey",
-			"getIds",
-			"zoom",
-			"keyEvent",
-			"zoom",
-			"isActive",
-			"4",
-			"-4",
-			"zebulon-layout",
-			"border",
-			"layout-body",
-			"web",
-			"-5",
-			"display",
-			"flex",
-			"7",
-			"style",
-			"toto",
-			"box",
-			"title",
-			"buildMeta",
-			"sorts",
-			"callbacks",
-			"filters",
-			"filterB",
-			"filterBetween",
-			"filters",
-			"betweens",
-			"getMockDatasource",
-			"zoom",
-			"zoo",
-			"component",
-			"props.data",
-			"component",
-			"compon",
-			"data",
-			"getParent",
-			"getHeader",
-			"layout.id",
-			"getParent",
-			"layout.id",
-			"getHeader",
-			"layout-title",
-			"zoom",
-			"component",
-			"scroll",
-			"contextualMenu",
-			"this.ContextualMenu",
-			"this.ContextualMenu.close();",
-			"parent",
-			"menu",
-			",",
-			"resizeHandleSize",
-			"resize",
-			"green",
-			"resizeImage",
-			"this.resizeImage",
-			"resizeImage",
-			"handleDragOver",
-			"style",
-			"resizeHandleSize",
-			"direction",
-			"drags",
-			"onClick",
-			"drag",
-			"isActive",
-			"keyEvent",
-			"shouldComponentUpdate",
-			"getChildren",
-			"isActive",
-			"zoom",
-			"font",
-			"tabs",
-			"getHeader",
-			"layout",
-			"visible"
+			"drag"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -1055,24 +1067,24 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 7,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "src/demo/Layout.js",
+					"file": "src/demo/dataset.example.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 27189,
+						"buffer_size": 14522,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1104,
-								1104
+								6312,
+								6312
 							]
 						],
 						"settings":
@@ -1085,424 +1097,8 @@
 								{
 									"1":
 									[
-										1871,
-										1872
-									]
-								},
-								"icon":
-								{
-									"1":
-									[
-										"Packages/BracketHighlighter/icons/double_quote.png",
-										"region.greenish"
-									]
-								},
-								"open":
-								{
-									"1":
-									[
-										1866,
-										1867
-									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.clone_regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"bracket_highlighter.locations":
-							{
-								"close":
-								{
-									"1":
-									[
-										1103,
-										1104
-									]
-								},
-								"icon":
-								{
-									"1":
-									[
-										"Packages/BracketHighlighter/icons/double_quote.png",
-										"region.greenish"
-									]
-								},
-								"open":
-								{
-									"1":
-									[
-										1098,
-										1099
-									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 384.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
-					"type": "text"
-				},
-				{
-					"buffer": 1,
-					"file": "src/demo/Layout.example.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 4533,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1907,
-								1907
-							]
-						],
-						"settings":
-						{
-							"bracket_highlighter.busy": false,
-							"bracket_highlighter.clone": -1,
-							"bracket_highlighter.clone_locations":
-							{
-								"close":
-								{
-									"1":
-									[
-										2416,
-										2417
-									]
-								},
-								"icon":
-								{
-									"1":
-									[
-										"Packages/BracketHighlighter/icons/round_bracket.png",
-										"region.yellowish"
-									]
-								},
-								"open":
-								{
-									"1":
-									[
-										2081,
-										2082
-									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.clone_regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"bracket_highlighter.locations":
-							{
-								"close":
-								{
-									"1":
-									[
-										1914,
-										1915
-									]
-								},
-								"icon":
-								{
-									"1":
-									[
-										"Packages/BracketHighlighter/icons/round_bracket.png",
-										"region.yellowish"
-									]
-								},
-								"open":
-								{
-									"1":
-									[
-										1685,
-										1686
-									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 1152.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "src/demo/meta.dataset.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 2662,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								2459,
-								2459
-							]
-						],
-						"settings":
-						{
-							"bracket_highlighter.busy": false,
-							"bracket_highlighter.clone": -1,
-							"bracket_highlighter.locations":
-							{
-								"close":
-								{
-									"1":
-									[
-										2572,
-										2573
+										5334,
+										5335
 									]
 								},
 								"icon":
@@ -1517,36 +1113,26 @@
 								{
 									"1":
 									[
-										2420,
-										2421
+										4816,
+										4817
 									]
 								},
 								"unmatched":
 								{
 								}
 							},
-							"bracket_highlighter.regions":
+							"bracket_highlighter.clone_regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -1562,52 +1148,151 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"bracket_highlighter.locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										6317,
+										6318
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/double_quote.png",
+										"region.greenish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										6304,
+										6305
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.regions":
+							[
 								"bh_curly",
 								"bh_curly_center",
 								"bh_curly_open",
 								"bh_curly_close",
-								"bh_curly_content"
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
-							"translate_tabs_to_spaces": false
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1968.0,
+						"translation.y": 3575.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
-					"file": "src/table/ZebulonTable.js",
+					"buffer": 1,
+					"file": "src/table/MetaDescriptions.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 11559,
+						"buffer_size": 14111,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								8164,
-								8164
+								5842,
+								5842
 							]
 						],
 						"settings":
@@ -1620,8 +1305,8 @@
 								{
 									"1":
 									[
-										8233,
-										8234
+										5847,
+										5848
 									]
 								},
 								"icon":
@@ -1636,8 +1321,8 @@
 								{
 									"1":
 									[
-										7647,
-										7648
+										5734,
+										5735
 									]
 								},
 								"unmatched":
@@ -1646,26 +1331,16 @@
 							},
 							"bracket_highlighter.regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -1681,53 +1356,62 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 4074.0,
+						"translation.y": 3417.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
-					"file": "src/table/Table.js",
+					"buffer": 2,
+					"file": "src/demo/ZebulonTable.demo.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 40691,
+						"buffer_size": 6699,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5044,
-								5044
+								3356,
+								3356
 							]
 						],
 						"settings":
@@ -1740,8 +1424,216 @@
 								{
 									"1":
 									[
-										23026,
-										23027
+										3462,
+										3463
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/square_bracket.png",
+										"region.bluish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										3158,
+										3159
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.clone_regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"bracket_highlighter.locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										3462,
+										3463
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/square_bracket.png",
+										"region.bluish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										3158,
+										3159
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1296.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/table/Table.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 42383,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								19138,
+								19138
+							]
+						],
+						"settings":
+						{
+							"bracket_highlighter.busy": false,
+							"bracket_highlighter.clone": -1,
+							"bracket_highlighter.clone_locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										19167,
+										19168
 									]
 								},
 								"icon":
@@ -1756,8 +1648,8 @@
 								{
 									"1":
 									[
-										22825,
-										22826
+										19109,
+										19110
 									]
 								},
 								"unmatched":
@@ -1766,26 +1658,16 @@
 							},
 							"bracket_highlighter.clone_regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -1801,26 +1683,36 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"bracket_highlighter.locations":
 							{
@@ -1828,24 +1720,24 @@
 								{
 									"1":
 									[
-										5071,
-										5072
+										19166,
+										19167
 									]
 								},
 								"icon":
 								{
 									"1":
 									[
-										"Packages/BracketHighlighter/icons/round_bracket.png",
-										"region.yellowish"
+										"Packages/BracketHighlighter/icons/curly_bracket.png",
+										"region.purplish"
 									]
 								},
 								"open":
 								{
 									"1":
 									[
-										5044,
-										5045
+										19109,
+										19110
 									]
 								},
 								"unmatched":
@@ -1854,26 +1746,16 @@
 							},
 							"bracket_highlighter.regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -1889,36 +1771,254 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2420.0,
+						"translation.y": 9981.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/table/TableHeaders.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 11195,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1540,
+								1540
+							]
+						],
+						"settings":
+						{
+							"bracket_highlighter.busy": false,
+							"bracket_highlighter.clone": -1,
+							"bracket_highlighter.clone_locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										2348,
+										2349
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/curly_bracket.png",
+										"region.purplish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										2251,
+										2252
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.clone_regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"bracket_highlighter.locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										1579,
+										1580
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/curly_bracket.png",
+										"region.purplish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										1337,
+										1338
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 925.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
@@ -1927,15 +2027,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 7715,
+						"buffer_size": 8533,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2712,
-								3011
+								863,
+								863
 							]
 						],
 						"settings":
@@ -1948,8 +2048,8 @@
 								{
 									"1":
 									[
-										925,
-										926
+										930,
+										931
 									]
 								},
 								"icon":
@@ -1964,8 +2064,8 @@
 								{
 									"1":
 									[
-										213,
-										214
+										862,
+										863
 									]
 								},
 								"unmatched":
@@ -1974,26 +2074,16 @@
 							},
 							"bracket_highlighter.clone_regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -2009,26 +2099,36 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"bracket_highlighter.locations":
 							{
@@ -2036,8 +2136,8 @@
 								{
 									"1":
 									[
-										3233,
-										3234
+										930,
+										931
 									]
 								},
 								"icon":
@@ -2052,8 +2152,8 @@
 								{
 									"1":
 									[
-										2353,
-										2354
+										862,
+										863
 									]
 								},
 								"unmatched":
@@ -2062,26 +2162,16 @@
 							},
 							"bracket_highlighter.regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -2097,248 +2187,50 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 768.0,
+						"translation.y": 96.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
 					"buffer": 6,
-					"file": "src/table/utils.js",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 25777,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								23127,
-								23127
-							]
-						],
-						"settings":
-						{
-							"bracket_highlighter.busy": false,
-							"bracket_highlighter.clone": -1,
-							"bracket_highlighter.clone_locations":
-							{
-								"close":
-								{
-									"1":
-									[
-										23135,
-										23136
-									]
-								},
-								"icon":
-								{
-									"1":
-									[
-										"Packages/BracketHighlighter/icons/round_bracket.png",
-										"region.yellowish"
-									]
-								},
-								"open":
-								{
-									"1":
-									[
-										23124,
-										23125
-									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.clone_regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"bracket_highlighter.locations":
-							{
-								"close":
-								{
-									"1":
-									[
-										23134,
-										23135
-									]
-								},
-								"icon":
-								{
-									"1":
-									[
-										"Packages/BracketHighlighter/icons/round_bracket.png",
-										"region.yellowish"
-									]
-								},
-								"open":
-								{
-									"1":
-									[
-										23124,
-										23125
-									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 12960.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 7,
 					"file": "src/table/Rows.js",
 					"semi_transient": false,
 					"settings":
@@ -2350,8 +2242,113 @@
 						"selection":
 						[
 							[
-								166,
-								202
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"bracket_highlighter.busy": false,
+							"bracket_highlighter.clone": -1,
+							"bracket_highlighter.locations":
+							{
+								"close":
+								{
+								},
+								"icon":
+								{
+								},
+								"open":
+								{
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 672.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "src/table/utils.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 27562,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								5518,
+								5518
 							]
 						],
 						"settings":
@@ -2364,8 +2361,96 @@
 								{
 									"1":
 									[
-										1668,
-										1669
+										22205,
+										22206
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/curly_bracket.png",
+										"region.purplish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										21604,
+										21605
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.clone_regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"bracket_highlighter.locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										5562,
+										5563
 									]
 								},
 								"icon":
@@ -2380,82 +2465,9 @@
 								{
 									"1":
 									[
-										1583,
-										1584
+										5475,
+										5476
 									]
-								},
-								"unmatched":
-								{
-								}
-							},
-							"bracket_highlighter.clone_regions":
-							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_round_content",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_tag_content",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
-							],
-							"bracket_highlighter.locations":
-							{
-								"close":
-								{
-								},
-								"icon":
-								{
-								},
-								"open":
-								{
 								},
 								"unmatched":
 								{
@@ -2463,26 +2475,16 @@
 							},
 							"bracket_highlighter.regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -2498,53 +2500,63 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 2525.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
 					"buffer": 8,
-					"file": "src/demo/ZebulonTable.demo.js",
+					"file": "src/demo/datasources.js",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5360,
+						"buffer_size": 9532,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2809,
-								2809
+								5182,
+								5246
 							]
 						],
 						"settings":
@@ -2557,24 +2569,24 @@
 								{
 									"1":
 									[
-										2651,
-										2652
+										4882,
+										4883
 									]
 								},
 								"icon":
 								{
 									"1":
 									[
-										"Packages/BracketHighlighter/icons/curly_bracket.png",
-										"region.purplish"
+										"Packages/BracketHighlighter/icons/round_bracket.png",
+										"region.yellowish"
 									]
 								},
 								"open":
 								{
 									"1":
 									[
-										2594,
-										2595
+										4876,
+										4877
 									]
 								},
 								"unmatched":
@@ -2583,26 +2595,16 @@
 							},
 							"bracket_highlighter.clone_regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -2618,26 +2620,36 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"bracket_highlighter.locations":
 							{
@@ -2645,8 +2657,127 @@
 								{
 									"1":
 									[
-										2966,
-										2967
+										5245,
+										5246
+									]
+								},
+								"icon":
+								{
+									"1":
+									[
+										"Packages/BracketHighlighter/icons/round_bracket.png",
+										"region.yellowish"
+									]
+								},
+								"open":
+								{
+									"1":
+									[
+										5234,
+										5235
+									]
+								},
+								"unmatched":
+								{
+								}
+							},
+							"bracket_highlighter.regions":
+							[
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
+							],
+							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2413.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "src/table/ZebulonTable.js",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 12080,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								222,
+								236
+							]
+						],
+						"settings":
+						{
+							"bracket_highlighter.busy": false,
+							"bracket_highlighter.clone": -1,
+							"bracket_highlighter.locations":
+							{
+								"close":
+								{
+									"1":
+									[
+										263,
+										264
 									]
 								},
 								"icon":
@@ -2661,8 +2792,8 @@
 								{
 									"1":
 									[
-										2794,
-										2795
+										147,
+										148
 									]
 								},
 								"unmatched":
@@ -2671,26 +2802,16 @@
 							},
 							"bracket_highlighter.regions":
 							[
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_square_content",
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_regex_content",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close",
-								"bh_single_quote_content",
-								"bh_c_define",
-								"bh_c_define_center",
-								"bh_c_define_open",
-								"bh_c_define_close",
-								"bh_c_define_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
 								"bh_round",
 								"bh_round_center",
 								"bh_round_open",
@@ -2706,36 +2827,46 @@
 								"bh_unmatched_open",
 								"bh_unmatched_close",
 								"bh_unmatched_content",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_double_quote_content",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_angle_content",
 								"bh_default",
 								"bh_default_center",
 								"bh_default_open",
 								"bh_default_close",
 								"bh_default_content",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_curly_content"
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content"
 							],
 							"syntax": "Packages/Babel/JavaScript (Babel).sublime-syntax",
 							"tab_size": 2,
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 912.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 9,
 					"type": "text"
 				}
 			]
@@ -2802,23 +2933,7 @@
 		"selected_items":
 		[
 			[
-				"meta",
-				"src\\demo\\meta.dataset.js"
-			],
-			[
-				"layoutex",
-				"src\\demo\\Layout.example.js"
-			],
-			[
-				"input",
-				"src\\table\\Input.js"
-			],
-			[
-				"utils",
-				"src\\table\\utils.js"
-			],
-			[
-				"row",
+				"rows",
 				"src\\table\\Rows.js"
 			],
 			[
@@ -2826,16 +2941,76 @@
 				"src\\demo\\ZebulonTable.demo.js"
 			],
 			[
+				"input",
+				"src\\table\\Input.js"
+			],
+			[
 				"table",
+				"src\\table\\TableHeaders.js"
+			],
+			[
+				"utils",
+				"src\\table\\utils.js"
+			],
+			[
+				"tabl",
 				"src\\table\\Table.js"
 			],
 			[
-				"layout",
-				"src\\demo\\Layout.example.js"
+				"metadesc",
+				"src\\table\\MetaDescriptions.js"
+			],
+			[
+				"met",
+				"src\\demo\\meta.thirdparties.js"
+			],
+			[
+				"meta",
+				"src\\demo\\meta.dataset.js"
+			],
+			[
+				"zebu",
+				"src\\demo\\ZebulonTable.demo.js"
+			],
+			[
+				"datasource",
+				"src\\demo\\datasources.js"
+			],
+			[
+				"metadata",
+				"src\\demo\\meta.dataset.js"
+			],
+			[
+				"zeb",
+				"src\\table\\ZebulonTableAndConfiguration.js"
+			],
+			[
+				"json",
+				"package.json"
+			],
+			[
+				"row",
+				"src\\table\\Rows.js"
 			],
 			[
 				"read",
 				"README.md"
+			],
+			[
+				"css",
+				"src\\table\\index.css"
+			],
+			[
+				"readm",
+				"README.md"
+			],
+			[
+				"layoutex",
+				"src\\demo\\Layout.example.js"
+			],
+			[
+				"layout",
+				"src\\demo\\Layout.example.js"
 			],
 			[
 				"mock",
@@ -2850,14 +3025,6 @@
 				"src\\demo\\ZebulonTable.demo.js"
 			],
 			[
-				"css",
-				"src\\table\\index.css"
-			],
-			[
-				"zeb",
-				"src\\table\\ZebulonTable.js"
-			],
-			[
 				"data",
 				"src\\demo\\meta.dataset.js"
 			],
@@ -2870,10 +3037,6 @@
 				"src\\table\\ZebulonTableAndConfiguration.js"
 			],
 			[
-				"rows",
-				"src\\table\\Rows.js"
-			],
-			[
 				"ze",
 				"src\\table\\ZebulonTable.js"
 			],
@@ -2882,24 +3045,8 @@
 				"src\\demo\\Layout.js"
 			],
 			[
-				"zebu",
-				"zebulon-table-1.0.0.tgz"
-			],
-			[
 				"in",
 				"src\\table\\Input.js"
-			],
-			[
-				"json",
-				"package.json"
-			],
-			[
-				"datasource",
-				"src\\demo\\datasources.js"
-			],
-			[
-				"met",
-				"src\\demo\\meta.dataset.js"
 			],
 			[
 				"zebul",
@@ -3138,10 +3285,6 @@
 				"src\\pivotGrid\\containers\\Properties.js"
 			],
 			[
-				"tabl",
-				"src\\pivotGrid\\components\\Controls\\Table.js"
-			],
-			[
 				"piv",
 				"src\\pivotGrid\\components\\PivotGrid\\PivotGrid.js"
 			],
@@ -3300,18 +3443,6 @@
 			[
 				"acka",
 				"package.json"
-			],
-			[
-				"git",
-				".gitignore"
-			],
-			[
-				"dimenheads",
-				"src\\pivotGrid\\components\\DimensionHeaders\\DimensionHeaders.js"
-			],
-			[
-				"column",
-				"src\\pivotGrid\\containers\\ColumnHeaders.js"
 			]
 		],
 		"width": 0.0
