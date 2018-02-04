@@ -582,8 +582,8 @@ export class MyDataset extends Component {
     footer = (
       <textarea
         readOnly
-        rows="30"
-        cols="200"
+        rows="23"
+        cols="180"
         value={text}
         style={{
           fontFamily: "sans-serif",

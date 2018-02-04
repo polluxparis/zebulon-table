@@ -30,7 +30,7 @@ class ZebulonTableDemo extends Component {
     this.state = {
       data: null,
       sizes: {
-        height: 1000,
+        height: 700,
         width: 1200,
         rowHeight: 25
       },

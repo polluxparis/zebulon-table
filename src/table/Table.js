@@ -203,7 +203,10 @@ export class Table extends Component {
       this.state.selectedRange.end,
       cell => this.selectRange_({ start: cell, end: cell }),
       this.onChange,
-      this.state.filteredData
+      this.state.filteredData,
+      this.state.updatedRows,
+      this.state.data,
+      this.props.params
     );
   };
   //-----------------------------------------

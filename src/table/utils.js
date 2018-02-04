@@ -532,7 +532,8 @@ export const cellData = (row, column, status, data, params, focused) => {
   // if (column.formatFunction && !(editable && focused)) {
   //   value = column.formatFunction(value, row, params, status, data);
   // }
-  let select = column.selectItems || column.select;
+
+  let select = column.select ? column.selectItems || column.select : undefined;
   if (
     editable &&
     focused &&
@@ -971,12 +972,10 @@ export const buildPasteArray = (
   selectedCell,
   selectCell,
   onChange,
-  filteredData
-  // columns,
-  // filteredData,
-  // updatedRows,
-  // data,
-  // params
+  filteredData,
+  updatedRows,
+  data,
+  params
 ) => {
   const columnSeparator = type === "csv" ? "," : "\t";
   // let { columnIndex, rowIndex } = cell;
@@ -1002,7 +1001,16 @@ export const buildPasteArray = (
         column = columns[cell.columns];
       }
       columnIndex++;
-      if (column.editable) {
+      const editable = column.editableFunction
+        ? column.editableFunction({
+            column,
+            row,
+            status: updatedRows[row.index_] || {},
+            data,
+            params
+          })
+        : column.editable;
+      if (editable) {
         if (!selectCell(cell)) {
           return;
         }
