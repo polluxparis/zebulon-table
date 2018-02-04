@@ -2,14 +2,15 @@
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
 ## Main features
-* Key navigation
-* Sorting, filtering
-* Copy, paste
-* Formats
-* Validations
-* Self description
-* Computed columns
-* Server communication
+* Key navigation.
+* Sorting, filtering.
+* Formats.
+* Validations.
+* Foreign key management.
+* Copy, paste.
+* Self description.
+* Computed columns.
+* Server communication.
 ## Help and suggestions would be welcome.
 ## Getting started
 Install `zebulon-table` using npm.
@@ -383,3 +384,22 @@ You can overwrite the navigationKeyHandler functions setting your custom functio
 Not yet documented
 ## Self description
 Not yet documented
+## Details and drilldown
+Not yet documented
+## To do
+* Complete documentation.
+* Demo.
+* Loading from observable improvement.
+* Pagination manager improvement.
+* Computed columns with aggregation functions improvement. 
+* "values" filter improvement.
+* Styles and design improvement.
+* Contextual menu and tooltips management.
+* Audits.
+* Rollback of row updates.
+* Details improvement.
+* Parameterisation of "actions".
+* Grouped columns.
+* Lock of columns.
+*...
+

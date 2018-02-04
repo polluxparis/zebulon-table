@@ -90,21 +90,15 @@ export const getMockDataset = nRow => {
 	const d = [];
 	for (let i = 0; i < nRow; i++) {
 		const row = {};
-		row.product_id = Math.ceil(
-			Math.random() * (Object.keys(products).length - 1.001)
+		row.product_id = Math.floor(
+			Math.random() * (Object.keys(products).length - 0.001)
 		);
 		row.id = i;
-		row.country_id = Math.ceil(
-			Math.random() * (Object.keys(countries).length - 1.001)
+		row.country_id = Math.floor(
+			Math.random() * (Object.keys(countries).length - 0.001)
 		);
-		// const country = countries[row.country_id];
-		// row.country_cd = country.code;
-		// row.country_cur_id = country.currencyId;
 		row.currency_id = countries[row.country_id].currency_id;
-		// row.rate = currency.rate;
-		// row.country_cur_cd = currency.code;
-		// row.country_cur_sym = currency.symbol;
-		row.color = colors[Math.ceil(Math.random() * (colors.length - 1.001))];
+		row.color = colors[Math.floor(Math.random() * (colors.length - 0.001))];
 		row.qty = Math.round(1000 * Math.random()) + 125;
 		row.d = new Date(
 			2017 + Math.round(2 * Math.random()),

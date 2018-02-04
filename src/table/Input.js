@@ -74,7 +74,7 @@ export class Input extends Component {
       if (!this.validateInput(value)) return;
       // selection of an object
       if (column.reference) {
-        validatedValue = column.select[e.target.value];
+        validatedValue = column.selectItems[e.target.value];
       } else if (dataType === "boolean") {
         if (inputType === "filter" && this.state.value === false)
           validatedValue = null;
@@ -92,7 +92,17 @@ export class Input extends Component {
       }
       if (onChange)
         if (onChange(validatedValue, row, column, filterTo) === false) return;
-      if (row) row[column.reference || column.id] = validatedValue;
+      if (row) {
+        row[column.reference || column.id] = validatedValue;
+        if (column.setForeignKeyAccessorFunction) {
+          column.setForeignKeyAccessorFunction({
+            value: column.foreignKeyAccessorFunction({
+              row: { [column.reference]: validatedValue }
+            }),
+            row
+          });
+        }
+      }
       this.setState({ formatedValue: value, value: validatedValue });
     }
   };

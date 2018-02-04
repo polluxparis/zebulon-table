@@ -118,11 +118,6 @@ const meta = {
         enable: "isSelected"
       },
       {
-        type: "action",
-        caption: "Compute",
-        enable: true
-      },
-      {
         type: "save",
         caption: "Save",
         enable: true
@@ -164,6 +159,7 @@ const meta = {
       mandatory: true,
       hidden: true,
       accessor: "product",
+      setForeignKeyAccessor: ({ value, row }) => (row.product_id = value),
       foreignKeyAccessor: "product.id",
       locked: true
     },
@@ -241,7 +237,8 @@ const meta = {
       mandatory: true,
       hidden: true,
       accessor: "country",
-      foreignKeyAccessor: "country.id"
+      foreignKeyAccessor: "country.id",
+      setForeignKeyAccessor: ({ value, row }) => (row.country_id = value)
     },
     {
       id: "country_cd",
@@ -272,7 +269,8 @@ const meta = {
       mandatory: true,
       hidden: true,
       accessor: "currency",
-      foreignKeyAccessor: "currency.id"
+      foreignKeyAccessor: "currency.id",
+      setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
     },
     {
       id: "currency_cd",
@@ -330,7 +328,6 @@ const meta = {
         );
       }
     },
-
     totalAmount,
     rollingAverage
   ]
@@ -563,6 +560,7 @@ export class MyDataset extends Component {
               />sum of amounts in € by country.
             </div>
           </div>
+
           <textarea
             readOnly
             rows="6"
@@ -579,25 +577,35 @@ export class MyDataset extends Component {
         </div>
       </div>
     );
+    const text =
+      "Test key, navigation, zoom, scroll, wheel...\n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters and sorts\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n. Resize and move columns by drag and drop.\n...";
+    footer = (
+      <textarea
+        readOnly
+        rows="30"
+        cols="200"
+        value={text}
+        style={{
+          fontFamily: "sans-serif",
+          border: "unset"
+          // fontSize: "medium"
+        }}
+      />
+    );
 
-    sizes.height = Math.min(sizes.height - 50, 700);
+    sizes.height = Math.min(sizes.height - 200, 600);
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}
         <ZebulonTable
           key="dataset"
           id="dataset"
-          // visible={selectedTab === 0}
-          // isActive={selectedTab === 0}
-          // data={data}
           meta={meta}
           filters={filters}
           sorts={sorts}
-          // updatedRows={updatedRows}
           status={status}
           sizes={sizes}
           functions={functions}
-          // params={params}
           keyEvent={keyEvent}
           errorHandler={this.errorHandler}
           // navigationKeyHandler={navigationKeyHandler}

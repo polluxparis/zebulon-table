@@ -28,9 +28,9 @@ class ZebulonTableDemo extends Component {
     this.options = [200, 40, 3];
     const functionsObject = { ...functions, dataset: datasetFunctions };
     this.state = {
-      data: null, //getMockDatasource(1, ...this.options),
+      data: null,
       sizes: {
-        height: 2000,
+        height: 1000,
         width: 1200,
         rowHeight: 25
       },
@@ -53,7 +53,6 @@ class ZebulonTableDemo extends Component {
     this.state.meta = metaDataset;
     this.text =
       "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
-    // this.tabs = this.initTabs(props);
   }
   componentDidMount() {
     document.addEventListener("copy", this.handleKeyEvent);
@@ -86,9 +85,7 @@ class ZebulonTableDemo extends Component {
     }
   };
   onSelectTab = index => {
-    // if (this[this.tabs[this.state.selectedTab].id].table.canQuit()) {
     this.setState({ selectedTab: index });
-    // }
   };
   tabs = [
     {
@@ -130,23 +127,9 @@ class ZebulonTableDemo extends Component {
         <MyDataset
           key="dataset"
           id="dataset"
-          // visible={selectedTab === 0}
-          // isActive={selectedTab === 0}
-          // data={data}
-          // meta={meta}
-          // filters={filters}
-          // sorts={sorts}
-          // updatedRows={updatedRows}
-          // status={status}
-          sizes={sizes}
           functions={functions}
-          // params={params}
           keyEvent={keyEvent}
-          // errorHandler={this.errorHandler}
-          // navigationKeyHandler={navigationKeyHandler}
-          // onFilter={this.getLengths}
-          // onSort={this.getLengths}
-          // onGetPage={this.getPageLengths}
+          sizes={sizes}
         />
       );
     } else if (tabIndex === 1) {

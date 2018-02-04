@@ -145,8 +145,14 @@ export const computeMeta = (meta, zoom = 1, functions) => {
         if (typeof select.filter === "function") {
           column.selectFilter = select.filter;
           column.selectItems = select.items || [""];
-        } else column.selectItems = select || [""];
-      } else column.selectItems = select || [""];
+        } else {
+          column.selectItems = select || [""];
+        }
+      } else {
+        column.selectItems = select || [""];
+      }
+    } else {
+      column.selectItems = select || [""];
     }
     // reference to an object
     if (
@@ -155,12 +161,20 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       column.accessor.indexOf(".") !== -1
     ) {
       column.reference = column.accessor.slice(0, column.accessor.indexOf("."));
+      const referencedColumn = meta.properties.find(
+        col => col.id === column.reference
+      );
       column.foreignKeyAccessorFunction = getFunction(
         functions,
         meta.table.object,
         "accessor",
-        meta.properties.find(col => col.id === column.reference)
-          .foreignKeyAccessor
+        referencedColumn.foreignKeyAccessor
+      );
+      column.setForeignKeyAccessorFunction = getFunction(
+        functions,
+        meta.table.object,
+        "setAccessor",
+        referencedColumn.setForeignKeyAccessor
       );
     }
     column.accessorFunction = getFunction(
@@ -174,6 +188,12 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       meta.table.object,
       "accessor",
       column.foreignKeyAccessor
+    );
+    column.setForeignKeyAccessorFunction = getFunction(
+      functions,
+      meta.table.object,
+      "setAccessor",
+      column.setForeignKeyAccessorFunction
     );
     column.sortAccessorFunction = getFunction(
       functions,
@@ -968,23 +988,52 @@ export const buildPasteArray = (
   cells.forEach((rowCells, rowIndex) => {
     const cell = {};
     const row = filteredData[selectedCell.rows + rowIndex];
-    rowCells.forEach((value, columnIndex) => {
+    let columnIndex = 0;
+    rowCells.forEach(value => {
       cell.rows = selectedCell.rows + rowIndex;
       cell.columns = selectedCell.columns + columnIndex;
-      const column = columns[cell.columns];
+      let column = columns[cell.columns];
+      while (
+        column.hidden &&
+        selectedCell.columns + columnIndex < columns.length
+      ) {
+        columnIndex++;
+        cell.columns = selectedCell.columns + columnIndex;
+        column = columns[cell.columns];
+      }
+      columnIndex++;
       if (column.editable) {
         if (!selectCell(cell)) {
           return;
         }
         let v = value;
         const { dataType, format } = column;
-        if (dataType === "boolean") {
-          v = v === "true";
-        } else if (dataType === "date") {
-          v = utils.stringToDate(v, format);
-        } else if (dataType === "number") {
-          v = v === "" ? null : Number(value);
+        if (column.reference && column.selectItems) {
+          const item = Object.values(column.selectItems).find(
+            item =>
+              column.accessorFunction({ row: { [column.reference]: item } }) ===
+              v
+          );
+          row[column.reference] = item;
+          if (column.setForeignKeyAccessorFunction) {
+            column.setForeignKeyAccessorFunction({
+              value: column.foreignKeyAccessorFunction({
+                row: { [column.reference]: item }
+              }),
+              row
+            });
+          }
+        } else {
+          if (dataType === "boolean") {
+            v = v === "true";
+          } else if (dataType === "date") {
+            v = utils.stringToDate(v, format);
+          } else if (dataType === "number") {
+            v = v === "" ? null : Number(value);
+          }
+          row[column.id] = v;
         }
+
         if (!onChange(v, row, column)) {
           return;
         }
