@@ -361,7 +361,9 @@ export class ZebulonTable extends Component {
 
   render() {
     let div = (
-      <div style={{ fontSize: `${this.zoomValue * 100}%` }}>
+      <div
+        style={{ fontSize: `${this.zoomValue * 100}%`, position: "relative" }}
+      >
         <Table
           id={this.props.id}
           status={this.state.status}

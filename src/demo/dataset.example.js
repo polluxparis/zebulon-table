@@ -49,7 +49,7 @@ const totalAmount = {
   editable: false,
   hidden: true,
   aggregation: "sum",
-  groupByAccessor: "product.id",
+  groupByAccessor: "country.id",
   accessor: ({ row }) => row.qty * (row.product || {}).price,
   format: ({ value, row }) => {
     return (
@@ -198,9 +198,10 @@ const meta = {
     },
     {
       id: "country",
+      caption: "Country",
+      mandatory: true,
       width: 100,
       dataType: "object",
-      mandatory: true,
       hidden: true,
       accessor: "country",
       foreignKeyAccessor: "country.id",
@@ -230,6 +231,7 @@ const meta = {
     },
     {
       id: "currency",
+      caption: "Currency",
       width: 10,
       dataType: "object",
       mandatory: true,
@@ -251,6 +253,7 @@ const meta = {
     {
       id: "qty",
       caption: "Quantity",
+      mandatory: true,
       width: 90,
       dataType: "number",
       editable: true,
@@ -349,11 +352,15 @@ export class MyDataset extends Component {
     if (!totalAmount.hidden) {
       computeAnalytic(this.table.state.data, totalAmount);
     }
-    computeMetaPositions(meta.properties, this.table.zoomValue);
+    meta.visibleIndexes = computeMetaPositions(
+      meta.properties,
+      this.table.zoomValue
+    );
     this.setState({
       totalAmount: !this.state.totalAmount,
       status: this.state.status
     });
+    this.table.table.onMetaChange(true);
   };
   handleRollingAverage = () => {
     rollingAverage.hidden = this.state.rollingAverage;
@@ -361,11 +368,15 @@ export class MyDataset extends Component {
     if (!rollingAverage.hidden) {
       computeAnalytic(this.table.state.data, rollingAverage);
     }
-    computeMetaPositions(meta.properties, this.table.zoomValue);
+    meta.visibleIndexes = computeMetaPositions(
+      meta.properties,
+      this.table.zoomValue
+    );
     this.setState({
       rollingAverage: !this.state.rollingAverage,
       status: this.state.status
     });
+    this.table.table.onMetaChange(true);
   };
   errorHandler = {
     onRowQuit: message => {

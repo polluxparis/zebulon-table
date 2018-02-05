@@ -325,11 +325,10 @@ export class Table extends Component {
     } else {
       this.setState({ filteredData: rows });
     }
-
     if (this.onRowNew(row)) {
       this.selectRange(
         {
-          end: { rows: range.end.rows, columns: 0 },
+          end: { rows: range.end.rows || 0, columns: 0 },
           start: {
             rows: range.end.rows,
             columns: this.state.meta.properties.length - 1
@@ -339,6 +338,7 @@ export class Table extends Component {
         "enter"
       );
     }
+    this.rowUpdated = true;
   };
   handleNew = index => {
     const row = { index_: this.getDataLength() };
@@ -362,29 +362,25 @@ export class Table extends Component {
   // ----------------------------------------
   // filtering
   // ----------------------------------------
-  adjustScroll = filteredDataLength => {
-    if (
-      this.state &&
-      filteredDataLength !== this.getFilteredDataLength &&
-      this.state.scroll.rows.startIndex !== 0 &&
-      this.state.scroll.rows.index +
-        (this.state.scroll.rows.direction === 1
-          ? this.rowsHeight / this.rowHeight
-          : 0) >
-        filteredDataLength
-    ) {
-      this.setState({
-        scroll: {
-          columns: this.state.scroll.columns,
-          rows: {
-            index: 0,
-            direction: 1,
-            startIndex: 0,
-            shift: 0,
-            position: 0
-          }
-        }
-      });
+  adjustScrollRows = filteredDataLength => {
+    if (this.state) {
+      let { rows, columns } = this.state.scroll;
+      if (
+        filteredDataLength !== this.getFilteredDataLength &&
+        rows.startIndex !== 0 &&
+        rows.index +
+          (rows.direction === 1 ? this.rowsHeight / this.rowHeight : 0) >
+          filteredDataLength
+      ) {
+        rows = {
+          index: 0,
+          direction: 1,
+          startIndex: 0,
+          shift: 0,
+          position: 0
+        };
+        this.setState({ scroll: { rows, columns } });
+      }
     }
   };
   filters = (data, filters, noFocus, updatedRows) => {
@@ -394,7 +390,7 @@ export class Table extends Component {
           filters,
           callbackAfter: page => {
             this.selectRange_(this.range, undefined, "enter", noFocus);
-            this.adjustScroll(page.filteredDataLength);
+            this.adjustScrollRows(page.filteredDataLength);
           }
         });
       }
@@ -407,7 +403,7 @@ export class Table extends Component {
       updatedRows
     );
     const filteredData = data.filter(filter);
-    this.adjustScroll(filteredData.length);
+    this.adjustScrollRows(filteredData.length);
     if (this.props.onFilter) {
       this.props.onFilter({
         filters,
@@ -911,7 +907,6 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    // mandatory data
 
     let b = this.onRowQuit_(message);
     if (
@@ -929,7 +924,7 @@ export class Table extends Component {
         .filter(property => property.mandatory)
         .forEach(property => {
           const error = message.status.errors[property.id] || {};
-
+          // mandatory data
           manageRowError(
             this.state.updatedRows,
             message.row.index_,
@@ -937,7 +932,7 @@ export class Table extends Component {
             "mandatory",
             utils.isNullOrUndefined(message.row[property.id]) ||
             message.row[property.id] === ""
-              ? property.caption + ": mandatory data."
+              ? (property.caption || property.id) + ": mandatory data."
               : null
           );
         });
@@ -1147,67 +1142,53 @@ export class Table extends Component {
     this.setState({ text: { ...this.state.text, v: e.target.value } });
     this.onChange(e.target.value, row, column);
   };
-  onMetaChange = () => this.setState({ scroll: this.state.scroll });
+  onMetaChange = resetScroll =>
+    this.setState({
+      scroll: {
+        rows: this.state.scroll.rows,
+        columns: resetScroll
+          ? {
+              index: 0,
+              direction: 1,
+              startIndex: 0,
+              shift: 0,
+              position: 0
+            }
+          : this.state.scroll.columns
+      }
+    });
   // getMenu = (menuId, data) => {};
   render() {
     const height = this.props.height,
       width = this.props.width;
-    const { visible } = this.props;
-
+    const { visible, params } = this.props;
+    const {
+      status,
+      meta,
+      scroll,
+      selectedRange,
+      updatedRows,
+      data
+    } = this.state;
     // let filter;
 
     if (!visible) {
       return null;
-    } else if (this.state.status.loading || this.state.status.loadingConfig) {
+    } else if (status.loading || status.loadingConfig) {
       return <div>Loading data...</div>;
-    } else if (this.state.status.error) {
-      if (this.state.status.error.message === "No rows retrieved") {
+    } else if (status.error) {
+      if (status.error.message === "No rows retrieved") {
         return <div style={{ width: "max-content" }}>No rows retrieved</div>;
       } else {
         return (
           <div style={{ color: "red", width: "max-content" }}>
-            <p>{this.state.status.error.type}</p>
-            <p>{this.state.status.error.message}</p>
+            <p>{status.error.type}</p>
+            <p>{status.error.message}</p>
           </div>
         );
       }
     }
-    // -----------------------------
-    //   action buttons
-    // -----------------------------
-    const noUpdate = !this.isInPage(this.state.scroll.rows);
-    const actions = (this.state.meta.table.actions || [])
-      .map((action, index) => {
-        if (!this.doubleclickAction && action.type === "detail") {
-          this.doubleclickAction = action;
-        }
-        let enable = action.enable || false;
-        if (this.state.status.loadingPage) {
-          enable = false;
-        } else if (action.enableFunction) {
-          const row =
-            this.state.selectedRange.end.rows !== undefined
-              ? this.getRow(this.state.selectedRange.end.rows)
-              : { index_: undefined };
-          const status = this.state.updatedRows[row.index_];
-          enable = action.enableFunction({ row, status });
-        }
-        return (
-          <button
-            key={index}
-            disabled={!enable}
-            style={{
-              width: `${96 / this.state.meta.table.actions.length}%`,
-              margin: 2,
-              marginTop: 6,
-              backgroundColor: "lightgrey"
-            }}
-            onClick={() => this.handleClickButton(index)}
-          >
-            {action.caption}
-          </button>
-        );
-      });
+    const noUpdate = !this.isInPage(scroll.rows);
     // -----------------------------------
     // filters
     // -----------------------------------
@@ -1215,7 +1196,7 @@ export class Table extends Component {
     // ----------------------------------
     let filterHeaders;
 
-    if (this.state.meta.table.noFilter) {
+    if (meta.table.noFilter) {
       filterHeaders = [];
     } else {
       filterHeaders = [
@@ -1224,18 +1205,17 @@ export class Table extends Component {
           key="filters"
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
-          meta={this.state.meta.properties}
-          data={this.state.data}
+          meta={meta.properties}
+          data={data}
           height={this.rowHeight}
           width={width}
-          scroll={this.state.scroll.columns}
-          statusBar={!this.state.meta.table.noStatus}
+          scroll={scroll.columns}
+          statusBar={!meta.table.noStatus}
         />
       ];
       if (
-        this.state.meta.properties.findIndex(
-          column => column.filterType === "between"
-        ) !== -1
+        meta.properties.findIndex(column => column.filterType === "between") !==
+        -1
       ) {
         filterHeaders.push(
           <Headers
@@ -1243,13 +1223,13 @@ export class Table extends Component {
             key="filtersBetween"
             openFilter={this.openFilter}
             onChange={this.onChangeFilter}
-            meta={this.state.meta.properties}
-            data={this.state.data}
+            meta={meta.properties}
+            data={data}
             height={this.rowHeight}
             width={width}
-            scroll={this.state.scroll.columns}
+            scroll={scroll.columns}
             filterTo={true}
-            statusBar={!this.state.meta.table.noStatus}
+            statusBar={!meta.table.noStatus}
           />
         );
       }
@@ -1327,29 +1307,28 @@ export class Table extends Component {
     let detail = this.state.detail.content;
     if (detail) {
       const row =
-        this.state.selectedRange.end.rows !== undefined
-          ? this.getRow(this.state.selectedRange.end.rows)
+        selectedRange.end.rows !== undefined
+          ? this.getRow(selectedRange.end.rows)
           : {};
-      const status = this.state.updatedRows[row.index_];
-      //       top: (3 + rowIndex) * this.rowHeight + this.state.scroll.rows.shift,
+      const status = updatedRows[row.index_];
+      //       top: (3 + rowIndex) * this.rowHeight + scroll.rows.shift,
       // left:
-      //   column.position + this.rowHeight - this.state.scroll.columns.position
+      //   column.position + this.rowHeight - scroll.columns.position
       detail = this.getDetail({
         Detail: detail,
         row,
-        data: this.state.data,
-        meta: this.state.meta.properties,
+        data: data,
+        meta: meta.properties,
         status,
-        params: this.props.params,
+        params: params,
         top:
           (3 +
             filterHeaders.length +
-            this.state.selectedRange.end.rows -
-            this.state.scroll.rows.startIndex) *
+            selectedRange.end.rows -
+            scroll.rows.startIndex) *
             this.rowHeight +
-          this.state.scroll.rows.shift,
-
-        onChange: this.state.meta.row.onChange,
+          scroll.rows.shift,
+        onChange: meta.row.onChange,
         onClose: this.closeOpenedWindows
       });
     }
@@ -1369,7 +1348,7 @@ export class Table extends Component {
         <div
           key={"tool-tip"}
           className="zebulon-tool-tip"
-          style={{ top: toolTip.top, left: toolTip.left }}
+          style={{ top: toolTip.top, left: toolTip.left, position: "absolute" }}
         >
           {content}
         </div>
@@ -1381,29 +1360,71 @@ export class Table extends Component {
     this.rowsHeight =
       height -
       (1 + filterHeaders.length) * this.rowHeight -
-      (actions.length ? 30 : 0);
+      ((meta.table.actions || []).length ? 30 : 0);
 
     let statusBar;
-    if (this.state.meta.table.noStatus) {
+    if (meta.table.noStatus) {
       statusBar = null;
     } else {
       statusBar = (
         <Status
           data={this.state.filteredData}
-          status={this.state.status}
+          status={status}
           dataLength={this.state.filteredDataLength}
           height={this.rowsHeight}
           rowHeight={this.rowHeight}
-          scroll={this.state.scroll.rows}
+          scroll={scroll.rows}
           updatedRows={this.state.updatedRows}
           selectRange={this.selectRange}
-          selectedIndex={this.state.selectedRange.end.rows}
-          meta={this.state.meta.properties}
+          selectedIndex={selectedRange.end.rows}
+          meta={meta.properties}
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
         />
       );
     }
+    // -----------------------------
+    //   action buttons
+    // -----------------------------
+    const actions = (meta.table.actions || []).map((action, index) => {
+      if (!this.doubleclickAction && action.type === "detail") {
+        this.doubleclickAction = action;
+      }
+      let enable = action.enable || false;
+      if (status.loadingPage) {
+        enable = false;
+      } else if (action.enableFunction) {
+        const row =
+          selectedRange.end.rows !== undefined
+            ? this.getRow(selectedRange.end.rows)
+            : { index_: undefined };
+        const status = updatedRows[row.index_];
+        enable = action.enableFunction({ row, status });
+      }
+      const lastColumn = meta.properties[meta.properties.length - 1];
+      const actionsWidth =
+        Math.min(
+          lastColumn.position +
+            lastColumn.computedWidth +
+            this.rowHeight * (statusBar !== null),
+          width - 12
+        ) / meta.table.actions.length;
+      return (
+        <button
+          key={index}
+          disabled={!enable}
+          style={{
+            width: actionsWidth, //`${96 / meta.table.actions.length}%`,
+            margin: 2,
+            marginTop: 6,
+            backgroundColor: "lightgrey"
+          }}
+          onClick={() => this.handleClickButton(index)}
+        >
+          {action.caption}
+        </button>
+      );
+    });
     return (
       <div
         style={{
@@ -1421,11 +1442,11 @@ export class Table extends Component {
         <Headers
           type="header"
           onSort={this.onSort}
-          meta={this.state.meta.properties}
-          data={this.state.data}
+          meta={meta.properties}
+          data={data}
           height={this.rowHeight}
           width={width}
-          scroll={this.state.scroll.columns}
+          scroll={scroll.columns}
           onMetaChange={this.onMetaChange}
           statusBar={statusBar !== null}
         />
@@ -1433,22 +1454,22 @@ export class Table extends Component {
         <div style={{ display: "-webkit-box" }}>
           {statusBar}
           <Rows
-            meta={this.state.meta}
+            meta={meta}
             data={this.state.filteredData}
-            status={this.state.status}
+            status={status}
             dataLength={this.state.filteredDataLength}
             height={this.rowsHeight}
             width={width - this.rowHeight * (statusBar !== null)}
             rowHeight={this.rowHeight}
-            scroll={this.state.scroll}
+            scroll={scroll}
             onScroll={this.onScroll}
-            selectedRange={this.state.selectedRange}
+            selectedRange={selectedRange}
             selectRange={this.selectRange}
             onChange={this.onChange}
             onFocus={() => {}}
             hasFocus={this.hasFocus}
             updatedRows={this.state.updatedRows}
-            params={this.props.params}
+            params={params}
             navigationKeyHandler={this.props.navigationKeyHandler}
             ref={ref => (this.rows = ref)}
             noUpdate={noUpdate}

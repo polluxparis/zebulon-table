@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { utils } from "zebulon-controls";
+import { utils, constants } from "zebulon-controls";
 import { Input } from "./Input";
 import { computeMetaPositions, getRowErrors } from "./utils";
 import classnames from "classnames";
@@ -211,7 +211,7 @@ export class Headers extends Component {
   };
 
   handleDragOver = e => {
-    console.log("dragover", e.target, e.dataTransfer.getData("text"));
+    // console.log("dragover", e.target, e.dataTransfer.getData("text"));
     if (
       this.dragType === "move" ||
       (this.dragType === "resize" &&
@@ -236,7 +236,7 @@ export class Headers extends Component {
         meta[this.dragId].index_ = meta[e.target.id].index_ + 0.1;
         meta.sort((a, b) => (a.index_ > b.index_) - (a.index_ < b.index));
         computeMetaPositions(meta);
-        this.props.onMetaChange();
+        this.props.onMetaChange(this.props.width);
         // console.log("drag end", e);
       } else if (
         this.dragType === "resize" &&
@@ -248,7 +248,25 @@ export class Headers extends Component {
         column.computedWidth += e.pageX - this.dragX;
         column.width = column.computedWidth / zoom;
         computeMetaPositions(meta);
-        this.props.onMetaChange();
+        // console.log(
+        //   "drop resize",
+        //   meta[meta.length - 1].position,
+        //   this.props.scroll.shift,
+        //   meta[this.props.scroll.startIndex].position,
+        //   meta[meta.length - 1].position +
+        //     this.props.scroll.shift -
+        //     meta[this.props.scroll.startIndex].position +
+        //     12 +
+        //     height * statusBar
+        // );
+        this.props.onMetaChange(
+          meta[meta.length - 1].position +
+            this.props.scroll.shift -
+            meta[this.props.scroll.startIndex].position +
+            constants.ScrollbarSize * 1 +
+            this.props.height * this.props.statusBar <
+            this.props.width
+        );
       }
     }
     this.dragId = null;
@@ -284,6 +302,7 @@ export class Headers extends Component {
           />
         ]
       : [];
+    // meta[18].position+ 120-meta[_this2.props.scroll.startIndex].position+_this2.props.scroll.shift
     let position = height * statusBar,
       first = true;
     while (index < meta.length && position < width) {

@@ -25,9 +25,14 @@ import ZebulonTable from 'zebulon-table'
 ```js
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import ZebulonTable from "zebulon-table";
+import { ZebulonTable } from "zebulon-table";
+import "zebulon-controls/lib/index.css";
+import "zebulon-table/lib/index.css";
 
-const buildData = (n0, n1, n2) => {
+const buildData = () => {
+  const n0 = 100,
+    n1 = 100,
+    n2 = 10;
   let data = [];
   for (let i0 = 0; i0 < n0; i0++) {
     for (let i1 = 0; i1 < n1; i1++) {
@@ -46,49 +51,50 @@ const buildData = (n0, n1, n2) => {
   return data;
 };
 const buildMeta = () => {
-	return {
-		// serverPagination: true,
-		table: {
-			object: "dataset",
-			editable: true,
-			select: buildData,
-			actions: [
-				{ type: "insert", caption: "New", enable: true },
-				{
-					type: "delete",
-					caption: "Delete",
-					enable: "isSelected"
-				},
-				{
-					type: "duplicate",
-					caption: "Duplicate",
-					enable: "isSelected"
-				}
-			]
-		},
-		row: {},
-		properties: []
-	};
+  return {
+    // serverPagination: true,
+    table: {
+      object: "dataset",
+      editable: true,
+      select: buildData,
+      actions: [
+        { type: "insert", caption: "New", enable: true },
+        {
+          type: "delete",
+          caption: "Delete",
+          enable: "isSelected"
+        },
+        {
+          type: "duplicate",
+          caption: "Duplicate",
+          enable: "isSelected"
+        }
+      ]
+    },
+    row: {},
+    properties: []
+  };
 };
 class MyEditableTable extends Component {
   meta = buildMeta();
   render() {
     return (
-      <ZebulonTable
-        meta={this.meta}
-        sizes={{
-          height: 600,
-          width: 1000,
-          cellWidth: 80,
-          cellHeight: 28,
-          zoom: 0.9
-        }}
-
-      />
+      <div style={{ fontFamily: "sans-serif" }}>
+        <ZebulonTable
+          meta={this.meta}
+          sizes={{
+            height: 600,
+            width: 1000,
+            cellWidth: 80,
+            cellHeight: 28,
+            zoom: 0.9
+          }}
+        />
+      </div>
     );
   }
 }
-ReactDOM.render(<MyEditableTable  />, document.getElementById("root"));
+ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 ```
 ## Zebulon table props
 | Property | Type/required | Description |

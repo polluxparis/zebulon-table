@@ -38,14 +38,20 @@ export const getFunction = (functions, object, type, value) => {
 };
 export const computeMetaPositions = (meta, zoom) => {
   let position = 0;
+  const visibleIndexes = [];
   meta.forEach((column, index) => {
     column.index_ = index;
     column.position = position;
     if (zoom !== undefined) {
       column.computedWidth = zoom * (column.hidden ? 0 : column.width || 0);
+      if (column.computedWidth !== 0) {
+        column.visibleIndex_ = visibleIndexes.length;
+        visibleIndexes.push(column.index_);
+      }
     }
     position += column.computedWidth;
   });
+  return visibleIndexes;
 };
 export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
@@ -396,6 +402,9 @@ const functionsByObject = (object, functions) => {
   return f_;
 };
 export const functionsTable = functions => {
+  if (functions === undefined) {
+    return [];
+  }
   return Object.keys(functions).reduce(
     (acc, object) => acc.concat(functionsByObject(object, functions)),
     []
