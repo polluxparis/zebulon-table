@@ -1,6 +1,6 @@
 {
 	"name": "zebulon-table",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"homepage": "http://polluxparis.github.io/zebulon-table",
 	"license": "MIT",
 	"description": "React editable table",
