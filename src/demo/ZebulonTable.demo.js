@@ -9,20 +9,20 @@ import { Input, constants, utils } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
 import { functionsTable, getFilters } from "../table/utils";
 // import { Layout, components, layout } from "./Layout";
-import { MyLayout } from "./layout.example";
+// import { MyLayout } from "./layout.example";
 import { MyDataset } from "./dataset.example";
 import { ResizableBox } from "react-resizable";
 import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
-import {
-  countries,
-  metaCountries,
-  currencies,
-  metaCurrencies,
-  thirdparties,
-  metaThirdparties
-} from "./meta.thirdparties";
-import { metaDataset, datasetFunctions, buildMeta } from "./meta.dataset";
+// import {
+//   countries,
+//   metaCountries,
+//   currencies,
+//   metaCurrencies,
+//   thirdparties,
+//   metaThirdparties
+// } from "./meta.thirdparties";
+import { datasetFunctions } from "./dataset.functions";
 class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);
@@ -51,7 +51,7 @@ class ZebulonTableDemo extends Component {
       filteredDataLength: 0,
       loadedDataLength: 0
     };
-    this.state.meta = metaDataset;
+    // this.state.meta = metaDataset;
     this.text =
       "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
   }
@@ -133,42 +133,43 @@ class ZebulonTableDemo extends Component {
           sizes={sizes}
         />
       );
-    } else if (tabIndex === 1) {
-      return (
-        <div style={{ fontFamily: "sans-serif" }} id="zebulon">
-          {header}
-          <ZebulonTableAndConfiguration
-            functions={functions}
-            params={params}
-            visible={this.state.selectedTab === 1}
-            isActive={this.state.selectedTab === 1}
-            data={data}
-            meta={meta}
-            filters={filters}
-            sorts={sorts}
-            updatedRows={updatedRows}
-            status={status}
-            sizes={sizes}
-            keyEvent={keyEvent}
-            errorHandler={this.errorHandler}
-          />
-          {footer}
-        </div>
-      );
-    } else if (tabIndex === 2) {
-      return (
-        <MyLayout
-          // layout={layout}
-          // components={components}
-          visible={selectedTab === 2}
-          isActive={selectedTab === 2}
-          keyEvent={keyEvent}
-          // data={data}
-          // meta={buildMeta()}
-          functions={functions}
-        />
-      );
     }
+    // else if (tabIndex === 1) {
+    //   return (
+    //     <div style={{ fontFamily: "sans-serif" }} id="zebulon">
+    //       {header}
+    //       <ZebulonTableAndConfiguration
+    //         functions={functions}
+    //         params={params}
+    //         visible={this.state.selectedTab === 1}
+    //         isActive={this.state.selectedTab === 1}
+    //         data={data}
+    //         meta={meta}
+    //         filters={filters}
+    //         sorts={sorts}
+    //         updatedRows={updatedRows}
+    //         status={status}
+    //         sizes={sizes}
+    //         keyEvent={keyEvent}
+    //         errorHandler={this.errorHandler}
+    //       />
+    //       {footer}
+    //     </div>
+    //   );
+    // } else if (tabIndex === 2) {
+    //   return (
+    //     <MyLayout
+    //       // layout={layout}
+    //       // components={components}
+    //       visible={selectedTab === 2}
+    //       isActive={selectedTab === 2}
+    //       keyEvent={keyEvent}
+    //       // data={data}
+    //       // meta={buildMeta()}
+    //       functions={functions}
+    //     />
+    //   );
+    // }
   };
 
   render() {

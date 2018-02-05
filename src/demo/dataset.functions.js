@@ -16,7 +16,10 @@ import {
 	getProduct
 } from "./datasources";
 
-const set = () => {};
+const save = () => {
+	alert("Save updates");
+	return true;
+};
 export const datasetFunctions = {
 	selects: {
 		titi_lb: ({ row, params, status, data }) => [
@@ -75,12 +78,6 @@ export const datasetFunctions = {
 			xx.setDate(xx.getDate() - 30);
 			return xx;
 		}
-		// ,
-		// to5d: x => {
-		// 	const xx = new Date(x);
-		// 	xx.setDate(xx.getDate() + 5);
-		// 	return xx;
-		// }
 	},
 	accessors: {
 		qty3: ({ row }) => row.qty / 3,
@@ -121,49 +118,6 @@ export const datasetFunctions = {
 		get_promise,
 		get_observable,
 		get_pagination_manager,
-		set
+		save
 	}
-};
-export const metaDataset = {
-	table: {
-		object: "dataset",
-		editable: true,
-		select: "get_array",
-		primaryKey: "id",
-		onSave: "set",
-		noFilter: false,
-		actions: [
-			{ type: "insert", caption: "New", enable: true },
-			{
-				type: "delete",
-				caption: "Delete",
-				enable: "isSelected"
-			},
-			{
-				type: "duplicate",
-				caption: "Duplicate",
-				enable: "isSelected"
-			}
-		]
-	},
-	row: {},
-	properties: []
-};
-const metaDataset2 = {
-	// serverPagination: true,
-	table: {
-		object: "dataset",
-		editable: true,
-		select: "get_array",
-		primaryKey: "id",
-		onSave: "set",
-		actions: [],
-		noFilter: true,
-		noStatus: true
-	},
-	row: {},
-	properties: []
-};
-export const buildMeta = () => {
-	return metaDataset2;
 };

@@ -435,6 +435,34 @@ export const manageRowError = (updatedRows, index, object, type, error) => {
     }
   }
 };
+export const getRowErrors = (status, rowIndex) => {
+  const errors = [];
+  Object.keys(status.errors).forEach(column => {
+    if (status.errors[column] || column !== "n_") {
+      Object.keys(status.errors[column]).forEach(type => {
+        if (type !== "n_") {
+          errors.push({
+            column,
+            type,
+            error: status.errors[column][type],
+            rowIndex
+          });
+        }
+      });
+    }
+  });
+  return errors;
+};
+export const getErrors = updatedRows => {
+  const errors = [];
+  let errorIndex = 0;
+  Object.values(updatedRows).forEach(status => {
+    if ((status.errors || {}).n_) {
+      errors.push(...getRowErrors(status, status.row.index_));
+    }
+  });
+  return errors;
+};
 // -----------------------------------------------------------
 // Export configuration
 // -----------------------------------------------------------

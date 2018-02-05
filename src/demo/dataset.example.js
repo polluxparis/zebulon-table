@@ -9,7 +9,12 @@ import {
   colors,
   products
 } from "./datasources";
-import { computeAnalytic, computeMetaPositions } from "../table/utils";
+import {
+  computeAnalytic,
+  computeMetaPositions,
+  getRowErrors,
+  getErrors
+} from "../table/utils";
 
 const rollingAverage = {
   id: "rolling_avg",
@@ -64,7 +69,7 @@ const meta = {
     editable: true,
     select: "get_array",
     primaryKey: "id",
-    onSave: "set",
+    onSave: "save",
     noFilter: false,
     actions: [
       { type: "insert", caption: "New", enable: true },
@@ -361,6 +366,27 @@ export class MyDataset extends Component {
       rollingAverage: !this.state.rollingAverage,
       status: this.state.status
     });
+  };
+  errorHandler = {
+    onRowQuit: message => {
+      if (message.updated) {
+        return window.confirm(
+          "Errors: " +
+            getRowErrors(message.status, message.row.index_).map(
+              error => `\n${error.rowIndex} ${error.error}`
+            )
+        );
+      }
+      return true;
+    },
+    onSave: message => {
+      return window.alert(
+        "Can't save with errors: " +
+          getErrors(message.updatedRows).map(
+            error => `\n${error.rowIndex} ${error.error}`
+          )
+      );
+    }
   };
   render() {
     const {

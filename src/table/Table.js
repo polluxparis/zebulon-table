@@ -1079,20 +1079,28 @@ export class Table extends Component {
       data: this.state.data,
       params: this.props.params
     };
-    let b = this.onSave_(message);
-    if (
-      (!b || (message.updatedRows || {}).nErrors_) &&
-      this.props.errorHandler.onSave
-    ) {
-      b = this.props.errorHandler.onSave(message);
-    }
-    if (b) {
+    // let b = this.onSave_(message);
+    // if (
+    //   (!b || (message.updatedRows || {}).nErrors_) &&
+    //   this.props.errorHandler.onSave
+    // ) {
+    //   b = this.props.errorHandler.onSave(message);
+    // }
+    if (this.onSave_(message)) {
       this.setState({ data: message.data, updatedRows: {} });
+      return true;
     }
-    return b;
+    return false;
   };
   onSave_ = message => {
     if (!this.onSaveBefore(message)) return false;
+    if (
+      (message.updatedRows || {}).nErrors &&
+      this.props.errorHandler.onSave &&
+      !this.props.errorHandler.onSave(message)
+    ) {
+      return false;
+    }
     const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
     if (onSave && onSave(message) === false) {
       return false;

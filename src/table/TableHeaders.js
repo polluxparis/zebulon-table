@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { utils } from "zebulon-controls";
 import { Input } from "./Input";
-import { computeMetaPositions } from "./utils";
+import { computeMetaPositions, getRowErrors } from "./utils";
 import classnames from "classnames";
 export const editCell = (
   style,
@@ -22,16 +22,17 @@ export const editCell = (
   } else {
     glyph = null;
   }
-  const errors = [];
-  Object.keys(row.errors).forEach(column => {
-    if (row.errors[column] || column !== "n_") {
-      Object.keys(row.errors[column]).forEach(type => {
-        if (type !== "n_") {
-          errors.push({ column, type, error: row.errors[column][type] });
-        }
-      });
-    }
-  });
+  const errors = getRowErrors(row, row.index_);
+  // [];
+  // Object.keys(row.errors).forEach(column => {
+  //   if (row.errors[column] || column !== "n_") {
+  //     Object.keys(row.errors[column]).forEach(type => {
+  //       if (type !== "n_") {
+  //         errors.push({ column, type, error: row.errors[column][type] });
+  //       }
+  //     });
+  //   }
+  // });
   if (errors.length && !row.deleted_) {
     style.color = "red";
   }
