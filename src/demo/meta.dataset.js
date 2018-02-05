@@ -2,8 +2,8 @@ import React from "react";
 import { utils } from "zebulon-controls";
 import {
 	computeData,
-	buildObject,
-	exportFunctions,
+	// buildObject,
+	// exportFunctions,
 	aggregations
 } from "../table/utils";
 import {

@@ -2,6 +2,7 @@ import React, { Component, cloneElement } from "react";
 import classnames from "classnames";
 import {
   ScrollableGrid,
+  Layout,
   // ContextualMenu,
   // ContextualMenuClient,
   utils
@@ -11,7 +12,7 @@ import { ZebulonTable } from "../table/ZebulonTable";
 import { buildMeta } from "./meta.dataset";
 import { getMockDatasource } from "./mock";
 
-import { Layout } from "./Layout";
+// import { Layout } from "./Layout";
 const titleHeight = 20;
 
 // ------------------------------------

@@ -937,7 +937,7 @@ export class Table extends Component {
             "mandatory",
             utils.isNullOrUndefined(message.row[property.id]) ||
             message.row[property.id] === ""
-              ? "mandatory data"
+              ? property.caption + ": mandatory data."
               : null
           );
         });
@@ -1057,7 +1057,10 @@ export class Table extends Component {
     if (errors.length || this.state.toolTip) {
       const toolTip = errors.length
         ? {
-            top: (3 + rowIndex) * this.rowHeight + this.state.scroll.rows.shift,
+            top:
+              e.target.offsetParent.offsetTop +
+              rowIndex * this.rowHeight +
+              this.state.scroll.rows.shift,
             left: this.rowHeight,
             rowIndex,
             content: errors
@@ -1137,6 +1140,7 @@ export class Table extends Component {
     this.onChange(e.target.value, row, column);
   };
   onMetaChange = () => this.setState({ scroll: this.state.scroll });
+  // getMenu = (menuId, data) => {};
   render() {
     const height = this.props.height,
       width = this.props.width;
@@ -1349,11 +1353,7 @@ export class Table extends Component {
       const content = (
         <ul style={{ paddingLeft: 20, maxWidth: 300 }}>
           {toolTip.content.map((error, index) => {
-            return (
-              <li
-                key={index}
-              >{`${error.column} :  ${error.type}, ${error.error}.`}</li>
-            );
+            return <li key={index}>{error.error}</li>;
           })}
         </ul>
       );
@@ -1409,6 +1409,7 @@ export class Table extends Component {
         {this.filter}
         {this.text}
         {toolTip}
+
         <Headers
           type="header"
           onSort={this.onSort}
@@ -1450,3 +1451,9 @@ export class Table extends Component {
     );
   }
 }
+// <ContextualMenu
+//   key="table-menu"
+//   getMenu={this.getMenu}
+//   componentId="layout"
+//   ref={ref => (this.contextualMenu = ref)}
+// />

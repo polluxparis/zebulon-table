@@ -10,46 +10,7 @@ import {
   products
 } from "./datasources";
 import { computeAnalytic, computeMetaPositions } from "../table/utils";
-// import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
-// import { ZebulonTable } from "../table/ZebulonTable";
-// // import ZebulonTable from "../table/ZebulonTable";
-// import "zebulon-controls/lib/index.css";
-// import "../table/index.css";
-// import { Input, constants, utils } from "zebulon-controls";
-// import { metaDescriptions, functions } from "../table/MetaDescriptions";
-// import { functionsTable, getFilters } from "../table/utils";
-// // import { Layout, components, layout } from "./Layout";
-// import { MyLayout } from "./layout.example";
-// import { MyDataset } from "./dataset.example";
-// import { ResizableBox } from "react-resizable";
-// import { navigationKeyHandler } from "./navigation.handler";
-// import cx from "classnames";
-// import {
-//   countries,
-//   metaCountries,
-//   currencies,
-//   metaCurrencies,
-//   thirdparties,
-//   metaThirdparties
-// } from "./meta.thirdparties";
-// import { metaDataset } from "./meta.dataset";
-// const getCountryFlag = ({ row }) => {
-//   if (
-//     !row.country ||
-//     row.country.code === "" ||
-//     utils.isNullOrUndefined(row.country.code)
-//   ) {
-//     return null;
-//   }
-//   return (
-//     <img
-//       height="100%"
-//       width="100%"
-//       padding="unset"
-//       src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
-//     />
-//   );
-// };
+
 const rollingAverage = {
   id: "rolling_avg",
   caption: "Rolling average",
@@ -320,7 +281,7 @@ const meta = {
       format: ({ value, row }) => {
         return (
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{row.currency.symbol}</div>
+            <div>{(row.currency || {}).symbol}</div>
             <div style={{ textAlign: "right" }}>
               {utils.formatValue(value, null, 2)}
             </div>
@@ -578,11 +539,11 @@ export class MyDataset extends Component {
       </div>
     );
     const text =
-      "Test key, navigation, zoom, scroll, wheel...\n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters and sorts\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n. Resize and move columns by drag and drop.\n...";
+      "Test key, navigation, zoom, scroll, wheel...\n• resize the grid using the handle at right, down corner. \n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters and sorts\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n. Resize and move columns by drag and drop.\n...";
     footer = (
       <textarea
         readOnly
-        rows="23"
+        rows="24"
         cols="180"
         value={text}
         style={{
@@ -593,7 +554,7 @@ export class MyDataset extends Component {
       />
     );
 
-    sizes.height = Math.min(sizes.height - 200, 600);
+    sizes.height = sizes.height - 200;
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}

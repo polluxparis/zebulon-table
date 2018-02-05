@@ -20,8 +20,6 @@ npm install zebulon-table --save
 And in your code:
 ```js
 import ZebulonTable from 'zebulon-table'
-// or 
-import ZebulonTableAndConfiguration from 'zebulon-table'
 ```
 ## Simple Example
 ```js
@@ -324,7 +322,8 @@ The updatedRows prop is an object with an entry for each updated rows in the tab
 ```
 N.B. By default, errors are not blocking in the table. You'll have to manage the blocking yourself with the Error Handler.
 
-If you pass an updatedRows prop as an empty object, it will mutate at each update in the table. Validation functions should update the error entry if needed. In consequence, the component calling the table component can know at any time all the changes since the loading of data.  
+If you pass an updatedRows prop as an empty object, it will mutate at each update in the table. Validation functions should update the error entry if needed. In consequence, the component calling the table component can know at any time all the changes since the loading of data.
+A function, manageRowError, is available in /src/table/utils (and exported) to set or remove errors. 
 
 ## Error handler
 onQuit functions can be cancelled if the onQuit function returns false or if the function passed as the errorHandler prop returns false. Parameters are the same as for the onQuit function. To create interractions with the user, you'll have to block the UI thread as with window.alert or window.confirm.   
@@ -358,9 +357,16 @@ sorts={
 };
 ```
 ## Pagination manager
-Not yet documented
+If you don't want to load the full dataset on the client, you can use a pagination manager (defined in the meta.table.select key) and let the server manage it. The pagination manager is a function called by the client on load and scroll actions with the first and last index of the diplayed rows.
+It must returns (as a promise) a page of rows including those two rows, the first index in the page, the number or rows in the dataset and the number of filtered rows.
+As only current page is known by the client, global functions as sorting and filtering must be managed by the server. With an editable grid, updates may have impacts on sorting and filtering. You may want to take into account those changes before commit.
+Filters and sorting informations plus updated rows are passed as arguments of the function({  startIndex, stopIndex, filters, sorts, params,updatedRows}).
+You can find an example in src/demo/datasource.
+### Actual restrictions
+* Filters with existing values is not implemented yet, values must be given by the server.
+* Computed columns with aggregation are not available.
 ## Computed columns
-Not yet documented
+Not yet documented 
 ## Key events and navigation key handler
 To manage correctly key events, specialy with several instances of the component, you can pass from an upper component the event as a prop. Only active component,considering the isActive prop will handle the event.
 Key events are used to navigate in the the grid, select a range of cells, zoom, copy or paste.
@@ -379,7 +385,7 @@ For a not editable table :
 ###
 For an editable grid left and righ arrow must keep the default behavior in the edditable cells. The alt key is used to force the navigation behavior.
 ###
-You can overwrite the navigationKeyHandler functions setting your custom function in the navigationKeyHandler prop (see /demo/navigation.handler.js).
+You can overwrite the navigationKeyHandler functions setting your custom function in the navigationKeyHandler prop (see src/demo/navigation.handler.js).
 ## Managing privileges
 Not yet documented
 ## Self description

@@ -65,6 +65,7 @@ export class Rows extends ScrollableGrid {
     );
     const className = classnames({
       "zebulon-table-cell": true,
+      "zebulon-table-cell-odd": rowIndex % 2 === 1,
       "zebulon-table-cell-selected": selected,
       "zebulon-table-cell-focused": focused,
       "zebulon-table-cell-editable": editable && focused
