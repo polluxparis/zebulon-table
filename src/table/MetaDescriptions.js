@@ -112,7 +112,10 @@ export const functions = {
 		}
 	},
 	globals_: {
-		editables: { isSelected: ({ row }) => row.index_ !== undefined },
+		editables: {
+			is_selected: ({ row }) => row.index_ !== undefined,
+			is_new: ({ status }) => status.new_
+		},
 		formats: {
 			decimals: ({ value, column }) =>
 				utils.formatValue(value, null, column.decimals || 2),
@@ -120,6 +123,16 @@ export const functions = {
 				utils.isNullOrUndefined(value)
 					? ""
 					: utils.formatValue(value, "mm/yyyy")
+		},
+		accessors: {
+			mth: ({ row }) => {
+				if (utils.isNullOrUndefined(row.d)) {
+					return null;
+				}
+				const d = new Date(row.d);
+				d.setDate(1);
+				return d;
+			}
 		}
 	}
 };
@@ -183,7 +196,7 @@ export const metaDescriptions = (
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "detail",
@@ -407,12 +420,12 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "action",
@@ -500,12 +513,12 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "action",
@@ -576,12 +589,12 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "isSelected"
+						enable: "is_selected"
 					},
 					{
 						type: "action",

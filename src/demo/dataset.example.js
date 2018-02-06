@@ -24,22 +24,13 @@ const rollingAverage = {
   editable: false,
   aggregation: "avg",
   groupByAccessor: "country.id",
-  accessor: ({ row }) => row.qty * (row.product || {}).price,
+  accessor: "amt_€",
   comparisonAccessor: "row.d",
   sortAccessor: "row.d",
   windowStart: "since30d",
   hidden: true,
-  windowEnd: d => d,
-  format: ({ value, row }) => {
-    return (
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div>€</div>
-        <div style={{ textAlign: "right" }}>
-          {utils.formatValue(value, null, 2)}
-        </div>
-      </div>
-    );
-  }
+  windowEnd: "row.d",
+  format: "amt_€"
 };
 const totalAmount = {
   id: "total_amt",
@@ -50,17 +41,8 @@ const totalAmount = {
   hidden: true,
   aggregation: "sum",
   groupByAccessor: "country.id",
-  accessor: ({ row }) => row.qty * (row.product || {}).price,
-  format: ({ value, row }) => {
-    return (
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div>€</div>
-        <div style={{ textAlign: "right" }}>
-          {utils.formatValue(value, null, 2)}
-        </div>
-      </div>
-    );
-  }
+  accessor: "amt_€",
+  format: "amt_€"
 };
 
 const meta = {
@@ -76,12 +58,12 @@ const meta = {
       {
         type: "delete",
         caption: "Delete",
-        enable: "isSelected"
+        enable: "is_selected"
       },
       {
         type: "duplicate",
         caption: "Duplicate",
-        enable: "isSelected"
+        enable: "is_selected"
       },
       {
         type: "save",
@@ -107,7 +89,7 @@ const meta = {
       width: 100,
       dataType: "number",
       mandatory: true,
-      editable: ({ status }) => status.new_,
+      editable: "is_new",
       filterType: "between"
     },
     {
@@ -126,7 +108,7 @@ const meta = {
       hidden: true,
       accessor: "product",
       setForeignKeyAccessor: ({ value, row }) => (row.product_id = value),
-      foreignKeyAccessor: "product.id",
+      primaryKeyAccessor: "product.id",
       locked: true
     },
     {
@@ -178,16 +160,7 @@ const meta = {
       dataType: "number",
       editable: false,
       accessor: "product.price",
-      format: ({ value }) => {
-        return (
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>€</div>
-            <div style={{ textAlign: "right" }}>
-              {utils.formatValue(value, null, 2)}
-            </div>
-          </div>
-        );
-      },
+      format: "price",
       filterType: "between"
     },
     {
@@ -204,7 +177,7 @@ const meta = {
       dataType: "object",
       hidden: true,
       accessor: "country",
-      foreignKeyAccessor: "country.id",
+      primaryKeyAccessor: "country.id",
       setForeignKeyAccessor: ({ value, row }) => (row.country_id = value)
     },
     {
@@ -237,7 +210,7 @@ const meta = {
       mandatory: true,
       hidden: true,
       accessor: "currency",
-      foreignKeyAccessor: "currency.id",
+      primaryKeyAccessor: "currency.id",
       setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
     },
     {
@@ -266,17 +239,8 @@ const meta = {
       dataType: "number",
       filterType: ">=",
       editable: false,
-      accessor: ({ row }) => row.qty * (row.product || {}).price,
-      format: ({ value }) => {
-        return (
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>€</div>
-            <div style={{ textAlign: "right" }}>
-              {utils.formatValue(value, null, 2)}
-            </div>
-          </div>
-        );
-      }
+      accessor: "amt_€",
+      format: "amt_€"
     },
     {
       id: "amt",
@@ -284,18 +248,8 @@ const meta = {
       width: 120,
       dataType: "number",
       editable: false,
-      accessor: ({ row }) =>
-        row.qty * (row.product || {}).price * (row.currency || {}).rate,
-      format: ({ value, row }) => {
-        return (
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div>{(row.currency || {}).symbol}</div>
-            <div style={{ textAlign: "right" }}>
-              {utils.formatValue(value, null, 2)}
-            </div>
-          </div>
-        );
-      }
+      accessor: "amt_cur",
+      format: "amt_cur"
     },
     totalAmount,
     rollingAverage

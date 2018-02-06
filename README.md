@@ -62,12 +62,12 @@ const buildMeta = () => {
         {
           type: "delete",
           caption: "Delete",
-          enable: "isSelected"
+          enable: "is_selected"
         },
         {
           type: "duplicate",
           caption: "Duplicate",
-          enable: "isSelected"
+          enable: "is_selected"
         }
       ]
     },
@@ -108,7 +108,7 @@ ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 | [filters](#filtering-and-sorting) | object | Initial or external filters  |
 | [sorts](#filtering-and-sorting) | object |  Initial or external sorts|
 | status | object | Dataset loading status |
-| [keyEvent](#key-events-and-navigation-key-handler) | event | Dataset loading status |
+| [keyEvent](#key-events-and-navigation-key-handler) | event | Keyboard event |
 | [navigationKeyHandler](#key-events-and-navigation-key-handler) | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
 | isActive | boolean | Indicator that the component is active| 
 | [errorHandler](#error-handler) | object | Custom error management|
@@ -143,6 +143,7 @@ The data set (data property) can be:
 * a pagination manager as a function to retrieve the appropriate pages from the server. In this case, the full dataset is not loaded locally, but only the diplayed page.
 ### Object properties and foreign keys
 A row entry can be an object, a pointer to an object or a foreign key referencing an object. Foreign keys can be used to retrieve an object using the accessor of and "object property".
+Accessors are executed only when the component renders, except for "object properties": the referenced object is stored initialy in the dataset and then, it's properties can be referenced by the other columns.
 ## Available functions and callbacks
 In the manipulation of the dataset, you may need to call functions for data calculation, formating, validation...
 Those functions are passed (functions property) to the component as 
@@ -218,16 +219,15 @@ available (and will overwrite functions defined in the meta description) for val
 The meta property is an object describing how to manipulate the dataset, the way to display it, the controls and validation to apply when data are changed, the actions allowed...
 ### Using accessors
 An accessor is a descriptor(string) used to retrieve a function that returns data or execute different actions.
-####data accessors (on properties)
+#### data accessors (on properties)
 * The default accessor function is ({row})=>row[property.id].
 * You can refer to an other property value :"row.<referenced property id>", eg row.quantity. N.B. "row." is mandatory in this case to make the distinction with function accessors. Accessor function is ({row})=>row[referenced property.id] 
-* 
 * You can refer to a key of an object stored in a property :<referenced property id>.<key>, eg product.price. Accessor function is ({row})=>row[referenced property.id].[key]
 * You can refer to a function accessor.
-####function accessors
-Functions can be defined directly in the meta description or referenced by accessors: f =typeof meta...x===function?meta...x:functions[object][function type][meta...x] 
-It contains 3 sections: table, row and properties.
+#### function accessors
+Functions can be defined directly in the meta description or referenced by accessors: f =typeof meta...x===function?meta...x:functions[object][function type][meta...x]
 ### meta object
+It contains 3 sections: table, row and properties.
 ```js
 {
   serverPagination:false // default:false
@@ -245,8 +245,8 @@ N.B. if the table section is the only one defined, properties section will be in
     select: "onSelect",
     primaryKey: "id", // unused yet
     onSave: "onSave",
-    onSaveBefore: null,
-    onSaveAfter: null,
+    onSaveBefore: undefined,
+    onSaveAfter: undefined,
     noFilter: false, // Indicator if the filter bar is diplayed. default : false
     noStatus: false, //  Indicator if the status bar is diplayed. default : false
     actions: []
@@ -262,8 +262,8 @@ Not documented yet
 ### row
 ```js
 {
-  onEnter:null,
-  onQuit:null
+  onEnter:undefined,
+  onQuit:undefined
 }
 ```
 ##### Validators
@@ -277,23 +277,31 @@ N.B. width and properties order can be defined on the table by drag and drop.
     caption: "Code", // default : id
     width: 100, // default : props.sizes.cellWidth
     hidden:false, // default : false
-    dataType: "string", // boolean, number, date, string, object. default : first datarow correponding property datatype
+    dataType: "string", // boolean, number, date, string, object. default : first data row correponding property datatype
     editable: true, //value (true, false) or function or function accessor. default table.editable
-    mandatory: true, // default false
-    default:"toto",
-    filterType:"between", // default 
-    select:["toto","tutu","titi"], // default null
-    accessor:null,
-    format:null,
-    onChange:null,
-    onEnter:null,
-    onQuit:null
+    mandatory: true, // mandatory indicator, default false
+    default:"toto", // default value, default undefined
+    filterType:"between", // default: "starts", ">=" or "between" depending of the datatype
+    select:["toto","tutu","titi"], // default undefined
+    accessor:undefined,
+    sortAccessor:undefined,
+    format:undefined,
+    onChange:undefined,
+    onEnter:undefined,
+    onQuit:undefined
+    // specific data for window calculation (computed columns with aggregation)
+    aggregation:undefined,
+    comparisonAccesssor:undefined,
+    groupByAccessord:undefined,
+    windowStart:undefined,
+    windowEnd:undefined
 }
 ```
 ##### Accessors
 * value accessor : Function (or function accessor) that returns a computed value. By default (row,column)=> row[column.id].
 * sort accessor : Function (or function accessor) that returns the elements needed by the sort function. By default value accessor.
-* foreignKeyAccessor : (for object properties only) Function (or function accessor) that returns the value of the object primary key.
+* primaryKeyAccessor : (for object properties only) Function (or function accessor) that returns the value of the object primary key.
+* setForeignKeyAccessor : (for object properties only) Function (or function accessor) that set the value of the object primary key to the foreign key. When an object property loaded from a foreign key is updatable, you must change this foreign key in case of update.
 ##### Format
 Formatting function that returns a formatted string or a JSX element. Parameters :(value, row, column, params, status, data).
 ##### Sort function 
@@ -308,7 +316,6 @@ Filtering method used for the column.
 * values : value in existing dataset values. A checkable list is used to define filter.
 ##### Select
 List of possible values. It can be an array of values, an object {id:caption,...}, or an object {id:{id:,caption:},...}
-
 ##### Validators
 * onChange : Function triggered on cell changes. Parameters :({value,previousValue, row, status,column,data,params}).
 * onEnter : Function triggered when a cell is entered. Parameters :({value,previousValue, row, status,column,data,params}).

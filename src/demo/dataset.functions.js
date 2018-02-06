@@ -35,6 +35,42 @@ export const datasetFunctions = {
 			utils.isNullOrUndefined(value)
 				? ""
 				: utils.formatValue(value, "mm/yyyy"),
+		"amt_€": ({ value, row }) => {
+			return (
+				<div
+					style={{ display: "flex", justifyContent: "space-between" }}
+				>
+					<div>€</div>
+					<div style={{ textAlign: "right" }}>
+						{utils.formatValue(value, null, 2)}
+					</div>
+				</div>
+			);
+		},
+		amt_cur: ({ value, row }) => {
+			return (
+				<div
+					style={{ display: "flex", justifyContent: "space-between" }}
+				>
+					<div>{(row.currency || {}).symbol}</div>
+					<div style={{ textAlign: "right" }}>
+						{utils.formatValue(value, null, 2)}
+					</div>
+				</div>
+			);
+		},
+		price: ({ value }) => {
+			return (
+				<div
+					style={{ display: "flex", justifyContent: "space-between" }}
+				>
+					<div>€</div>
+					<div style={{ textAlign: "right" }}>
+						{utils.formatValue(value, null, 2)}
+					</div>
+				</div>
+			);
+		},
 		formatAmt: (value, row, params, status, data) => {
 			const v = utils.formatValue(value, null, 2);
 			if (
@@ -81,6 +117,10 @@ export const datasetFunctions = {
 	},
 	accessors: {
 		qty3: ({ row }) => row.qty / 3,
+
+		"amt_€": ({ row }) => row.qty * (row.product || {}).price,
+		amt_cur: ({ row }) =>
+			row.qty * (row.product || {}).price * (row.currency || {}).rate,
 		mth: ({ row }) => {
 			if (utils.isNullOrUndefined(row.d)) {
 				return null;

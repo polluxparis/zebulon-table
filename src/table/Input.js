@@ -96,7 +96,7 @@ export class Input extends Component {
         row[column.reference || column.id] = validatedValue;
         if (column.setForeignKeyAccessorFunction) {
           column.setForeignKeyAccessorFunction({
-            value: column.foreignKeyAccessorFunction({
+            value: column.primaryKeyAccessorFunction({
               row: { [column.reference]: validatedValue }
             }),
             row
@@ -192,7 +192,7 @@ export class Input extends Component {
         } else if (typeof options === "object") {
           // const indexDot = column.accessor.indexOf(".");
           if (column.reference) {
-            value = column.foreignKeyAccessorFunction({ row });
+            value = column.primaryKeyAccessorFunction({ row });
             options = [{ id: undefined, label: "" }].concat(
               Object.keys(select).map(key => ({
                 id: key,

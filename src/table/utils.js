@@ -170,11 +170,11 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       const referencedColumn = meta.properties.find(
         col => col.id === column.reference
       );
-      column.foreignKeyAccessorFunction = getFunction(
+      column.primaryKeyAccessorFunction = getFunction(
         functions,
         meta.table.object,
         "accessor",
-        referencedColumn.foreignKeyAccessor
+        referencedColumn.primaryKeyAccessor
       );
       column.setForeignKeyAccessorFunction = getFunction(
         functions,
@@ -189,11 +189,11 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       "accessor",
       column.accessor
     );
-    column.foreignKeyaccessorFunction = getFunction(
+    column.primaryKeyAccessorFunction = getFunction(
       functions,
       meta.table.object,
       "accessor",
-      column.foreignKeyAccessor
+      column.primaryKeyAccessor
     );
     column.setForeignKeyAccessorFunction = getFunction(
       functions,
@@ -356,7 +356,7 @@ export const computeData = (data, meta, startIndex) => {
   const calcObjects = calcIndex || meta.serverPagination;
   if (calcObjects) {
     foreignObjects = meta.properties.filter(
-      column => column.foreignKeyAccessor !== undefined
+      column => column.primaryKeyAccessor !== undefined
     );
   }
   if (calcIndex || calcObjects) {
@@ -1062,7 +1062,7 @@ export const buildPasteArray = (
           row[column.reference] = item;
           if (column.setForeignKeyAccessorFunction) {
             column.setForeignKeyAccessorFunction({
-              value: column.foreignKeyAccessorFunction({
+              value: column.primaryKeyAccessorFunction({
                 row: { [column.reference]: item }
               }),
               row
