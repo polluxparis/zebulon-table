@@ -38,20 +38,24 @@ export const getFunction = (functions, object, type, value) => {
 };
 export const computeMetaPositions = (meta, zoom) => {
   let position = 0;
-  const visibleIndexes = [];
-  meta.forEach((column, index) => {
+  meta.visibleIndexes = [];
+  meta.properties.forEach((column, index) => {
     column.index_ = index;
     column.position = position;
     if (zoom !== undefined) {
       column.computedWidth = zoom * (column.hidden ? 0 : column.width || 0);
-      if (column.computedWidth !== 0) {
-        column.visibleIndex_ = visibleIndexes.length;
-        visibleIndexes.push(column.index_);
-      }
+    }
+    if (column.computedWidth !== 0) {
+      column.visibleIndex_ = meta.visibleIndexes.length;
+      meta.visibleIndexes.push(column.index_);
     }
     position += column.computedWidth;
+    if (column.locked) {
+      meta.lockedIndex = column.index_;
+      meta.lockedWidth = position;
+    }
   });
-  return visibleIndexes;
+  return meta.visibleIndexes;
 };
 export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
@@ -118,6 +122,10 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     column.position = position;
     column.index_ = index;
     position += width;
+    if (column.locked) {
+      meta.lockedIndex = column.index_;
+      meta.lockedWidth = position;
+    }
     if (width !== 0) {
       column.visibleIndex_ = meta.visibleIndexes.length;
       meta.visibleIndexes.push(column.index_);
@@ -170,18 +178,8 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       const referencedColumn = meta.properties.find(
         col => col.id === column.reference
       );
-      column.primaryKeyAccessorFunction = getFunction(
-        functions,
-        meta.table.object,
-        "accessor",
-        referencedColumn.primaryKeyAccessor
-      );
-      column.setForeignKeyAccessorFunction = getFunction(
-        functions,
-        meta.table.object,
-        "setAccessor",
-        referencedColumn.setForeignKeyAccessor
-      );
+      column.primaryKeyAccessor = referencedColumn.primaryKeyAccessor;
+      column.setForeignKeyAccessor = referencedColumn.setForeignKeyAccessor;
     }
     column.accessorFunction = getFunction(
       functions,
@@ -198,7 +196,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     column.setForeignKeyAccessorFunction = getFunction(
       functions,
       meta.table.object,
-      "setAccessor",
+      "accessor",
       column.setForeignKeyAccessorFunction
     );
     column.sortAccessorFunction = getFunction(
@@ -286,7 +284,6 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       );
     }
   });
-  // const a = buildObject(meta, null, functions);
 };
 // return meta;
 // };

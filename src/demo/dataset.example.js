@@ -108,13 +108,12 @@ const meta = {
       hidden: true,
       accessor: "product",
       setForeignKeyAccessor: ({ value, row }) => (row.product_id = value),
-      primaryKeyAccessor: "product.id",
-      locked: true
+      primaryKeyAccessor: "product.id"
     },
     {
       id: "product_lb",
       caption: "Product",
-      width: 100,
+      width: 120,
       dataType: "string",
       editable: true,
       filterType: "values",
@@ -123,7 +122,8 @@ const meta = {
           () => (column.selectItems = products)
         ),
       accessor: "product.label",
-      sortAccessor: "product.id"
+      sortAccessor: "product.id",
+      locked: true
     },
     {
       id: "shape",
@@ -306,10 +306,7 @@ export class MyDataset extends Component {
     if (!totalAmount.hidden) {
       computeAnalytic(this.table.state.data, totalAmount);
     }
-    meta.visibleIndexes = computeMetaPositions(
-      meta.properties,
-      this.table.zoomValue
-    );
+    meta.visibleIndexes = computeMetaPositions(meta, this.table.zoomValue);
     this.setState({
       totalAmount: !this.state.totalAmount,
       status: this.state.status
@@ -322,10 +319,7 @@ export class MyDataset extends Component {
     if (!rollingAverage.hidden) {
       computeAnalytic(this.table.state.data, rollingAverage);
     }
-    meta.visibleIndexes = computeMetaPositions(
-      meta.properties,
-      this.table.zoomValue
-    );
+    meta.visibleIndexes = computeMetaPositions(meta, this.table.zoomValue);
     this.setState({
       rollingAverage: !this.state.rollingAverage,
       status: this.state.status

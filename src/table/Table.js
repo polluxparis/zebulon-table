@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Headers, Status } from "./TableHeaders";
 import { Rows } from "./Rows";
-import { utils, Filter } from "zebulon-controls";
+import { utils, Filter, ContextualMenu } from "zebulon-controls";
 import { getSelection, buildPasteArray } from "./utils";
 
 // import { Filter } from "./controls-o/Filter";
@@ -32,7 +32,6 @@ export class Table extends Component {
           filteredDataLength: filteredData.filteredDataLength,
           status: { loaded: true, loading: false }
         });
-        // this.indexPage = filteredData.pageStartIndex;
       });
     }
     this.sorts(filteredData, props.meta.properties);
@@ -148,6 +147,7 @@ export class Table extends Component {
     if (this.state.toolTip !== undefined) {
       this.setState({ toolTip: undefined });
     }
+    this.contextualMenu.close();
   };
   hasParent(element, id) {
     if (!element.parentElement) {
@@ -466,9 +466,9 @@ export class Table extends Component {
       return false;
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
-    filter.top = e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
-    filter.left =
-      column.position + this.rowHeight - this.state.scroll.columns.position;
+    filter.top = this.rowHeight; // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
+    filter.left = e.target.offsetLeft;
+    // column.position + this.rowHeight - this.state.scroll.columns.position;
     this.setState({
       openedFilter: column.id,
       filters: { ...this.state.filters, [column.id]: filter }
@@ -697,7 +697,7 @@ export class Table extends Component {
   onScroll_ = (scroll, cell, extension) => {
     this.closeOpenedWindows();
     if (cell) {
-      const range = { ...this.state.range };
+      const range = { ...this.state.selectedRange };
       range.end = cell;
       if (!extension) {
         range.start = cell;
@@ -1157,7 +1157,150 @@ export class Table extends Component {
           : this.state.scroll.columns
       }
     });
-  // getMenu = (menuId, data) => {};
+  getMenu = (menuId, data) => {
+    // const ids = this.getIds(data.id);
+    // const root = ids.length === 1;
+    // const layout = this.getLayout(ids);
+    const menus = [];
+    // const menuComponents = Object.keys(
+    //   this.state.components
+    // ).map((key, index) => ({
+    //   id: 100 + index,
+    //   type: "menu-item",
+    //   separation: false,
+    //   caption: `${this.state.components[key].caption}`,
+    //   componentId: this.state.components[key].id,
+    //   onClick: this.handleClickMenu
+    // }));
+    console.log("getMenu", menuId, data);
+    if (menuId === "row-status-menu") {
+      menus.push({
+        id: menus.length,
+        type: "menu-item",
+        // disable:
+        //   layout.id === "0" ||
+        //   (!layout.content &&
+        //     layout.layouts.length === 0 &&
+        //     !data.id.startsWith("layout-title")),
+        separation: false,
+        caption: `Rollback row updates`,
+        onClick: this.handleClickMenu
+      });
+    } else if (menuId === "column-header-menu") {
+      menus.push({
+        id: menus.length,
+        type: "menu-item",
+        // disable:
+        //   layout.id === "0" ||
+        //   (!layout.content &&
+        //     layout.layouts.length === 0 &&
+        //     !data.id.startsWith("layout-title")),
+        separation: false,
+        caption: `Unlock columns`,
+        onClick: this.handleClickMenu
+      });
+      menus.push({
+        id: menus.length,
+        type: "menu-item",
+        // disable:
+        //   layout.id === "0" ||
+        //   (!layout.content &&
+        //     layout.layouts.length === 0 &&
+        //     !data.id.startsWith("layout-title")),
+        separation: false,
+        caption: `Lock columns until ${data.column.caption}`,
+        onClick: this.handleClickMenu
+      });
+    }
+    // menus.push({
+    //   id: menus.length,
+    //   type: "menu-item",
+    //   separation: false,
+    //   disable: layout.content === null && layout.layouts.length === 0,
+    //   caption: `Remove content`,
+    //   onClick: this.handleClickMenu
+    // });
+    // menus.push({
+    //   id: menus.length,
+    //   type: "menu-item",
+    //   separation: false,
+    //   disable:
+    //     !layout.parent ||
+    //     (layout.layouts.length > 1 && layout.parent.layouts > 1) ||
+    //     layout.content ||
+    //     (!layout.content && layout.layouts.length === 0),
+    //   caption: `Remove split`,
+    //   onClick: this.handleClickMenu
+    // });
+    // menus.push({
+    //   id: menus.length,
+    //   type: "menu-item",
+    //   separation: menus.length > 0,
+    //   caption: `Split verticaly`,
+    //   onClick: this.handleClickMenu
+    // });
+    // menus.push({
+    //   id: menus.length,
+    //   type: "menu-item",
+    //   separation: false,
+    //   caption: `Split horizontaly`,
+    //   onClick: this.handleClickMenu
+    // });
+    // menus.push({
+    //   id: menus.length,
+    //   type: "menu-item",
+    //   separation: false,
+    //   caption: `Transpose`,
+    //   onClick: this.handleClickMenu
+    // });
+    // menus.push({
+    //   id: menus.length,
+    //   type: "sub-menu",
+    //   separation: menus.length > 0,
+    //   disable: !layout.content && layout.layouts.length === 0,
+    //   caption: `Rename`,
+    //   children: [
+    //     {
+    //       id: 100,
+    //       type: "jsx",
+    //       navigation: false,
+    //       // caption: "Filter",
+    //       content: (
+    //         <Input
+    //           key={100}
+    //           id={"menuRename"}
+    //           hasFocus={true}
+    //           dataType="string"
+    //           value={layout.title}
+    //           editable={true}
+    //           style={{ textAlign: "left" }}
+    //           onChange={e => {
+    //             layout.title = e;
+    //             this.setState({ layout: this.state.layout });
+    //           }}
+    //         />
+    //       )
+    //     }
+    //   ]
+    // });
+    // menus.push({
+    //   id: menus.length,
+    //   type: "sub-menu",
+    //   separation: menus.length > 0,
+    //   disable: !(layout.content === null && layout.layouts.length === 0),
+    //   caption: `Add component`,
+    //   children: menuComponents
+    // });
+    if (menus.length) {
+      return {
+        type: "menu",
+        position: "bottom",
+        children: menus
+      };
+    } else {
+      return null;
+    }
+  };
   render() {
     const height = this.props.height,
       width = this.props.width;
@@ -1189,52 +1332,14 @@ export class Table extends Component {
       }
     }
     const noUpdate = !this.isInPage(scroll.rows);
-    // -----------------------------------
-    // filters
-    // -----------------------------------
-    // between
-    // ----------------------------------
-    let filterHeaders;
-
-    if (meta.table.noFilter) {
-      filterHeaders = [];
-    } else {
-      filterHeaders = [
-        <Headers
-          type="filter"
-          key="filters"
-          openFilter={this.openFilter}
-          onChange={this.onChangeFilter}
-          meta={meta.properties}
-          data={data}
-          height={this.rowHeight}
-          width={width}
-          scroll={scroll.columns}
-          statusBar={!meta.table.noStatus}
-        />
-      ];
-      if (
-        meta.properties.findIndex(column => column.filterType === "between") !==
-        -1
-      ) {
-        filterHeaders.push(
-          <Headers
-            type="filter"
-            key="filtersBetween"
-            openFilter={this.openFilter}
-            onChange={this.onChangeFilter}
-            meta={meta.properties}
-            data={data}
-            height={this.rowHeight}
-            width={width}
-            scroll={scroll.columns}
-            filterTo={true}
-            statusBar={!meta.table.noStatus}
-          />
-        );
-      }
-    }
-    this.nFilterRows = filterHeaders.length;
+    const headersLength =
+      1 +
+      !meta.table.noFilter *
+        (1 +
+          (meta.properties.findIndex(
+            column => column.filterType === "between"
+          ) !==
+            -1));
 
     // -----------------------------------
     // Filter check list
@@ -1277,7 +1382,7 @@ export class Table extends Component {
             position: "absolute",
             border: "solid 0.1em rgba(0, 0, 0, 0.5)",
             backgroundColor: "white",
-            top: top + filterHeaders.length * this.rowHeight,
+            top: top + (headersLength - 1) * this.rowHeight,
             left,
             zIndex: 3,
             opacity: 1
@@ -1322,8 +1427,8 @@ export class Table extends Component {
         status,
         params: params,
         top:
-          (3 +
-            filterHeaders.length +
+          (2 +
+            headersLength +
             selectedRange.end.rows -
             scroll.rows.startIndex) *
             this.rowHeight +
@@ -1359,7 +1464,7 @@ export class Table extends Component {
     // ----------------------------------
     this.rowsHeight =
       height -
-      (1 + filterHeaders.length) * this.rowHeight -
+      headersLength * this.rowHeight -
       ((meta.table.actions || []).length ? 30 : 0);
 
     let statusBar;
@@ -1380,6 +1485,7 @@ export class Table extends Component {
           meta={meta.properties}
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
+          componentId={this.props.id}
         />
       );
     }
@@ -1425,8 +1531,137 @@ export class Table extends Component {
         </button>
       );
     });
+    let style = {};
+    const locked =
+      !utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth;
+    if (locked) {
+      style = {
+        borderLeft: "solid 0.02em rgba(0, 0, 0, 1)",
+        boxSizing: "border-box"
+      };
+    }
+    const rows = (
+      <Rows
+        meta={meta}
+        data={this.state.filteredData}
+        status={status}
+        dataLength={this.state.filteredDataLength}
+        height={this.rowsHeight}
+        width={
+          width -
+          this.rowHeight * (statusBar !== null) -
+          (meta.lockedWidth || 0)
+        }
+        rowHeight={this.rowHeight}
+        scroll={scroll}
+        onScroll={this.onScroll}
+        selectedRange={selectedRange}
+        selectRange={this.selectRange}
+        onChange={this.onChange}
+        onFocus={() => {}}
+        hasFocus={this.hasFocus}
+        updatedRows={this.state.updatedRows}
+        params={params}
+        navigationKeyHandler={this.props.navigationKeyHandler}
+        ref={ref => (this.rows = ref)}
+        noUpdate={noUpdate}
+        style={style}
+      />
+    );
+    let lockedColumns = null;
+    if (locked) {
+      lockedColumns = (
+        <Rows
+          meta={meta}
+          data={this.state.filteredData}
+          status={status}
+          dataLength={this.state.filteredDataLength}
+          height={this.rowsHeight}
+          width={meta.lockedWidth}
+          rowHeight={this.rowHeight}
+          scroll={scroll}
+          onScroll={this.onScroll}
+          selectedRange={selectedRange}
+          selectRange={this.selectRange}
+          onChange={this.onChange}
+          onFocus={() => {}}
+          hasFocus={this.hasFocus}
+          updatedRows={this.state.updatedRows}
+          params={params}
+          navigationKeyHandler={this.props.navigationKeyHandler}
+          ref={ref => (this.rows = ref)}
+          noUpdate={noUpdate}
+          noVerticalScrollbar={true}
+        />
+      );
+    }
+
+    const headers = (
+      <Headers
+        onSort={this.onSort}
+        meta={meta}
+        data={data}
+        height={this.rowHeight * headersLength}
+        width={
+          width -
+          this.rowHeight * (statusBar !== null) -
+          (meta.lockedWidth || 0)
+        }
+        scroll={scroll.columns}
+        headersLength={headersLength}
+        onMetaChange={this.onMetaChange}
+        openFilter={this.openFilter}
+        onChange={this.onChangeFilter}
+        style={style}
+        componentId={this.props.id}
+      />
+    );
+    let lockedLockedHeader = null;
+    if (!utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth) {
+      lockedLockedHeader = (
+        <Headers
+          onSort={this.onSort}
+          meta={meta}
+          data={data}
+          height={this.rowHeight * headersLength}
+          width={meta.lockedWidth}
+          scroll={scroll.columns}
+          headersLength={headersLength}
+          onMetaChange={this.onMetaChange}
+          openFilter={this.openFilter}
+          onChange={this.onChangeFilter}
+          locked={true}
+          componentId={this.props.id}
+        />
+      );
+    }
+    let statusBarHeader = [];
+    if (statusBar !== null) {
+      for (let i = 0; i < headersLength; i++) {
+        statusBarHeader.push(
+          <div
+            key={`status-${i}`}
+            className="zebulon-table-corner"
+            style={{
+              width: this.rowHeight,
+              height: this.rowHeight,
+              border: "0.02em solid rgba(0, 0, 0, 0.3)"
+            }}
+          />
+        );
+      }
+      statusBarHeader = (
+        <div style={{ display: "block" }}>{statusBarHeader}</div>
+      );
+    } else {
+      statusBarHeader = null;
+    }
+    // statusBar !== null ? <div style={{ display: "block" }}>{1}</div> : null;
+    // {filterHeaders}
+
     return (
       <div
+        id={this.props.id}
         style={{
           width: "max-content",
           height: "fit-content"
@@ -1439,50 +1674,25 @@ export class Table extends Component {
         {this.text}
         {toolTip}
 
-        <Headers
-          type="header"
-          onSort={this.onSort}
-          meta={meta.properties}
-          data={data}
-          height={this.rowHeight}
-          width={width}
-          scroll={scroll.columns}
-          onMetaChange={this.onMetaChange}
-          statusBar={statusBar !== null}
-        />
-        {filterHeaders}
+        <div style={{ display: "-webkit-box" }}>
+          {statusBarHeader}
+          {lockedLockedHeader}
+          {headers}
+        </div>
         <div style={{ display: "-webkit-box" }}>
           {statusBar}
-          <Rows
-            meta={meta}
-            data={this.state.filteredData}
-            status={status}
-            dataLength={this.state.filteredDataLength}
-            height={this.rowsHeight}
-            width={width - this.rowHeight * (statusBar !== null)}
-            rowHeight={this.rowHeight}
-            scroll={scroll}
-            onScroll={this.onScroll}
-            selectedRange={selectedRange}
-            selectRange={this.selectRange}
-            onChange={this.onChange}
-            onFocus={() => {}}
-            hasFocus={this.hasFocus}
-            updatedRows={this.state.updatedRows}
-            params={params}
-            navigationKeyHandler={this.props.navigationKeyHandler}
-            ref={ref => (this.rows = ref)}
-            noUpdate={noUpdate}
-          />
+          {lockedColumns}
+          {rows}
         </div>
         <div style={{ height: actions.length ? 30 : 0 }}>{actions}</div>
+        <ContextualMenu
+          key="table-menu"
+          getMenu={this.getMenu}
+          componentId={this.props.id}
+          id="table-menu"
+          ref={ref => (this.contextualMenu = ref)}
+        />
       </div>
     );
   }
 }
-// <ContextualMenu
-//   key="table-menu"
-//   getMenu={this.getMenu}
-//   componentId="layout"
-//   ref={ref => (this.contextualMenu = ref)}
-// />

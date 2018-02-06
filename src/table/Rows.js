@@ -200,12 +200,24 @@ export class Rows extends ScrollableGrid {
     let i = 0,
       index = this.props.scroll.rows.startIndex,
       indexPage = 0,
-      rows = data;
+      rows = data,
+      columnStartIndex = this.props.scroll.columns.startIndex,
+      columnShift = this.props.scroll.columns.shift;
+
     if (typeof data === "object" && data.page) {
       rows = data.page;
       indexPage = data.pageStartIndex;
     }
     const visibleWidth = width - this.scrollbars.vertical.width;
+    if (!this.props.noVerticalScrollbar) {
+      columnStartIndex = Math.max(
+        columnStartIndex,
+        utils.isNullOrUndefined(meta.lockedIndex) ? 0 : meta.lockedIndex + 1
+      );
+    } else {
+      columnStartIndex = 0;
+      columnShift = 0;
+    }
     while (index < (dataLength || data.length) && i < height / rowHeight) {
       let row = rows[index - indexPage];
       const status = updatedRows[row.index_];
@@ -217,8 +229,8 @@ export class Rows extends ScrollableGrid {
           row,
           status,
           meta.properties,
-          this.props.scroll.columns.startIndex,
-          this.props.scroll.columns.shift,
+          columnStartIndex,
+          columnShift,
           visibleWidth,
           rowHeight,
           index,
@@ -230,14 +242,12 @@ export class Rows extends ScrollableGrid {
       index++;
       i++;
     }
+    const style = { position: "absolute", top: this.props.scroll.rows.shift };
+    // if (this.props.noVerticalScrollbar) {
+    //   style.borderRight = "solid 0.03em rgba(0, 0, 0, 0.5)";
+    // }
     return (
-      <div
-        style={{
-          position: "absolute",
-          top: this.props.scroll.rows.shift
-        }}
-        onWheel={this.onWheel}
-      >
+      <div style={style} onWheel={this.onWheel}>
         {items}
       </div>
     );

@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { utils, constants } from "zebulon-controls";
+import { utils, constants, ContextualMenuClient } from "zebulon-controls";
 import { Input } from "./Input";
 import { computeMetaPositions, getRowErrors } from "./utils";
 import classnames from "classnames";
@@ -10,7 +10,8 @@ export const editCell = (
   row,
   onClick,
   onDoubleClick,
-  handleErrors
+  handleErrors,
+  componentId
 ) => {
   let glyph;
   if (row.deleted_) {
@@ -23,42 +24,41 @@ export const editCell = (
     glyph = null;
   }
   const errors = getRowErrors(row, row.index_);
-  // [];
-  // Object.keys(row.errors).forEach(column => {
-  //   if (row.errors[column] || column !== "n_") {
-  //     Object.keys(row.errors[column]).forEach(type => {
-  //       if (type !== "n_") {
-  //         errors.push({ column, type, error: row.errors[column][type] });
-  //       }
-  //     });
-  //   }
-  // });
   if (errors.length && !row.deleted_) {
     style.color = "red";
   }
   return (
-    <div
+    <ContextualMenuClient
+      id={"row-status: " + index}
       key={index}
-      className={className}
-      style={style}
-      onClick={() => onClick(index)}
-      onDoubleClick={e => onDoubleClick(e, row)}
-      onMouseOver={e => handleErrors(e, errors)}
-      onMouseOut={e => handleErrors(e, [])}
+      rowIndex={index}
+      menuId="row-status-menu"
+      componentId={componentId}
     >
-      {glyph}
-    </div>
+      <div
+        key={index}
+        className={className}
+        style={style}
+        onClick={() => onClick(index)}
+        onDoubleClick={e => onDoubleClick(e, row)}
+        onMouseOver={e => handleErrors(e, errors)}
+        onMouseOut={e => handleErrors(e, [])}
+      >
+        {glyph}
+      </div>
+    </ContextualMenuClient>
   );
 };
 const filter = (
   column,
   position,
+  height,
   width,
   filterTo,
   onChange,
   openFilter,
-  handleDragOver,
-  handleDrop,
+  // handleDragOver,
+  // handleDrop,
   focusedId
 ) => {
   const className = classnames({
@@ -79,7 +79,7 @@ const filter = (
   if (filterTo) {
     value = column.vTo;
   } else if (column.filterType === "values" && column.v) {
-    value = "Ỵ";
+    value = "Y";
   } else if (column.filterType === "values") {
     value = "";
   }
@@ -90,36 +90,35 @@ const filter = (
   return (
     <Input
       column={column}
-      key={column.id}
+      key={`${column.id}-filter${filterTo ? "-to" : ""}`}
       className={className}
       style={{
-        position: "absolute",
-        left: position,
+        // position: "absolute",
+        height,
         width,
         textAlign
       }}
       editable={true}
       focused={focused}
-      // autofocus={focused}
       inputType="filter"
       tabIndex={column.index_ * 2 + (filterTo || 0) + 100}
       value={value}
       filterTo={filterTo}
       onChange={onChange}
       onFocus={e => openFilter(e, column)}
-      // onDragOver={handleDragOver}
-      // onDrop={handleDrop}
     />
   );
 };
 const header = (
   column,
   position,
+  height,
   width,
   handleClick,
   handleDragStart,
   handleDragOver,
-  handleDrop
+  handleDrop,
+  componentId
   // handleDragEnd
 ) => {
   let sort = "";
@@ -130,53 +129,58 @@ const header = (
   }
 
   return (
-    <div
-      key={column.id}
-      id={column.index_}
-      draggable={true}
-      className="zebulon-table-cell zebulon-table-header"
-      onClick={() => handleClick(column, false)}
-      onDoubleClick={() => handleClick(column, true)}
-      onDragStart={e => handleDragStart(e, "move")}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      style={{
-        position: "absolute",
-        left: position,
-        width,
-        justifyContent: "space-between",
-        display: "flex"
-      }}
+    <ContextualMenuClient
+      id={"column-header: " + column.index}
+      key={"column-header: " + column.index}
+      column={column}
+      menuId="column-header-menu"
+      componentId={componentId}
     >
-      <div id={column.index_} style={{ width: width - 12 }}>
-        {column.caption || column.id}
+      <div
+        key={`${column.id}-header`}
+        id={column.index_}
+        draggable={true}
+        className="zebulon-table-cell zebulon-table-header"
+        onClick={() => handleClick(column, false)}
+        onDoubleClick={() => handleClick(column, true)}
+        onDragStart={e => handleDragStart(e, "move")}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        style={{
+          height,
+          width,
+          justifyContent: "space-between",
+          display: "flex"
+        }}
+      >
+        <div id={column.index_} style={{ width: width - 12 }}>
+          {column.caption || column.id}
+        </div>
+        <div style={{ display: "flex" }}>
+          <div>{sort}</div>
+          <div
+            id={column.index_}
+            draggable={true}
+            style={{
+              width: 3,
+              cursor: "col-resize",
+              opacity: 0
+            }}
+            onDragStart={e => handleDragStart(e, "resize")}
+          />
+        </div>
       </div>
-      <div style={{ display: "flex" }}>
-        <div>{sort}</div>
-        <div
-          id={column.index_}
-          draggable={true}
-          style={{
-            // height,
-            width: 3,
-            cursor: "col-resize",
-            opacity: 0
-          }}
-          onDragStart={e => handleDragStart(e, "resize")}
-        />
-      </div>
-    </div>
+    </ContextualMenuClient>
   );
 };
 
-const filterEmpty = (id, position, width) => {
+const filterEmpty = (id, position, width, height) => {
   return (
     <div
-      key={id}
+      key={`${id}-filter-empty`}
       className="zebulon-table-cell zebulon-table-header zebulon-table-filter-empty"
       style={{
-        position: "absolute",
-        left: position,
+        height,
         width,
         border: "0.02em solid rgba(0, 0, 0, 0.2) "
       }}
@@ -206,16 +210,17 @@ export class Headers extends Component {
     this.dragId = e.target.id;
     this.dragType = type;
     this.dragX = e.pageX;
-    // e.dataTransfer.setData("text", JSON.stringify(this.dragMessage));
     e.stopPropagation();
   };
 
   handleDragOver = e => {
-    // console.log("dragover", e.target, e.dataTransfer.getData("text"));
     if (
       this.dragType === "move" ||
       (this.dragType === "resize" &&
-        this.props.meta[this.dragId].computedWidth + e.pageX - this.dragX > 20)
+        this.props.meta.properties[this.dragId].computedWidth +
+          e.pageX -
+          this.dragX >
+          20)
     ) {
       e.preventDefault();
     }
@@ -223,21 +228,17 @@ export class Headers extends Component {
 
   handleDrop = e => {
     e.preventDefault();
-    // const msg = JSON.parse(e.dataTransfer.getData("text"));
-    // console.log("drop", e.target.id, msg);
-    const { meta } = this.props;
+    const meta = this.props.meta.properties;
     if (this.dragType) {
       if (
         this.dragType === "move" &&
         !utils.isNullOrUndefined(this.dragId) &&
         this.dragId !== e.target.id
       ) {
-        // console.log("drag end", msg.index, e.target.id);
         meta[this.dragId].index_ = meta[e.target.id].index_ + 0.1;
-        meta.sort((a, b) => (a.index_ > b.index_) - (a.index_ < b.index));
-        computeMetaPositions(meta);
-        this.props.onMetaChange(this.props.width);
-        // console.log("drag end", e);
+        meta.sort((a, b) => a.index_ - b.index_);
+        computeMetaPositions(this.props.meta);
+        this.props.onMetaChange();
       } else if (
         this.dragType === "resize" &&
         !utils.isNullOrUndefined(this.dragX) &&
@@ -247,26 +248,15 @@ export class Headers extends Component {
         const zoom = column.computedWidth / column.width;
         column.computedWidth += e.pageX - this.dragX;
         column.width = column.computedWidth / zoom;
-        computeMetaPositions(meta);
-        // console.log(
-        //   "drop resize",
-        //   meta[meta.length - 1].position,
-        //   this.props.scroll.shift,
-        //   meta[this.props.scroll.startIndex].position,
+        computeMetaPositions(this.props.meta);
+        this.props.onMetaChange();
         //   meta[meta.length - 1].position +
         //     this.props.scroll.shift -
         //     meta[this.props.scroll.startIndex].position +
-        //     12 +
-        //     height * statusBar
+        //     constants.ScrollbarSize * 1 +
+        //     this.props.height * this.props.statusBar <
+        //     this.props.width
         // );
-        this.props.onMetaChange(
-          meta[meta.length - 1].position +
-            this.props.scroll.shift -
-            meta[this.props.scroll.startIndex].position +
-            constants.ScrollbarSize * 1 +
-            this.props.height * this.props.statusBar <
-            this.props.width
-        );
       }
     }
     this.dragId = null;
@@ -285,28 +275,25 @@ export class Headers extends Component {
       filterTo,
       type,
       focusedId,
-      statusBar
+      statusBar,
+      headersLength,
+      locked,
+      componentId
     } = this.props;
-    // const type = this.state.type;
-    const cells = statusBar
-      ? [
-          <div
-            key="status"
-            className="zebulon-table-corner"
-            style={{
-              position: "absolute",
-              width: height,
-              left: 0,
-              border: "0.02em solid rgba(0, 0, 0, 0.3)"
-            }}
-          />
-        ]
-      : [];
-    // meta[18].position+ 120-meta[_this2.props.scroll.startIndex].position+_this2.props.scroll.shift
-    let position = height * statusBar,
+    const cells = [];
+    let position = 0,
       first = true;
-    while (index < meta.length && position < width) {
-      const column = meta[index];
+    if (!locked) {
+      index = Math.max(
+        index,
+        utils.isNullOrUndefined(meta.lockedIndex) ? 0 : meta.lockedIndex + 1
+      );
+    } else {
+      index = 0;
+      shift = 0;
+    }
+    while (index < meta.properties.length && position < width) {
+      const column = meta.properties[index];
       const columnWidth = Math.max(
         Math.min(
           first ? column.computedWidth + shift : column.computedWidth,
@@ -314,56 +301,90 @@ export class Headers extends Component {
         ),
         0
       );
+      let div = null;
       if (!column.hidden && columnWidth) {
         first = false;
-        let div;
-        if (type === "header") {
-          div = header(
-            column,
-            position,
-            columnWidth,
-            this.handleClick,
-            this.handleDragStart,
-            this.handleDragOver,
-            this.handleDrop
-          );
-        } else if (type === "filter") {
-          if (
-            (filterTo && column.filterType !== "between") ||
-            utils.isNullOrUndefined(column.dataType)
-          ) {
-            div = filterEmpty(column.id, position, columnWidth);
-          } else {
-            div = filter(
+        div = header(
+          column,
+          position,
+          height / headersLength,
+          columnWidth,
+          this.handleClick,
+          this.handleDragStart,
+          this.handleDragOver,
+          this.handleDrop,
+          componentId
+        );
+        if (headersLength > 1) {
+          div = [div];
+          div.push(
+            filter(
               column,
               position,
+              height / headersLength,
               columnWidth,
-              filterTo || false,
+              false,
               onChange,
               column.filterType === "values" ? openFilter : () => {},
+              this.handleDragStart,
               this.handleDragOver,
               this.handleDrop,
               focusedId
-            );
+            )
+          );
+          if (headersLength === 3) {
+            if (column.filterType === "between") {
+              div.push(
+                filter(
+                  column,
+                  position,
+                  height / headersLength,
+                  columnWidth,
+                  column.filterType === "between",
+                  onChange,
+                  column.filterType === "values" ? openFilter : () => {},
+                  // this.handleDragOver,
+                  // this.handleDrop,
+                  focusedId
+                )
+              );
+            } else {
+              div.push(
+                filterEmpty(
+                  column.id,
+                  position,
+                  columnWidth,
+                  height / headersLength
+                )
+              );
+            }
           }
+          div = (
+            <div
+              key={column.id}
+              style={{ display: "block", width: columnWidth, height }}
+            >
+              {div}
+            </div>
+          );
         }
         cells.push(div);
         position += columnWidth;
       }
       index += 1;
     }
+    const style = {
+      width,
+      height,
+      overflow: "hidden",
+      display: "flex"
+    };
     if (cells.length) {
       return (
         <div
-          key={-2}
-          id={type + filterTo ? "To" : ""}
-          style={{
-            width,
-            height,
-            overflow: "hidden"
-          }}
-          // onDragOver={e => this.handleDragOver(e)}
-          // onDrop={e => this.handleDrop(e)}
+          key={-2 - locked}
+          // id={type + filterTo ? "To" : ""}
+          style={{ ...this.props.style, ...style }}
         >
           {cells}
         </div>
@@ -396,7 +417,8 @@ export class Status extends Component {
       updatedRows,
       selectedIndex,
       handleErrors,
-      dataLength
+      dataLength,
+      componentId
     } = this.props;
     let index = 0,
       indexPage = 0,
@@ -434,7 +456,8 @@ export class Status extends Component {
             updatedRow,
             this.onClick,
             () => {},
-            (e, errors) => handleErrors(e, ix, errors)
+            (e, errors) => handleErrors(e, ix, errors),
+            componentId
           )
         );
       }
