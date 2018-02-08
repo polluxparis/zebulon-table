@@ -6,14 +6,11 @@ import { utils } from "zebulon-controls";
 import {
   computeMeta,
   computeMetaFromData,
-  computeData,
   functionsTable,
-  getFunction,
-  filterFunction,
-  getFilters,
-  getSorts
-} from "./utils";
-
+  getFunction
+} from "./utils/compute.meta";
+import { computeData } from "./utils/compute.data";
+import { getFilters, getSorts } from "./utils/filters.sorts";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -76,6 +73,7 @@ export class ZebulonTable extends Component {
       data = data({
         dataObject: meta.table.object,
         params,
+        meta,
         filters: getFilters(meta.properties, filters),
         sorts: this.sorts
           ? Object.values(this.sorts)
@@ -93,6 +91,7 @@ export class ZebulonTable extends Component {
       this.select = data;
       data = data({
         params,
+        meta,
         filters: getFilters(meta.properties, filters),
         sorts: this.sorts
           ? Object.values(this.sorts)
@@ -194,7 +193,7 @@ export class ZebulonTable extends Component {
           this.state.data.length,
           this.state.filters
         );
-        console.log("observable", x.length);
+        // console.log("observable", x.length);
         if (this.observable) {
           this.setState({
             data: this.state.data.concat(x),
@@ -376,6 +375,7 @@ export class ZebulonTable extends Component {
           visible={this.props.visible === undefined ? true : this.props.visible}
           width={this.state.sizes.width}
           height={this.state.sizes.height}
+          zoom={this.state.sizes.zoom}
           rowHeight={
             (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
           }

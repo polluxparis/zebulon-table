@@ -32,6 +32,10 @@
 .zebulon-table-cell-odd {
   background-color: rgba(0, 0, 0, 0.1);
 }
+.zebulon-table-cell-audit {
+  border-top: solid blue 0.02em;
+  border-bottom: solid blue 0.02em;
+}
 .zebulon-table-cell-selected {
   background-color: lightcyan;
 }

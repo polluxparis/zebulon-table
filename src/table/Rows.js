@@ -2,16 +2,28 @@ import React from "react";
 import classnames from "classnames";
 import { ScrollableGrid, utils, constants } from "zebulon-controls";
 import { Input } from "./Input";
-import { cellData } from "./utils";
+import { cellData } from "./utils/compute.data";
 export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   getRatios = props => {
-    const { height, width, rowHeight, scroll, data, dataLength } = props;
-    const meta = props.meta.properties;
-    const lastColumn = meta[meta.length - 1];
-    const columnsWidth = lastColumn.position + lastColumn.computedWidth;
+    const {
+      height,
+      width,
+      rowHeight,
+      scroll,
+      data,
+      dataLength,
+      meta,
+      noVerticalScrollbar
+    } = props;
+    // const meta = props.meta.properties;
+    const lastColumn = meta.properties[meta.properties.length - 1];
+    const columnsWidth =
+      lastColumn.position +
+      lastColumn.computedWidth -
+      (meta.lockedWidth || 0) * !noVerticalScrollbar;
     const horizontalDisplay =
       (width -
         ((dataLength || data.length) * rowHeight > height

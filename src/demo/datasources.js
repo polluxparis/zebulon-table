@@ -1,7 +1,8 @@
-import React from "react";
+// import React from "react";
 import { Observable } from "rx-lite";
 // import { getMockDatasource } from "./mock";
-import { filtersFunction, sortsFunction } from "../table/utils";
+import { filtersFunction, sortsFunction } from "../table/utils/filters.sorts";
+import { computeData } from "../table/utils/compute.data";
 import { utils } from "zebulon-controls";
 
 // -------------------------------------------
@@ -85,8 +86,6 @@ for (let i = 0; i < 200; i++) {
 export const getProduct = id => products[id];
 
 export const getMockDataset = nRow => {
-	// const data = (nRow, nProduct) => {
-
 	const d = [];
 	for (let i = 0; i < nRow; i++) {
 		const row = {};
@@ -105,7 +104,7 @@ export const getMockDataset = nRow => {
 			Math.round(12 * Math.random()),
 			Math.round(31 * Math.random())
 		);
-		const x = d.push(row);
+		d.push(row);
 	}
 	return {
 		data: d,
@@ -117,48 +116,27 @@ export const getMockDataset = nRow => {
 		colors
 	};
 };
-// export function getMockDatasource(
-// 	dataRepetition = 1,
-// 	nToto = 10,
-// 	nTiti = 10,
-// 	nTutu = 2
-// ) {
-// 	let obj = [];
-// 	const res = [];
-// 	let ii = 0;
-// 	for (let k = 0; k < dataRepetition; k += 1) {
-// 		for (let o = 0; o < nToto; o += 1) {
-// 			for (let i = 0; i < nTiti; i += 1) {
-// 				for (let u = 0; u < nTutu; u += 1) {
-// 					obj = {};
-// 					obj.toto = o;
-// 					obj.toto_lb = `toto ${String(o)}`;
-// 					obj.toto_0 = `att0 ${String(o)}`;
-// 					obj.toto_1 = `att1 ${String(nToto - o)}`;
-// 					obj.titi = i;
-// 					obj.titi_lb = `titi ${String(i)}`;
-// 					obj.tutu = String(Math.round((nTutu - 1) * Math.random()));
-// 					obj.qty = Math.round(1000 * Math.random()) + 125; // +9999999999.1234567890123456
-// 					obj.amt = Math.round(5000 * Math.random()) + 310; // +9999999999.1234567890123456
-// 					obj.d = new Date(
-// 						2017 + Math.round(2 * Math.random()),
-// 						Math.round(12 * Math.random()),
-// 						Math.round(31 * Math.random())
-// 					);
-// 					obj.id = ii;
-// 					res.push(obj);
-// 					ii++;
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return res;
-// }
-export const get_array = ({ params, filters }) => getMockDataset(25000).data;
+export const getAudits = id => [
+	{ user_: "toto", time_: new Date(), qty: 200, color: "blue" },
+	{ user_: "tutu_", time_: new Date(), qty: 100, product_id: 143 },
+	{ user_: "titi", time_: new Date(), qty: 0 },
+	{ user_: "titi", time_: new Date(), country_id: 0, currency_id: 0 }
+];
+export const get_array = ({ params, meta, filters }) => {
+	const data = getMockDataset(25000).data;
+	// this is necessary only because for demo, we are using the same filters and sorts functions as the client
+	// to simulate server actions
+	data.forEach(row => {
+		row.product = getProduct(row.product_id);
+		row.country = getCountry(row.country_id);
+		row.currency = getCurrency(row.currency_id);
+	});
+	return data;
+};
 // -------------------------------------------
 // promise
 // -------------------------------------------
-export const get_promise = ({ params, filters }) => {
+export const get_promise = ({ params, meta, filters }) => {
 	let data = get_array({ params, filters });
 	if (filters) {
 		data = data.filter(filtersFunction(filters, params, data));
@@ -168,7 +146,7 @@ export const get_promise = ({ params, filters }) => {
 // -------------------------------------------
 // observable
 // -------------------------------------------
-export const get_observable = ({ params, filters, sorts }) => {
+export const get_observable = ({ params, meta, filters, sorts }) => {
 	const data = get_array({ params, filters });
 	if (sorts) {
 		data.sort(sortsFunction(sorts));
@@ -199,7 +177,7 @@ export const get_pagination_manager = e => {
 	const pageLength = 100;
 	//  initial data, filters and sorts
 	let filteredData;
-	let { filters, sorts, params, startIndex, stopIndex } = e;
+	let { filters, sorts, params, meta, startIndex, stopIndex } = e;
 	let lastTimeStamp = new Date().getTime();
 	if (filters) {
 		filteredData = data.filter(filtersFunction(filters, params, data, {}));

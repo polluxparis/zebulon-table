@@ -1,14 +1,14 @@
-import React from "react";
+// import React from "react";
 import { utils } from "zebulon-controls";
 import {
 	// computeData,
 	buildObject,
-	exportFunctions,
-	aggregations
-} from "./utils";
+	exportFunctions
+	// aggregations
+} from "./utils/utils";
 import { Property } from "./Property";
 
-const set = () => {};
+// const set = () => {};
 const functionToString = row => {
 	if (typeof row.functionJS === "function") {
 		return String(row.functionJS);

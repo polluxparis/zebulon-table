@@ -1,4 +1,4 @@
-import { constants, utils } from "zebulon-controls";
+import { constants } from "zebulon-controls";
 // ----------------------------------------------------------
 // custom navigation handler
 // -> adapt following function and pass it as a prop (navigationKeyHandler)

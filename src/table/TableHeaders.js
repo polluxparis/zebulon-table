@@ -1,37 +1,41 @@
 import React, { Component } from "react";
-import { utils, constants, ContextualMenuClient } from "zebulon-controls";
+import { utils, ContextualMenuClient } from "zebulon-controls";
 import { Input } from "./Input";
-import { computeMetaPositions, getRowErrors } from "./utils";
+import { computeMetaPositions } from "./utils/compute.meta";
+import { cellData } from "./utils/compute.data";
+import { getRowErrors } from "./utils/utils";
 import classnames from "classnames";
 export const editCell = (
   style,
   className,
   index,
   row,
+  status,
   onClick,
   onDoubleClick,
   handleErrors,
   componentId
 ) => {
   let glyph;
-  if (row.deleted_) {
+  if (status.deleted_) {
     glyph = "X";
-  } else if (row.new_) {
+  } else if (status.new_) {
     glyph = "+";
-  } else if (row.updated_) {
+  } else if (status.updated_) {
     glyph = "√";
   } else {
     glyph = null;
   }
-  const errors = getRowErrors(row, row.index_);
-  if (errors.length && !row.deleted_) {
+  const errors = getRowErrors(status, status.index_);
+  if (errors.length && !status.deleted_) {
     style.color = "red";
   }
   return (
     <ContextualMenuClient
       id={"row-status: " + index}
       key={index}
-      rowIndex={index}
+      status={status}
+      row={row}
       menuId="row-status-menu"
       componentId={componentId}
     >
@@ -40,7 +44,7 @@ export const editCell = (
         className={className}
         style={style}
         onClick={() => onClick(index)}
-        onDoubleClick={e => onDoubleClick(e, row)}
+        onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
       >
@@ -173,7 +177,37 @@ const header = (
     </ContextualMenuClient>
   );
 };
-
+const auditCell = (row, column, status, data, params, style) => {
+  const { value } = cellData(row, column, status, data, params, false);
+  let textAlign = column.alignement || "left";
+  if (!column.alignement) {
+    if (column.dataType === "number") {
+      textAlign = "right";
+    } else if (column.dataType === "date" || column.dataType === "boolean") {
+      textAlign = "center";
+    }
+  }
+  style.textAlign = textAlign;
+  const className = classnames({
+    "zebulon-table-cell": true,
+    "zebulon-table-cell-audit": true,
+    "zebulon-table-cell-odd": true
+    // "zebulon-table-cell-selected": selected,
+    // "zebulon-table-cell-focused": focused,
+    // "zebulon-table-cell-editable": editable && focused
+  });
+  // if (column.dataType === "boolean") value = value || false;
+  return (
+    <Input
+      row={row}
+      column={column}
+      style={style}
+      className={className}
+      value={value}
+      key={`audit-cell-${row.index_}-${column.id}`}
+    />
+  );
+};
 const filterEmpty = (id, position, width, height) => {
   return (
     <div
@@ -250,13 +284,6 @@ export class Headers extends Component {
         column.width = column.computedWidth / zoom;
         computeMetaPositions(this.props.meta);
         this.props.onMetaChange();
-        //   meta[meta.length - 1].position +
-        //     this.props.scroll.shift -
-        //     meta[this.props.scroll.startIndex].position +
-        //     constants.ScrollbarSize * 1 +
-        //     this.props.height * this.props.statusBar <
-        //     this.props.width
-        // );
       }
     }
     this.dragId = null;
@@ -272,13 +299,14 @@ export class Headers extends Component {
       height,
       onChange,
       openFilter,
-      filterTo,
-      type,
       focusedId,
-      statusBar,
       headersLength,
       locked,
-      componentId
+      auditedRow,
+      auditStatus,
+      componentId,
+      data,
+      params
     } = this.props;
     const cells = [];
     let position = 0,
@@ -316,35 +344,33 @@ export class Headers extends Component {
           componentId
         );
         if (headersLength > 1) {
-          div = [div];
-          div.push(
-            filter(
-              column,
-              position,
-              height / headersLength,
-              columnWidth,
-              false,
-              onChange,
-              column.filterType === "values" ? openFilter : () => {},
-              this.handleDragStart,
-              this.handleDragOver,
-              this.handleDrop,
-              focusedId
-            )
-          );
-          if (headersLength === 3) {
-            if (column.filterType === "between") {
+          if (auditedRow) {
+            div = [div];
+            const style = {
+              // position: "absolute",
+              // left: position,
+              width: columnWidth,
+              // top: height / 2,
+              height: height / 2
+            };
+            div.push(
+              auditCell(auditedRow, column, auditStatus, data, params, style)
+            );
+          } else {
+            div = [div];
+            if (utils.nullValue(column.dataType, "object") !== "object") {
               div.push(
                 filter(
                   column,
                   position,
                   height / headersLength,
                   columnWidth,
-                  column.filterType === "between",
+                  false,
                   onChange,
                   column.filterType === "values" ? openFilter : () => {},
-                  // this.handleDragOver,
-                  // this.handleDrop,
+                  this.handleDragStart,
+                  this.handleDragOver,
+                  this.handleDrop,
                   focusedId
                 )
               );
@@ -357,6 +383,36 @@ export class Headers extends Component {
                   height / headersLength
                 )
               );
+            }
+            if (headersLength === 3) {
+              if (
+                column.filterType === "between" &&
+                utils.nullValue(column.dataType, "object") !== "object"
+              ) {
+                div.push(
+                  filter(
+                    column,
+                    position,
+                    height / headersLength,
+                    columnWidth,
+                    column.filterType === "between",
+                    onChange,
+                    column.filterType === "values" ? openFilter : () => {},
+                    // this.handleDragOver,
+                    // this.handleDrop,
+                    focusedId
+                  )
+                );
+              } else {
+                div.push(
+                  filterEmpty(
+                    `${column.id}-to`,
+                    position,
+                    columnWidth,
+                    height / headersLength
+                  )
+                );
+              }
             }
           }
           div = (
@@ -403,11 +459,6 @@ export class Status extends Component {
       end: { rows: index, columns: 0 },
       start: { rows: index, columns: this.props.meta.length - 1 }
     });
-  // onMouseOver = (e, row, errors) => {
-  //   if (errors.length) {
-  //     console.log("mouse over", e, row, error);
-  //   }
-  // };
   render() {
     const {
       height,
@@ -427,7 +478,6 @@ export class Status extends Component {
       rows = data.page;
       indexPage = data.pageStartIndex;
     }
-    // const shift = scroll.shift;
     const cells = [];
     while (
       index < Math.min(dataLength || data.length, Math.ceil(height / rowHeight))
@@ -439,9 +489,8 @@ export class Status extends Component {
         height: rowHeight
       };
       if (index + scroll.startIndex - indexPage < (dataLength || data.length)) {
-        const updatedRow = updatedRows[
-          rows[index + scroll.startIndex - indexPage].index_
-        ] || { errors: {} };
+        const row = rows[index + scroll.startIndex - indexPage];
+        const updatedRow = updatedRows[row.index_] || { errors: {} };
         const className = classnames({
           "zebulon-table-status": true,
           "zebulon-table-status-selected":
@@ -453,6 +502,7 @@ export class Status extends Component {
             style,
             className,
             index + scroll.startIndex,
+            row,
             updatedRow,
             this.onClick,
             () => {},

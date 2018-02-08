@@ -1,20 +1,17 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
-import { utils } from "zebulon-controls";
+// import { utils } from "zebulon-controls";
 import {
   countries,
   currencies,
-  shapes,
-  sizes,
+  // shapes,
+  // sizes,
   colors,
   products
 } from "./datasources";
-import {
-  computeAnalytic,
-  computeMetaPositions,
-  getRowErrors,
-  getErrors
-} from "../table/utils";
+import { getRowErrors, getErrors } from "../table/utils/utils";
+import { computeMetaPositions } from "../table/utils/compute.meta";
+import { computeAnalytic } from "../table/utils/compute.data";
 
 const rollingAverage = {
   id: "rolling_avg",
@@ -72,7 +69,9 @@ const meta = {
       }
     ]
   },
-  row: {},
+  row: {
+    audit: "audit"
+  },
   properties: [
     {
       id: "d",
@@ -348,12 +347,7 @@ export class MyDataset extends Component {
     }
   };
   render() {
-    const {
-      // updatedRows,
-      keyEvent,
-      functions
-      // params,
-    } = this.props;
+    const { keyEvent, functions } = this.props;
     const {
       filters,
       sorts,
@@ -426,7 +420,7 @@ export class MyDataset extends Component {
                 checked={radioDataset === "get_promise"}
                 onChange={e => {
                   this.text =
-                    "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_array @ demo/datasources.";
+                    "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
                   this.setState({
                     radioDataset: "get_promise",
                     status: { loading: true }
@@ -556,7 +550,7 @@ export class MyDataset extends Component {
           errorHandler={this.errorHandler}
           // navigationKeyHandler={navigationKeyHandler}
           onFilter={this.getLengths}
-          onSort={this.getLengths}
+          // onSort={this.getLengths}
           onGetPage={this.getPageLengths}
           ref={ref => (this.table = ref)}
         />

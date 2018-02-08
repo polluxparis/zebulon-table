@@ -1,11 +1,6 @@
 import React from "react";
 import { utils } from "zebulon-controls";
-import {
-	computeData,
-	// buildObject,
-	// exportFunctions,
-	aggregations
-} from "../table/utils";
+import { computeData, aggregations } from "../table/utils/compute.data";
 import {
 	get_array,
 	get_promise,
@@ -13,7 +8,8 @@ import {
 	get_pagination_manager,
 	getCountry,
 	getCurrency,
-	getProduct
+	getProduct,
+	getAudits
 } from "./datasources";
 
 const save = () => {
@@ -148,7 +144,8 @@ export const datasetFunctions = {
 					src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
 				/>
 			);
-		}
+		},
+		audit: ({ row }) => getAudits(row.id)
 	},
 	actions: {
 		computeData

@@ -2,7 +2,11 @@ import React, { Component } from "react";
 import cx from "classnames";
 import { ZebulonTable } from "./ZebulonTable";
 import { metaDescriptions, functions } from "./MetaDescriptions";
-import { computeMeta, computeMetaFromData, functionsTable } from "./utils";
+import {
+	computeMeta,
+	computeMetaFromData,
+	functionsTable
+} from "./utils/compute.meta";
 
 import { utils } from "zebulon-controls";
 
