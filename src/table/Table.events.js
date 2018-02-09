@@ -2,7 +2,7 @@ import React from "react";
 import { TableMenu } from "./Table.menu";
 import { utils } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
-import { buildPasteArray } from "./utils/copy.paste";
+import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import { manageRowError, rollback } from "./utils/utils";
 
 export class TableEvent extends TableMenu {
