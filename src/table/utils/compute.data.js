@@ -1,4 +1,4 @@
-import { utils } from "zebulon-controls";
+// import { utils } from "zebulon-controls";
 // ----------------------------------
 // common data access (row or fiels)
 // ----------------------------------
@@ -148,9 +148,7 @@ const sortFunction = accessor => (rowA, rowB) => {
 };
 export const computeAnalytic = (data, column) => {
   let d = data.concat([]);
-  let groups = [[]],
-    min = 0,
-    max;
+  let groups = [[]];
   // sort;
   let sortAccessor =
     column.sortAccessorFunction || (({ row }) => row[column.sortAccessor]);

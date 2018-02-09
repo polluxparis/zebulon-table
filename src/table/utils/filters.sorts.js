@@ -33,7 +33,7 @@ export const filterFunction = (column, params, data, updatedRows) => {
   if (column.id === "status_") {
     column.f = row => {
       const vRow = facc(row);
-      return vRow && (vRow & column.v) != 0;
+      return vRow && (vRow & column.v) !== 0;
     };
   } else if (column.filterType === "values") {
     column.f = row => column.v[facc(row)] !== undefined;

@@ -1,18 +1,11 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
-// import { utils } from "zebulon-controls";
-import {
-  countries,
-  currencies,
-  // shapes,
-  // sizes,
-  colors,
-  products
-} from "./datasources";
+import { countries, currencies, colors, products } from "./datasources";
 import { getRowErrors, getErrors } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
-
+import { customMenuFunctions } from "./dataset.functions";
+// customMenuFunctions;
 const rollingAverage = {
   id: "rolling_avg",
   caption: "Rolling average",
@@ -48,7 +41,8 @@ const meta = {
     editable: true,
     select: "get_array",
     primaryKey: "id",
-    onSave: "save",
+    onSave: "onSave",
+    onSaveAfter: "onSaveAfter",
     noFilter: false,
     actions: [
       { type: "insert", caption: "New", enable: true },
@@ -70,7 +64,7 @@ const meta = {
     ]
   },
   row: {
-    audit: "audit"
+    audit: undefined //"audit"
   },
   properties: [
     {
@@ -92,13 +86,6 @@ const meta = {
       filterType: "between"
     },
     {
-      id: "product_id",
-      caption: "product_id",
-      width: 100,
-      dataType: "number",
-      hidden: true
-    },
-    {
       id: "product",
       caption: "Product",
       width: 100,
@@ -106,8 +93,17 @@ const meta = {
       mandatory: true,
       hidden: true,
       accessor: "product",
-      setForeignKeyAccessor: ({ value, row }) => (row.product_id = value),
+      setForeignKeyAccessor: ({ value, row }) => {
+        row.product_id = value;
+      },
       primaryKeyAccessor: "product.id"
+    },
+    {
+      id: "product_id",
+      caption: "product_id",
+      width: 100,
+      dataType: "number",
+      hidden: true
     },
     {
       id: "product_lb",
@@ -550,8 +546,8 @@ export class MyDataset extends Component {
           errorHandler={this.errorHandler}
           // navigationKeyHandler={navigationKeyHandler}
           onFilter={this.getLengths}
-          // onSort={this.getLengths}
           onGetPage={this.getPageLengths}
+          // contextualMenu={customMenuFunctions}
           ref={ref => (this.table = ref)}
         />
         {footer}

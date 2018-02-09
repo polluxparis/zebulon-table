@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React from "react";
 import { TableMenu } from "./Table.menu";
 import { utils } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
@@ -131,7 +131,7 @@ export class TableEvent extends TableMenu {
       } else if (button.type === "duplicate") {
         return this.handleDuplicate(rowIndex || 0);
       } else if (button.type === "save") {
-        return this.onSave();
+        return this.props.onSave();
       } else if (button.type === "detail" && button.content) {
         this.setState({ detail: button });
       } else {
@@ -183,7 +183,7 @@ export class TableEvent extends TableMenu {
       ix = index;
     updatedRows[this.getDataLength()] = status;
     if (!meta.serverPagination) {
-      rows: filteredData;
+      rows = filteredData;
       data.push(row);
     } else {
       rows = filteredData.page;
@@ -362,7 +362,8 @@ export class TableEvent extends TableMenu {
     // avoid focus on cell when changing filters (set to false on changed filter ok)
     this.hasFocus = !noFocus;
     if (range.end.rows > this.getDataLength() - 1) {
-      (range.end = {}), (range.start = {});
+      range.end = {};
+      range.start = {};
       this.hasFocus = false;
     }
     const prevEnd = selectedRange.end;
@@ -523,8 +524,7 @@ export class TableEvent extends TableMenu {
       data: this.state.data,
       params: this.props.params
     };
-    if (this.props.onCellEnter) this.props.onCellEnter(row, column);
-    // console.log("onCellEnter", message);
+    if (this.props.onCellEnter) this.props.onCellEnter(message);
   };
   // -------------------------------
   //  row events
@@ -558,7 +558,7 @@ export class TableEvent extends TableMenu {
       this.state.meta.properties
         .filter(property => property.mandatory)
         .forEach(property => {
-          const error = message.status.errors[property.id] || {};
+          // const error = message.status.errors[property.id] || {};
           // mandatory data
           manageRowError(
             this.state.updatedRows,
@@ -702,48 +702,48 @@ export class TableEvent extends TableMenu {
   // -------------------------------
   //  Save events
   //  -------------------------------
-  onSave = () => {
-    const message = {
-      updatedRows: this.state.updatedRows,
-      meta: this.state.meta,
-      data: this.state.data,
-      params: this.props.params
-    };
-    if (this.onSave_(message)) {
-      this.setState({ data: message.data, updatedRows: {} });
-      return true;
-    }
-    return false;
-  };
-  onSave_ = message => {
-    if (!this.onSaveBefore(message)) return false;
-    if (
-      (message.updatedRows || {}).nErrors &&
-      this.props.errorHandler.onSave &&
-      !this.props.errorHandler.onSave(message)
-    ) {
-      return false;
-    }
-    const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
-    if (onSave && onSave(message) === false) {
-      return false;
-    }
-    return true;
-  };
-  onSaveBefore = message => {
-    const onSaveBefore =
-      this.props.onSaveBefore || this.state.meta.table.onSaveBeforeFunction;
-    if (onSaveBefore && onSaveBefore(message) === false) return false;
-    return true;
-  };
-  onSaveAfter = message => {
-    const onSaveAfter =
-      this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
-    if (onSaveAfter && onSaveAfter(message) === false) {
-      return false;
-    }
-    return true;
-  };
+  // onSave = () => {
+  //   const message = {
+  //     updatedRows: this.state.updatedRows,
+  //     meta: this.state.meta,
+  //     data: this.state.data,
+  //     params: this.props.params
+  //   };
+  //   if (this.onSave_(message)) {
+  //     this.setState({ data: message.data, updatedRows: {} });
+  //     return true;
+  //   }
+  //   return false;
+  // };
+  // onSave_ = message => {
+  //   if (!this.onSaveBefore(message)) return false;
+  //   if (
+  //     (message.updatedRows || {}).nErrors &&
+  //     this.props.errorHandler.onSave &&
+  //     !this.props.errorHandler.onSave(message)
+  //   ) {
+  //     return false;
+  //   }
+  //   const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
+  //   if (onSave && onSave(message) === false) {
+  //     return false;
+  //   }
+  //   return true;
+  // };
+  // onSaveBefore = message => {
+  //   const onSaveBefore =
+  //     this.props.onSaveBefore || this.state.meta.table.onSaveBeforeFunction;
+  //   if (onSaveBefore && onSaveBefore(message) === false) return false;
+  //   return true;
+  // };
+  // onSaveAfter = message => {
+  //   const onSaveAfter =
+  //     this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
+  //   if (onSaveAfter && onSaveAfter(message) === false) {
+  //     return false;
+  //   }
+  //   return true;
+  // };
   //-------------------------------------------
   // end events
   // ------------------------------------------

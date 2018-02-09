@@ -314,14 +314,16 @@ export class Table extends TableFilterSort {
             caption: "Time",
             dataType: "date",
             format: "time",
-            width: 120
+            formatFunction: ({ value }) =>
+              utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
+            width: 130
           },
           ...meta.properties
         ]
       };
       computeMetaPositions(meta, this.props.zoom); // A voir zoom
       meta.lockedIndex = 1;
-      meta.lockedWidth = 200 * this.props.zoom;
+      meta.lockedWidth = 210 * this.props.zoom;
       filteredData = computeAudit(auditedRow, meta, audits);
     }
     // ----------------------------------
@@ -520,7 +522,7 @@ export class Table extends TableFilterSort {
       statusBarHeader = (
         <ContextualMenuClient
           id={"header-status"}
-          menuId="header-status-menu"
+          menuId="top-left-corner-menu"
           componentId={this.props.id}
         >
           <div style={{ display: "block" }}>{statusBarHeader}</div>

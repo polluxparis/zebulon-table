@@ -205,7 +205,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       functions,
       meta.table.object,
       "accessor",
-      column.setForeignKeyAccessorFunction
+      column.setForeignKeyAccessor
     );
     column.sortAccessorFunction = getFunction(
       functions,

@@ -8,13 +8,47 @@ import {
 	get_pagination_manager,
 	getCountry,
 	getCurrency,
-	getProduct,
-	getAudits
+	getProduct
+	// getAudits
 } from "./datasources";
 
-const save = () => {
-	alert("Save updates");
-	return true;
+const onSave = ({ message, callback }) => {
+	return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+		alert("Save updates");
+		callback(message);
+	});
+};
+const audits = {};
+const onSaveAfter = message => {
+	const { updatedRows, meta } = message;
+	Object.keys(updatedRows).forEach(key => {
+		if (!audits[key]) {
+			audits[key] = [];
+		}
+		const updatedRow = updatedRows[key];
+		if (updatedRow.new_ && !updatedRow.deleted_) {
+			audits[key] = [updatedRow.rowUpdated].concat(audits[key]);
+		} else if (updatedRow.updated_) {
+			const audit = {};
+			meta.properties
+				.filter(column => !column.accessorFunction)
+				.forEach(column => {
+					if (
+						updatedRow.rowUpdated[column.id] !==
+						updatedRow.row[column.id]
+					) {
+						audit[column.id] = updatedRow.row[column.id];
+					}
+				});
+			audits[key].push(audit);
+		}
+		delete updatedRows[key];
+	});
+};
+const getAudits = ({ row }) => {
+	return new Promise(resolve => setTimeout(resolve, 20)).then(
+		() => audits[row.index_]
+	);
 };
 export const datasetFunctions = {
 	selects: {
@@ -27,7 +61,7 @@ export const datasetFunctions = {
 		]
 	},
 	formats: {
-		"mm/yyyy": value =>
+		"mm/yyyy": ({ value }) =>
 			utils.isNullOrUndefined(value)
 				? ""
 				: utils.formatValue(value, "mm/yyyy"),
@@ -67,7 +101,7 @@ export const datasetFunctions = {
 				</div>
 			);
 		},
-		formatAmt: (value, row, params, status, data) => {
+		formatAmt: ({ value, row, params, status, data }) => {
 			const v = utils.formatValue(value, null, 2);
 			if (
 				(value < 3000 && value > 1000) ||
@@ -141,11 +175,12 @@ export const datasetFunctions = {
 					height="100%"
 					width="100%"
 					padding="unset"
+					alt=""
 					src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
 				/>
 			);
 		},
-		audit: ({ row }) => getAudits(row.id)
+		audit: getAudits
 	},
 	actions: {
 		computeData
@@ -155,6 +190,95 @@ export const datasetFunctions = {
 		get_promise,
 		get_observable,
 		get_pagination_manager,
-		save
+		onSave,
+		onSaveAfter
 	}
 };
+export const customMenuFunctions = {
+	"row-header-menu": [
+		{
+			code: "toto1",
+			caption: "Toto1",
+			type: "MenuItem",
+			function: e => console.log("toto1")
+		},
+		{
+			code: "toto2",
+			caption: "Toto2",
+			type: "MenuItem",
+			function: e => console.log("toto2")
+		}
+	],
+	"column-header-menu": [
+		{
+			code: "totoa",
+			caption: "TotoA",
+			type: "MenuItem",
+			function: e => console.log("toto1")
+		},
+		{
+			code: "totob",
+			caption: "TotoB",
+			type: "MenuItem",
+			function: e => console.log("toto2")
+		}
+	],
+	"top-left-corner-menu": [
+		{
+			code: "toto1",
+			caption: "Toto_1",
+			type: "MenuItem",
+			function: e => console.log("toto1")
+		},
+		{
+			code: "toto2",
+			caption: "Toto2_",
+			type: "MenuItem",
+			function: e => console.log("toto2")
+		}
+	]
+};
+// 		tableCorner: {
+// 			...prevMenuFunctions.tableCorner,
+// 			range: {
+// 				code: "range",
+// 				caption: "Custom range function",
+// 				type: "MenuItem",
+// 				function: range => callback("range", rangeDisplay(range))
+// 			}
+// 		T,
+// 		rowHeader: {
+// 			...prevMenuFunctions.rowHeader,
+// 			grid: {
+// 				code: "grid",
+// 				type: "MenuItem",
+// 				caption: "Custom export as csv",
+// 				// function: () => <div>toto</div>
+// 				function: ({ grid, toText }) =>
+// 					exportFile(toText(grid, "csv"), "zebulon.csv")
+// 			}
+// 			// ,
+// 			// test: {
+// 			//   code: "test",
+// 			//   type: "SubMenu",
+// 			//   caption: "test",
+// 			//   // function: () => <div>toto</div>
+// 			//   function: () => <div>Test</div>
+// 			// }
+// 		}
+// 	};
+// 	const actionContent = (
+// 		<div>
+// 			<div>
+// 				Add custom menu functions for cell (cells under the right
+// 				ckick), selected range or grid, accesible by the contextual menu
+// 				on the data cells area.
+// 			</div>
+// 			<div>The first cell function is called on doubleclick too.</div>
+// 		</div>
+// 	);
+// 	return { menuFunctions, actionContent };
+// };
+
+//   return { menuFunctions, actionContent };
+// };

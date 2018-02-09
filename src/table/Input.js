@@ -133,7 +133,7 @@ export class Input extends Component {
       row,
       editable,
       inputType,
-      onChange,
+      // onChange,
       hasFocus,
       select,
       label,
@@ -141,7 +141,7 @@ export class Input extends Component {
       style,
       onClick,
       onMouseOver,
-      onFocus,
+      // onFocus,
       filterTo,
       tabIndex
     } = this.props;
@@ -155,7 +155,7 @@ export class Input extends Component {
       caption: this.props.label
     };
 
-    const { dataType, format } = column;
+    const { dataType } = column;
     if (
       inputType !== "filter" &&
       (!((this.focused || this.props.column === undefined) && editable) &&
@@ -180,8 +180,6 @@ export class Input extends Component {
         innerStyle.padding = ".4em";
         innerStyle.height = "inherit";
       }
-
-      let type = "text";
       // label;
       let disabled = !editable || undefined;
       if (select) {
@@ -226,7 +224,6 @@ export class Input extends Component {
           </select>
         );
       } else if (dataType === "boolean") {
-        type = "checkbox";
         innerStyle.width = "unset";
         innerStyle.margin = 0;
         input = (

@@ -2,7 +2,7 @@
 import { Observable } from "rx-lite";
 // import { getMockDatasource } from "./mock";
 import { filtersFunction, sortsFunction } from "../table/utils/filters.sorts";
-import { computeData } from "../table/utils/compute.data";
+// import { computeData } from "../table/utils/compute.data";
 import { utils } from "zebulon-controls";
 
 // -------------------------------------------
@@ -116,12 +116,14 @@ export const getMockDataset = nRow => {
 		colors
 	};
 };
-export const getAudits = id => [
-	{ user_: "toto", time_: new Date(), qty: 200, color: "blue" },
-	{ user_: "tutu_", time_: new Date(), qty: 100, product_id: 143 },
-	{ user_: "titi", time_: new Date(), qty: 0 },
-	{ user_: "titi", time_: new Date(), country_id: 0, currency_id: 0 }
-];
+// export const getAudits = id => {
+// 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => [
+// 		{ user_: "toto", time_: new Date(), qty: 200, color: "blue" },
+// 		{ user_: "tutu_", time_: new Date(), qty: 100, product_id: 143 },
+// 		{ user_: "titi", time_: new Date(), qty: 0 },
+// 		{ user_: "titi", time_: new Date(), country_id: 0, currency_id: 0 }
+// 	]);
+// };
 export const get_array = ({ params, meta, filters }) => {
 	const data = getMockDataset(25000).data;
 	// this is necessary only because for demo, we are using the same filters and sorts functions as the client
@@ -177,7 +179,7 @@ export const get_pagination_manager = e => {
 	const pageLength = 100;
 	//  initial data, filters and sorts
 	let filteredData;
-	let { filters, sorts, params, meta, startIndex, stopIndex } = e;
+	let { filters, sorts, params, startIndex, stopIndex } = e;
 	let lastTimeStamp = new Date().getTime();
 	if (filters) {
 		filteredData = data.filter(filtersFunction(filters, params, data, {}));

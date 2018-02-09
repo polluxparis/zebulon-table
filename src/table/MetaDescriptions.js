@@ -122,7 +122,15 @@ export const functions = {
 			"mm/yyyy": ({ value }) =>
 				utils.isNullOrUndefined(value)
 					? ""
-					: utils.formatValue(value, "mm/yyyy")
+					: utils.formatValue(value, "mm/yyyy"),
+			time: ({ value }) =>
+				utils.isNullOrUndefined(value)
+					? ""
+					: utils.formatValue(value, "hh:mi:ss"),
+			dateTime: ({ value }) =>
+				utils.isNullOrUndefined(value)
+					? ""
+					: utils.formatValue(value, "dd/mm/yyyy hh:mi:ss")
 		},
 		accessors: {
 			mth: ({ row }) => {

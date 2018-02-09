@@ -65,7 +65,6 @@ export const getRowErrors = (status, rowIndex) => {
 };
 export const getErrors = updatedRows => {
   const errors = [];
-  let errorIndex = 0;
   Object.values(updatedRows).forEach(status => {
     if ((status.errors || {}).n_) {
       errors.push(...getRowErrors(status, status.rowUpdated.index_));

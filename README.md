@@ -8,6 +8,8 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * Validations.
 * Foreign key management.
 * Copy, paste.
+* Column locks.
+* Custom contextual menus.
 * Self description.
 * Computed columns.
 * Server communication.
@@ -112,6 +114,7 @@ ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 | [navigationKeyHandler](#key-events-and-navigation-key-handler) | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
 | isActive | boolean | Indicator that the component is active| 
 | [errorHandler](#error-handler) | object | Custom error management|
+| [contextualMenu](#custom-contextual-menu) | object | Custom contextual menu |
 ###
 ## Data set
 The data set (data property) can be:
@@ -399,6 +402,43 @@ For a not editable table :
 For an editable grid left and righ arrow must keep the default behavior in the edditable cells. The alt key is used to force the navigation behavior.
 ###
 You can overwrite the navigationKeyHandler functions setting your custom function in the navigationKeyHandler prop (see src/demo/navigation.handler.js).
+## Custom contextual menu
+It's possible to add custom contextual menu on
+* row headers,
+* columns headers,
+* top left corner
+```js
+{
+  "row-header-menu": [
+    {
+      code: "toto1",
+      caption: "Toto1",
+      type: "MenuItem",
+      function: e => console.log("toto1")
+    },
+    ...
+  ],
+  "column-header-menu": [
+    {
+      code: "totoa",
+      caption: "TotoA",
+      type: "MenuItem",
+      function: e => console.log("toto1")
+    },
+    ...
+  ],
+  "top-left-corner-menu": [
+    {
+      code: "toto1",
+      caption: "Toto_1",
+      type: "MenuItem",
+      function: e => console.log("toto1")
+    },
+  ...
+  ]
+};
+```
+On menu click, function is called with {meta, data, params, row || column}  as argument.
 ## Managing privileges
 Not yet documented
 ## Self description

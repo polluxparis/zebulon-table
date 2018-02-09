@@ -35,7 +35,6 @@ export class ZebulonTable extends Component {
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
-    this.errorHandler = this.props.errorHandler || {};
   }
   setFilters = (filters, columns) => {
     columns.forEach(column => {
@@ -69,7 +68,7 @@ export class ZebulonTable extends Component {
     let { data, meta, params, filters } = props,
       status = { loaded: false, loading: true };
     if (typeof data === "function") {
-      this.select = data;
+      // this.select = data;
       data = data({
         dataObject: meta.table.object,
         params,
@@ -88,7 +87,7 @@ export class ZebulonTable extends Component {
           "dml",
           meta.table.select
         );
-      this.select = data;
+      // this.select = data;
       data = data({
         params,
         meta,
@@ -122,13 +121,8 @@ export class ZebulonTable extends Component {
   };
   initData = (data, meta, zoom, functions, startIndex, filters) => {
     if (data) {
-      // if (data[0] && data[0].index_ === undefined) {
-      //   data.forEach((row, index) => (row.index_ = index + (startIndex || 0)));
-      // }
-      // if (meta.properties.length === 0) {
       computeMetaFromData(data, meta, zoom, functions);
       computeData(data, meta, startIndex);
-      // }
     }
     if (filters && meta.properties.length !== 0) {
       this.setFilters(filters, meta.properties);
@@ -161,12 +155,6 @@ export class ZebulonTable extends Component {
               0,
               this.state.filters
             );
-            // computeMetaFromData(
-            //   page.page,
-            //   this.state.meta,
-            //   this.zoomValue,
-            //   this.state.functions
-            // );
           });
           this.setState({ data, status: { loaded: true, loading: false } });
           return data;
@@ -223,22 +211,6 @@ export class ZebulonTable extends Component {
       document.removeEventListener("keydown", this.handleKeyDown);
     }
   }
-
-  // componentWillMount() {
-  //   if (this.props.filters) {
-  //     const { meta, params, data, filters } = this.state;
-  //     this.setState({
-  //       filters: this.getFilters(
-  //         this.props.filters,
-  //         meta.properties,
-  //         params,
-  //         data,
-  //         0,
-  //         filters
-  //       )
-  //     });
-  //   }
-  // }
   componentWillReceiveProps(nextProps) {
     const {
       data,
@@ -323,39 +295,91 @@ export class ZebulonTable extends Component {
       this.table.handlePaste(e);
     }
   };
-
+  // ----------------------------------------
   // comunication with server
-  select = ({ from, columns, where }) => {
-    if (this.props.select) return this.props.select(from, columns, where);
+  // ----------------------------------------
+  // select = ({ from, columns, where }) => {
+  //   if (this.props.select) return this.props.select(from, columns, where);
+  // };
+  // save = (data, updatedRows, params) => {
+  //   let ok = true,
+  //     updatedData = Object.keys(updatedRows).map(index => ({
+  //       ...updatedRows[index],
+  //       initialRow: updatedRows[index].row,
+  //       row: data[index]
+  //     }));
+  //   if (this.props.check) {
+  //     ok = this.props.check(updatedData, params);
+  //   }
+  //   if (ok && this.props.save) {
+  //     this.props.save(updatedData, params);
+  //   } else {
+  //     if (ok && this.props.delete) {
+  //       const deletedData = updatedData.filter(row => row.deleted_);
+  //       ok = this.props.delete(deletedData, params);
+  //     }
+  //     if (ok && this.props.insert) {
+  //       const insertedData = updatedData.filter(
+  //         row => row.inserted_ && !row.deleted_
+  //       );
+  //       ok = this.props.insert(insertedData, params);
+  //     }
+  //     if (ok && this.props.update) {
+  //       updatedData = updatedData.filter(
+  //         row => row.updated_ && !row.inserted_ && !row.deleted_
+  //       );
+  //       ok = this.props.update(updatedData, params);
+  //     }
+  //   }
+  //   return ok;
+  // };
+  onSave = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.onSave_(message)) {
+      return true;
+    }
+    return false;
   };
-  save = (data, updatedRows, params) => {
-    let ok = true,
-      updatedData = Object.keys(updatedRows).map(index => ({
-        ...updatedRows[index],
-        initialRow: updatedRows[index].row,
-        row: data[index]
-      }));
-    if (this.props.check) ok = this.props.check(updatedData, params);
-    if (ok && this.props.save) this.props.save(updatedData, params);
-    else {
-      if (ok && this.props.delete) {
-        const deletedData = updatedData.filter(row => row.deleted_);
-        ok = this.props.delete(deletedData, params);
-      }
-      if (ok && this.props.insert) {
-        const insertedData = updatedData.filter(
-          row => row.inserted_ && !row.deleted_
-        );
-        ok = this.props.insert(insertedData, params);
-      }
-      if (ok && this.props.update) {
-        updatedData = updatedData.filter(
-          row => row.updated_ && !row.inserted_ && !row.deleted_
-        );
-        ok = this.props.update(updatedData, params);
+  onSave_ = message => {
+    // local checks and process
+    if (!this.onSaveBefore(message)) return false;
+    if (
+      (message.updatedRows || {}).nErrors &&
+      this.props.errorHandler.onSave &&
+      !this.props.errorHandler.onSave(message)
+    ) {
+      return false;
+    }
+    const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
+    const callback = this.onSaveAfter;
+    if (onSave) {
+      const ok = onSave({ message, callback });
+      if (ok === false) {
+        return false;
+      } else if (ok === true) {
+        callback(message);
       }
     }
-    return ok;
+  };
+  onSaveBefore = message => {
+    const onSaveBefore =
+      this.props.onSaveBefore || this.state.meta.table.onSaveBeforeFunction;
+    if (onSaveBefore && onSaveBefore(message) === false) return false;
+    return true;
+  };
+  onSaveAfter = message => {
+    const onSaveAfter =
+      this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
+    if (onSaveAfter && onSaveAfter(message) === false) {
+      return false;
+    }
+    this.setState({ updatedRows: {} });
+    return true;
   };
 
   render() {
@@ -395,11 +419,13 @@ export class ZebulonTable extends Component {
           onSort={this.props.onSort}
           onGetData={this.props.onGetData}
           onGetPage={this.props.onGetPage}
-          onSaveBefore={this.props.onSaveBefore}
-          onSaveAfter={this.props.onSaveAfter}
+          onSave={this.onSave}
+          // onSaveBefore={this.props.onSaveBefore}
+          // onSaveAfter={this.props.onSaveAfter}
           callbacks={this.props.callbacks}
-          errorHandler={this.errorHandler}
+          errorHandler={this.props.errorHandler || {}}
           navigationKeyHandler={this.props.navigationKeyHandler}
+          contextualMenu={this.props.contextualMenu}
         />
       </div>
     );

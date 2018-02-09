@@ -71,8 +71,8 @@ export const buildPasteArray = (
   const lines = clipboard.replace(/\r/g, "").split("\n");
   lines.pop();
   const cells = lines.map(line => line.split(columnSeparator));
-  const nRows = lines.length,
-    nColumns = cells[0].length;
+  // const nRows = lines.length,
+  //   nColumns = cells[0].length;
   cells.forEach((rowCells, rowIndex) => {
     const cell = {};
     const row = filteredData[selectedCell.rows + rowIndex];

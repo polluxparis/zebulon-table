@@ -17,19 +17,31 @@ export class TableMenu extends Component {
                 computeMetaPositions(meta);
                 this.setState({ scroll: this.state.scroll });
             }
-        } else if (data.menuId === "row-status-menu") {
+        } else if (data.menuId === "row-header-menu") {
             if (item.id === 0) {
                 rollback(data.status);
                 this.setState({ scroll: this.state.scroll });
             } else if (item.id === 1) {
-                this.setState({
-                    auditedRow: data.row,
-                    audits: this.state.meta.row.auditFunction({ row: data.row })
+                const audits = this.state.meta.row.auditFunction({
+                    row: data.row
                 });
+                if (utils.isPromise(audits)) {
+                    audits.then(audits =>
+                        this.setState({
+                            auditedRow: data.row,
+                            audits
+                        })
+                    );
+                } else {
+                    this.setState({
+                        auditedRow: data.row,
+                        audits
+                    });
+                }
             } else if (item.id === 2) {
                 this.setState({ auditedRow: undefined, audits: undefined });
             }
-        } else if (data.menuId === "header-status-menu") {
+        } else if (data.menuId === "top-left-corner-menu") {
             const { filters, data, updatedRows } = this.state;
             let filter = filters.status_;
             if (!filter) {
@@ -53,7 +65,7 @@ export class TableMenu extends Component {
     };
     getMenu = (menuId, data) => {
         const menus = [];
-        if (menuId === "row-status-menu") {
+        if (menuId === "row-header-menu") {
             menus.push({
                 id: menus.length,
                 type: "menu-item",
@@ -62,22 +74,30 @@ export class TableMenu extends Component {
                 caption: `Rollback row updates`,
                 onClick: this.handleClickMenu
             });
-            menus.push({
-                id: menus.length,
-                type: "menu-item",
-                // disable: true,
-                // separation: false,
-                caption: `Audit`,
-                onClick: this.handleClickMenu
-            });
-            menus.push({
-                id: menus.length,
-                type: "menu-item",
-                disable: this.state.auditedRow === undefined,
-                // separation: false,
-                caption: `Close audit`,
-                onClick: this.handleClickMenu
-            });
+            if (this.state.meta.row.audit) {
+                menus.push({
+                    id: menus.length,
+                    type: "menu-item",
+                    disable: this.state.auditedRow !== undefined,
+                    // separation: false,
+                    caption: `Audit`,
+                    onClick: this.handleClickMenu
+                });
+            }
+            if (
+                this.props.contextualMenu &&
+                this.props.contextualMenu[menuId]
+            ) {
+                this.props.contextualMenu[menuId].forEach((menu, index) =>
+                    menus.push({
+                        id: menus.length,
+                        separation: index === 0 && menus.length > 0,
+                        type: menu.type,
+                        caption: menu.caption,
+                        onClick: menu.function
+                    })
+                );
+            }
         } else if (menuId === "column-header-menu") {
             menus.push({
                 id: menus.length,
@@ -94,64 +114,112 @@ export class TableMenu extends Component {
                 caption: `Lock columns until ${data.column.caption}`,
                 onClick: this.handleClickMenu
             });
-        } else if (menuId === "header-status-menu") {
-            menus.push({
-                id: menus.length,
-                type: "menu-item",
-                checked: this.state.filters.status_ === undefined,
-                caption: `No status filter`,
-                onClick: this.handleClickMenu
-            });
-            menus.push({
-                id: menus.length,
-                type: "sub-menu",
-                separation: menus.length > 0,
-                caption: `Status filters`,
-                children: [
-                    {
-                        id: 101,
-                        type: "menu-item",
-                        checked:
-                            (1 | (this.state.filters.status_ || { v: 0 }).v) ===
-                            (this.state.filters.status_ || { v: 0 }).v,
-                        // disable: utils.isNullOrUndefined(this.state.meta.lockedIndex),
-                        separation: false,
-                        caption: `Updated rows`,
-                        onClick: this.handleClickMenu
-                    },
-                    {
-                        id: 102,
-                        type: "menu-item",
-                        checked:
-                            (2 | (this.state.filters.status_ || { v: 0 }).v) ===
-                            (this.state.filters.status_ || { v: 0 }).v,
-                        separation: false,
-                        caption: `New rows`,
-                        onClick: this.handleClickMenu
-                    },
-                    {
-                        id: 104,
-                        type: "menu-item",
-                        checked:
-                            (4 | (this.state.filters.status_ || { v: 0 }).v) ===
-                            (this.state.filters.status_ || { v: 0 }).v,
-                        separation: false,
-                        caption: `Deleted rows`,
-                        onClick: this.handleClickMenu
-                    },
-                    {
-                        id: 108,
-                        type: "menu-item",
-                        // disable: utils.isNullOrUndefined(this.state.meta.lockedIndex),
-                        checked:
-                            (8 | (this.state.filters.status_ || { v: 0 }).v) ===
-                            (this.state.filters.status_ || { v: 0 }).v,
-                        separation: false,
-                        caption: `Rows with errors`,
-                        onClick: this.handleClickMenu
-                    }
-                ]
-            });
+            if (
+                this.props.contextualMenu &&
+                this.props.contextualMenu[menuId]
+            ) {
+                this.props.contextualMenu[menuId].forEach((menu, index) =>
+                    menus.push({
+                        id: menus.length,
+                        separation: index === 0 && menus.length > 0,
+                        type: menu.type,
+                        caption: menu.caption,
+                        onClick: menu.function
+                    })
+                );
+            }
+        } else if (menuId === "top-left-corner-menu") {
+            if (this.state.meta.table.editable) {
+                menus.push({
+                    id: menus.length,
+                    type: "menu-item",
+                    checked: this.state.filters.status_ === undefined,
+                    caption: `No status filter`,
+                    onClick: this.handleClickMenu
+                });
+                menus.push({
+                    id: menus.length,
+                    type: "sub-menu",
+                    separation: menus.length > 0,
+                    caption: `Status filters`,
+                    children: [
+                        {
+                            id: 101,
+                            type: "menu-item",
+                            checked:
+                                (1 |
+                                    (this.state.filters.status_ || { v: 0 })
+                                        .v) ===
+                                (this.state.filters.status_ || { v: 0 }).v,
+                            // disable: utils.isNullOrUndefined(this.state.meta.lockedIndex),
+                            separation: false,
+                            caption: `Updated rows`,
+                            onClick: this.handleClickMenu
+                        },
+                        {
+                            id: 102,
+                            type: "menu-item",
+                            checked:
+                                (2 |
+                                    (this.state.filters.status_ || { v: 0 })
+                                        .v) ===
+                                (this.state.filters.status_ || { v: 0 }).v,
+                            separation: false,
+                            caption: `New rows`,
+                            onClick: this.handleClickMenu
+                        },
+                        {
+                            id: 104,
+                            type: "menu-item",
+                            checked:
+                                (4 |
+                                    (this.state.filters.status_ || { v: 0 })
+                                        .v) ===
+                                (this.state.filters.status_ || { v: 0 }).v,
+                            separation: false,
+                            caption: `Deleted rows`,
+                            onClick: this.handleClickMenu
+                        },
+                        {
+                            id: 108,
+                            type: "menu-item",
+                            // disable: utils.isNullOrUndefined(this.state.meta.lockedIndex),
+                            checked:
+                                (8 |
+                                    (this.state.filters.status_ || { v: 0 })
+                                        .v) ===
+                                (this.state.filters.status_ || { v: 0 }).v,
+                            separation: false,
+                            caption: `Rows with errors`,
+                            onClick: this.handleClickMenu
+                        }
+                    ]
+                });
+            }
+            if (this.state.meta.row.audit) {
+                menus.push({
+                    id: menus.length,
+                    type: "menu-item",
+                    disable: this.state.auditedRow === undefined,
+                    separation: this.state.meta.table.editable,
+                    caption: `Close audit`,
+                    onClick: this.handleClickMenu
+                });
+            }
+            if (
+                this.props.contextualMenu &&
+                this.props.contextualMenu[menuId]
+            ) {
+                this.props.contextualMenu[menuId].forEach((menu, index) =>
+                    menus.push({
+                        id: menus.length,
+                        separation: index === 0 && menus.length > 0,
+                        type: menu.type,
+                        caption: menu.caption,
+                        onClick: menu.function
+                    })
+                );
+            }
         }
         if (menus.length) {
             return {

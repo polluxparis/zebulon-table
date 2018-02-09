@@ -139,7 +139,6 @@ export class TableFilterSort extends TableEvent {
       } else {
         column.v = v;
       }
-      const filters = filters;
       filters[column.id] = column;
       const filteredData = this.filters(data, filters, true, updatedRows);
       if (!meta.serverPagination) {

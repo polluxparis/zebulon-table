@@ -36,7 +36,7 @@ export const editCell = (
       key={index}
       status={status}
       row={row}
-      menuId="row-status-menu"
+      menuId="row-header-menu"
       componentId={componentId}
     >
       <div
