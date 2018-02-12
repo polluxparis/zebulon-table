@@ -101,6 +101,10 @@ export class TableFilterSort extends TableEvent {
           };
         });
         column.items = Object.values(items);
+        column.items.sort(
+          (itemA, itemB) =>
+            (itemA.label > itemB.label) - (itemA.label < itemB.label)
+        );
         filter = column;
       }
     } else {

@@ -63,6 +63,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
   // table
   meta.visibleIndexes = [];
+  meta.table.editable = meta.table.editable && !meta.table.checkable;
   meta.table.selectFunction = getFunction(
     functions,
     meta.table.object,
@@ -137,6 +138,11 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     if (width !== 0) {
       column.visibleIndex_ = meta.visibleIndexes.length;
       meta.visibleIndexes.push(column.index_);
+    }
+    if (!meta.table.editable) {
+      column.editable = false;
+    } else if (column.editable === undefined) {
+      column.editable = true;
     }
     column.editableFunction = getFunction(
       functions,

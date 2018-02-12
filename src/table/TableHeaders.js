@@ -14,7 +14,9 @@ export const editCell = (
   onClick,
   onDoubleClick,
   handleErrors,
-  componentId
+  componentId,
+  checkable,
+  onChange
 ) => {
   let glyph;
   if (status.deleted_) {
@@ -29,6 +31,16 @@ export const editCell = (
   const errors = getRowErrors(status, status.index_);
   if (errors.length && !status.deleted_) {
     style.color = "red";
+  }
+  if (checkable) {
+    glyph = (
+      <input
+        type="checkbox"
+        checked={status.checked_ || false}
+        onChange={() => onChange(row.index_)}
+        // style={{ height: 20 }}
+      />
+    );
   }
   return (
     <ContextualMenuClient
@@ -451,26 +463,47 @@ export class Headers extends Component {
   }
 }
 export class Status extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { updatedRows: this.props.updatedRows };
+  }
+  componentWillReceiveProps(nextProps) {
+    if (this.state.updatedRows !== nextProps.updatedRows) {
+      this.setState({ updatedRows: nextProps.updatedRows });
+    }
+  }
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
-  onClick = index =>
+  onClick = index => {
     this.props.selectRange({
       end: { rows: index, columns: 0 },
       start: { rows: index, columns: this.props.meta.length - 1 }
     });
+  };
+  onChange = index => {
+    if (this.props.checkable) {
+      const updatedRows = this.state.updatedRows;
+      if (!updatedRows[index]) {
+        updatedRows[index] = { errors: {} };
+      }
+      updatedRows[index].checked_ = !updatedRows[index].checked_;
+      this.setState({ updatedRows });
+    }
+  };
   render() {
     const {
       height,
       rowHeight,
       data,
       scroll,
-      updatedRows,
       selectedIndex,
       handleErrors,
       dataLength,
-      componentId
+      componentId,
+      checkable
     } = this.props;
+    const updatedRows = this.state.updatedRows;
     let index = 0,
       indexPage = 0,
       rows = data;
@@ -507,7 +540,9 @@ export class Status extends Component {
             this.onClick,
             () => {},
             (e, errors) => handleErrors(e, ix, errors),
-            componentId
+            componentId,
+            checkable,
+            this.onChange
           )
         );
       }

@@ -44,6 +44,7 @@ const meta = {
     onSave: "onSave",
     onSaveAfter: "onSaveAfter",
     noFilter: false,
+    caption: "Dataset",
     actions: [
       { type: "insert", caption: "New", enable: true },
       {

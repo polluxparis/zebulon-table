@@ -60,7 +60,7 @@ export const cellData = (row, column, status, data, params, focused) => {
 export const computeData = (data, meta, startIndex) => {
   let foreignObjects = [];
   const calcIndex = data[0] && data[0].index_ === undefined;
-  const calcObjects = calcIndex || meta.serverPagination;
+  const calcObjects = calcIndex || meta.serverPagination || true;
   if (calcObjects) {
     foreignObjects = meta.properties.filter(
       column => column.primaryKeyAccessor !== undefined

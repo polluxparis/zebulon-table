@@ -66,14 +66,16 @@ export class TableMenu extends Component {
     getMenu = (menuId, data) => {
         const menus = [];
         if (menuId === "row-header-menu") {
-            menus.push({
-                id: menus.length,
-                type: "menu-item",
-                disable: !(data.status || {}).updated_,
-                separation: false,
-                caption: `Rollback row updates`,
-                onClick: this.handleClickMenu
-            });
+            if (this.state.meta.table.editable) {
+                menus.push({
+                    id: menus.length,
+                    type: "menu-item",
+                    disable: !(data.status || {}).updated_,
+                    separation: false,
+                    caption: `Rollback row updates`,
+                    onClick: this.handleClickMenu
+                });
+            }
             if (this.state.meta.row.audit) {
                 menus.push({
                     id: menus.length,

@@ -1,3 +1,14 @@
+.zebulon-table: {
+  border: solid 0.05em;
+  color: red;
+  background-color: red;
+}
+.zebulon-table-title: {
+  font-weight: bold;
+  text-align: center;
+  padding: 4px;
+  border: solid 0.05em;
+}
 .zebulon-table-input {
   font: inherit;
   height: inherit;
@@ -17,7 +28,6 @@
 .zebulon-input-select: {
   width: inherit;
 }
-
 .zebulon-table-cell {
   overflow: hidden;
   white-space: nowrap;

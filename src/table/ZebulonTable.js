@@ -117,7 +117,7 @@ export class ZebulonTable extends Component {
       data = [];
     }
     // }
-    return { data, status, filters, sorts };
+    return { data, meta, status, filters, sorts };
   };
   initData = (data, meta, zoom, functions, startIndex, filters) => {
     if (data) {
@@ -356,13 +356,13 @@ export class ZebulonTable extends Component {
       return false;
     }
     const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
-    const callback = this.onSaveAfter;
+    message.callback = this.onSaveAfter;
     if (onSave) {
-      const ok = onSave({ message, callback });
+      const ok = onSave(message);
       if (ok === false) {
         return false;
       } else if (ok === true) {
-        callback(message);
+        message.callback(message);
       }
     }
   };
@@ -386,6 +386,7 @@ export class ZebulonTable extends Component {
     let div = (
       <div
         style={{ fontSize: `${this.zoomValue * 100}%`, position: "relative" }}
+        className="zebulon-table"
       >
         <Table
           id={this.props.id}

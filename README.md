@@ -381,6 +381,65 @@ You can find an example in src/demo/datasource.
 ### Actual restrictions
 * Filters with existing values is not implemented yet, values must be given by the server.
 * Computed columns with aggregation are not available.
+## Using a Redux store
+When using a store, you can create a container mapping the actions to the meta description in the mergeProps function as in the following example:
+```js
+import { connect } from "react-redux";
+import { select, save } from "../actions";
+import { ZebulonTable } from "zebulon-table";
+
+const mapStateToProps = (state, ownProps) => {
+  const getMeta = (select, save) => ({
+    table: {
+      object: "dataset",
+      select: select,
+      onSave: save,
+      // ...
+      actions: [
+        {
+          type: "save",
+          caption: "Save",
+          enable: true
+        }
+        // ...
+      ]
+    },
+    row: {},
+    properties: [
+      // ...
+    ]
+  });
+  return {
+    getMeta,
+    sizes: { height: 300, width: 800 },
+    ...ownProps
+  };
+};
+const mapDispatchToProps = (dispatch, ownProps) => ({
+  save: message => {
+    dispatch(save(message));
+  },
+  select: message => {
+    dispatch(select(message));
+  }
+});
+const mergeProps = (stateProps, dispatchProps, ownProps) => {
+  const { getMeta, ...restStateProps } = stateProps;
+  const { select, save, ...restDispatchProps } = dispatchProps;
+  const meta = metaQuery({ submit });
+  return {
+    meta: getMeta(select, save),
+    ...restStateProps,
+    ...restDispatchProps,
+    ...ownProps
+  };
+};
+export const MyDatasetContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps,
+  mergeProps
+)(ZebulonTable);
+```
 ## Computed columns
 Not yet documented 
 ## Key events and navigation key handler

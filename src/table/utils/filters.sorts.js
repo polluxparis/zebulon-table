@@ -67,8 +67,9 @@ export const filtersFunction = (filters, params, data, updatedRows) => {
   const f = Object.values(filters)
     .filter(filter => {
       return (
-        filter.v !== null ||
-        (filter.filterType === "between" && filter.vTo !== null)
+        !utils.isNullOrUndefined(filter.v) ||
+        (filter.filterType === "between" &&
+          !utils.isNullOrUndefined(filter.vTo))
       );
     })
     .map(filter => {

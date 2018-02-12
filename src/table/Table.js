@@ -58,7 +58,8 @@ export class Table extends TableFilterSort {
       },
       selectedRange: { start: {}, end: {} },
       detail: {},
-      text: {}
+      text: {},
+      checkAll: false
     };
 
     this.rowHeight = this.props.rowHeight;
@@ -129,6 +130,14 @@ export class Table extends TableFilterSort {
   componentWillUnmount() {
     this.onTableClose();
   }
+  onCheckAll = () => {
+    const checked_ = !this.state.checkAll;
+
+    this.state.filteredData.forEach(
+      row => (this.state.updatedRows[row.index_] = { checked_, errors: {} })
+    );
+    this.setState({ checkAll: checked_, updatedRows: this.state.updatedRows });
+  };
   render() {
     const height = this.props.height,
       width = this.props.width;
@@ -292,6 +301,7 @@ export class Table extends TableFilterSort {
     }
     this.rowsHeight =
       height -
+      (meta.table.caption ? 30 : 0) -
       headersLength * this.rowHeight -
       ((meta.table.actions || []).length ? 30 : 0);
     // -----------------------------
@@ -349,6 +359,7 @@ export class Table extends TableFilterSort {
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
           componentId={this.props.id}
+          checkable={meta.table.checkable}
         />
       );
     }
@@ -507,6 +518,16 @@ export class Table extends TableFilterSort {
     let statusBarHeader = [];
     if (statusBar !== null) {
       for (let i = 0; i < headersLength; i++) {
+        let checkbox = null;
+        if (i === 0 && meta.table.checkable) {
+          checkbox = (
+            <input
+              type="checkbox"
+              checked={this.state.checkAll}
+              onChange={this.onCheckAll}
+            />
+          );
+        }
         statusBarHeader.push(
           <div
             key={`status-${i}`}
@@ -514,9 +535,12 @@ export class Table extends TableFilterSort {
             style={{
               width: this.rowHeight,
               height: this.rowHeight,
-              border: "0.02em solid rgba(0, 0, 0, 0.3)"
+              border: "0.02em solid rgba(0, 0, 0, 0.3)",
+              padding: 4
             }}
-          />
+          >
+            {checkbox}
+          </div>
         );
       }
       statusBarHeader = (
@@ -533,7 +557,27 @@ export class Table extends TableFilterSort {
     }
     // statusBar !== null ? <div style={{ display: "block" }}>{1}</div> : null;
     // {filterHeaders}
-
+    let title = null;
+    if (meta.table.caption) {
+      title = (
+        <div
+          key="title"
+          className="zebulon-table-title"
+          style={{
+            fontWeight: "bold",
+            textAlign: "center",
+            padding: 4,
+            border: "solid 0.03em rgba(0,0,0,.2)",
+            height: 30,
+            width,
+            boxSizing: "border-box"
+          }}
+        >
+          {meta.table.caption}
+        </div>
+      );
+    }
+    // const className = "zebulon-table";
     return (
       <div
         id={this.props.id}
@@ -548,13 +592,17 @@ export class Table extends TableFilterSort {
         {this.filter}
         {this.text}
         {toolTip}
-
+        {title}
         <div style={{ display: "-webkit-box" }}>
           {statusBarHeader}
           {lockedLockedHeader}
           {headers}
         </div>
-        <div style={{ display: "-webkit-box" }}>
+        <div
+          style={{
+            display: "-webkit-box"
+          }}
+        >
           {statusBar}
           {lockedColumns}
           {rows}

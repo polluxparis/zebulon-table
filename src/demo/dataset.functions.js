@@ -12,10 +12,12 @@ import {
 	// getAudits
 } from "./datasources";
 
-const onSave = ({ message, callback }) => {
+const onSave = message => {
 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
 		alert("Save updates");
-		callback(message);
+		if (message.callback) {
+			message.callback(message);
+		}
 	});
 };
 const audits = {};

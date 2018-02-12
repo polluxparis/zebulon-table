@@ -143,11 +143,13 @@ export class TableEvent extends TableMenu {
     if (button.action) {
       const { selectedRange, updatedRows, data, meta } = this.state;
       button.actionFunction({
+        row: this.row,
         selectedRange,
         updatedRows,
         data,
         meta,
-        params: this.props.params
+        params: this.props.params,
+        action: button.id
       });
     }
   };
@@ -771,17 +773,6 @@ export class TableEvent extends TableMenu {
     this.onChange(e.target.value, row, column);
   };
   onMetaChange = resetScroll => {
-    // const meta = this.state.meta;
-    // const lastColumn = meta.properties[meta.properties.length - 1];
-    // const columnStartIndex = Math.max(
-    //   this.state.scroll.columns.startIndex,
-    //   utils.isNullOrUndefined(meta.lockedIndex) ? 0 : meta.lockedIndex + 1
-    // );
-    // const width =
-    //   lastColumn.position +
-    //   lastColumn.computedWidth -
-    //   meta.properties[columnStartIndex].position -
-    //   this.state.scroll.columns.shift;
     const bReset = false;
     this.setState({
       scroll: {
