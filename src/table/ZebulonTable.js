@@ -11,6 +11,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
+import { ConfirmationModal, rollbackAll } from "./utils/utils";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -20,7 +21,8 @@ export class ZebulonTable extends Component {
       meta: props.meta,
       updatedRows: props.updatedRows || {},
       sizes: props.sizes,
-      keyEvent: props.keyEvent
+      keyEvent: props.keyEvent,
+      confirmationModal: false
     };
     this.zoomValue = props.sizes.zoom || 1;
     this.keyEvent = false;
@@ -35,6 +37,13 @@ export class ZebulonTable extends Component {
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
+    this.closeAnswer = ok => {
+      this.setState({ closeAnswer: null });
+      if (this.props.closeAnswer) {
+        this.props.closeAnswer(ok);
+      }
+      return ok;
+    };
   }
   setFilters = (filters, columns) => {
     columns.forEach(column => {
@@ -219,7 +228,8 @@ export class ZebulonTable extends Component {
       keyEvent,
       updatedRows,
       filters,
-      status
+      status,
+      closeRequired
     } = nextProps;
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
@@ -244,6 +254,13 @@ export class ZebulonTable extends Component {
     }
     if (this.props.keyEvent !== keyEvent) {
       this.handleKeyEvent(keyEvent);
+    }
+    if (closeRequired) {
+      if (Object.keys(this.state.updatedRows).length) {
+        this.setState({ confirmationModal: true });
+      } else {
+        this.closeAnswer(true);
+      }
     }
   }
   shouldComponentUpdate(nextProps, nextState) {
@@ -350,17 +367,18 @@ export class ZebulonTable extends Component {
     if (!this.onSaveBefore(message)) return false;
     if (
       (message.updatedRows || {}).nErrors &&
+      this.props.errorHandler &&
       this.props.errorHandler.onSave &&
       !this.props.errorHandler.onSave(message)
     ) {
-      return false;
+      return this.closeAnswer(false);
     }
     const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
     message.callback = this.onSaveAfter;
     if (onSave) {
       const ok = onSave(message);
       if (ok === false) {
-        return false;
+        return this.closeAnswer(false);
       } else if (ok === true) {
         message.callback(message);
       }
@@ -376,10 +394,28 @@ export class ZebulonTable extends Component {
     const onSaveAfter =
       this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
     if (onSaveAfter && onSaveAfter(message) === false) {
-      return false;
+      return this.closeAnswer(false);
     }
     this.setState({ updatedRows: {} });
-    return true;
+    return this.closeAnswer(true);
+  };
+  // confirmation modal management for external close
+  onYes = () => {
+    this.setState({ confirmationModal: false, closeAnswer: true });
+    this.onSave();
+  };
+  onNo = () => {
+    rollbackAll(this.state.updatedRows, this.state.data);
+    this.setState({
+      confirmationModal: false,
+      closeAnswer: null,
+      updatedRows: {}
+    });
+    this.closeAnswer(true);
+  };
+  onCancel = () => {
+    this.setState({ confirmationModal: false, closeAnswer: false });
+    this.closeAnswer(false);
   };
 
   render() {
@@ -427,6 +463,13 @@ export class ZebulonTable extends Component {
           errorHandler={this.props.errorHandler || {}}
           navigationKeyHandler={this.props.navigationKeyHandler}
           contextualMenu={this.props.contextualMenu}
+        />{" "}
+        <ConfirmationModal
+          show={this.state.confirmationModal}
+          children="Do you want to save before closing the table?"
+          onYes={this.onYes}
+          onNo={this.onNo}
+          onCancel={this.onCancel}
         />
       </div>
     );

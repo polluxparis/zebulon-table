@@ -128,7 +128,7 @@ export class Table extends TableFilterSort {
     }
   }
   componentWillUnmount() {
-    this.onTableClose();
+    return this.onTableClose();
   }
   onCheckAll = () => {
     const checked_ = !this.state.checkAll;
@@ -389,19 +389,33 @@ export class Table extends TableFilterSort {
               lastColumn.position +
                 lastColumn.computedWidth +
                 this.rowHeight * (statusBar !== null),
-              width - 12
+              width - 4 * meta.table.actions.length
             ) / meta.table.actions.length;
+          const style = {
+            width: actionsWidth,
+            margin: 2,
+            marginTop: 6
+            // backgroundColor: "lightgrey"
+          };
+          const className = enable
+            ? "zebulon-action-button"
+            : "zebulon-action-button-disabled";
+          if (action.jsxFunction) {
+            return action.jsxFunction({
+              disabled: !enable,
+              className,
+              index,
+              style,
+              onClick: e => this.handleClickButton(index, e)
+            });
+          }
           return (
             <button
               key={index}
               disabled={!enable}
-              style={{
-                width: actionsWidth, //`${96 / meta.table.actions.length}%`,
-                margin: 2,
-                marginTop: 6,
-                backgroundColor: "lightgrey"
-              }}
-              onClick={() => this.handleClickButton(index)}
+              className={className}
+              style={style}
+              onClick={e => this.handleClickButton(index, e)}
             >
               {action.caption}
             </button>
@@ -607,7 +621,9 @@ export class Table extends TableFilterSort {
           {lockedColumns}
           {rows}
         </div>
-        <div style={{ height: actions.length ? 30 : 0 }}>{actions}</div>
+        <div style={{ height: actions.length ? 30 : 0, display: "flex" }}>
+          {actions}
+        </div>
         <ContextualMenu
           key="table-menu"
           getMenu={this.getMenu}

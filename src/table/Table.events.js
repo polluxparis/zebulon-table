@@ -3,7 +3,12 @@ import { TableMenu } from "./Table.menu";
 import { utils } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
-import { manageRowError, rollback } from "./utils/utils";
+import {
+  manageRowError,
+  rollback,
+  getRowStatus,
+  setStatus
+} from "./utils/utils";
 
 export class TableEvent extends TableMenu {
   // ------------------------------------
@@ -112,7 +117,7 @@ export class TableEvent extends TableMenu {
       />
     );
   };
-  handleClickButton = index => {
+  handleClickButton = (index, e) => {
     this.closeOpenedWindows();
     const button = this.state.meta.table.actions[index];
     const rowIndex = this.state.selectedRange.end.rows;
@@ -135,11 +140,11 @@ export class TableEvent extends TableMenu {
       } else if (button.type === "detail" && button.content) {
         this.setState({ detail: button });
       } else {
-        return this.handleAction(button);
+        return this.handleAction(button, e);
       }
     }
   };
-  handleAction = button => {
+  handleAction = (button, e) => {
     if (button.action) {
       const { selectedRange, updatedRows, data, meta } = this.state;
       button.actionFunction({
@@ -149,26 +154,36 @@ export class TableEvent extends TableMenu {
         data,
         meta,
         params: this.props.params,
-        action: button.id
+        action: button,
+        ...(e || {})
       });
+      this.setState({ status: this.state.status });
     }
   };
+
   handleDelete = row => {
-    let updatedRow = this.state.updatedRows[row.index_];
-    if (!updatedRow) {
-      updatedRow = { row: { ...row }, errors: {}, rowUpdated: row }; // a voir pour rollback ->valeur initial
+    const status = getRowStatus(this.state.updatedRows, row);
+    if (status.deleted_) {
+      status.deleted_ = false;
     } else {
-      rollback(updatedRow);
-      updatedRow.deleted_ = !updatedRow.deleted_;
+      setStatus(status, "deleted_");
+      rollback(status);
     }
-    this.setState({
-      updatedRows: {
-        ...this.state.updatedRows,
-        [row.index_]: updatedRow,
-        rowUpdated: row,
-        timeStamp: new Date().getTime()
-      }
-    });
+    this.setState({ status: this.state.status });
+    // if (!updatedRow) {
+    //   updatedRow = { row: { ...row }, errors: {}, rowUpdated: row }; // a voir pour rollback ->valeur initial
+    // } else {
+    //   rollback(updatedRow);
+    //   updatedRow.deleted_ = !updatedRow.deleted_;
+    // }
+    // this.setState({
+    //   updatedRows: {
+    //     ...this.state.updatedRows,
+    //     [row.index_]: updatedRow,
+    //     rowUpdated: row,
+    //     timeStamp: new Date().getTime()
+    //   }
+    // });
   };
   newRow = (row, index) => {
     const { selectedRange, updatedRows, filteredData, meta, data } = this.state;
@@ -441,26 +456,28 @@ export class TableEvent extends TableMenu {
     this.updated = true;
     this.rowUpdated = true;
     this.tableUpdated = true;
-    let updatedRow = this.state.updatedRows[row.index_];
-    if (!updatedRow) {
-      updatedRow = {
-        row: { ...row, [column.id]: this.previousValue },
-        errors: {},
-        updated_: true,
-        rowUpdated: row,
-        timeStamp: new Date().getTime()
-      };
-      // eslint-disable-next-line
-      this.state.updatedRows[row.index_] = updatedRow;
-    } else if (!updatedRow.updated_) {
-      updatedRow.updated_ = true;
-      updatedRow.timeStamp = new Date().getTime();
-    }
+    const status = getRowStatus(this.state.updatedRows, row);
+    setStatus(status, "updated_");
+    // let updatedRow = this.state.updatedRows[row.index_];
+    // if (!updatedRow) {
+    //   updatedRow = {
+    //     row: { ...row, [column.id]: this.previousValue },
+    //     errors: {},
+    //     updated_: true,
+    //     rowUpdated: row,
+    //     timeStamp: new Date().getTime()
+    //   };
+    //   // eslint-disable-next-line
+    //   this.state.updatedRows[row.index_] = updatedRow;
+    // } else if (!updatedRow.updated_) {
+    //   updatedRow.updated_ = true;
+    //   updatedRow.timeStamp = new Date().getTime();
+    // }
     const message = {
       value,
       previousValue: this.previousValue,
       row,
-      status: updatedRow,
+      status,
       column,
       meta: this.state.meta,
       data: this.state.data,
@@ -542,6 +559,7 @@ export class TableEvent extends TableMenu {
       status,
       meta: this.state.meta,
       data: this.state.data,
+      updatedRows: this.state.updatedRows,
       params: this.props.params
     };
 
@@ -674,6 +692,17 @@ export class TableEvent extends TableMenu {
     }
     return true;
   };
+  beforeTableClose = () => {
+    const message = {
+      updatedRows: this.state.updatedRows,
+      meta: this.state.meta,
+      data: this.state.data,
+      params: this.props.params
+    };
+    if (this.props.beforeTableClose) {
+      this.props.beforeTableClose(message);
+    }
+  };
   onTableClose = () => {
     const message = {
       updatedRows: this.state.updatedRows,
@@ -681,8 +710,13 @@ export class TableEvent extends TableMenu {
       data: this.state.data,
       params: this.props.params
     };
-    if (this.props.onTableClose) {
-      this.props.onTableClose(message);
+    if (Object.keys(this.state.updatedRows || {}).length) {
+      this.setState({ confirmationModal: true });
+      return false;
+    } else {
+      if (this.props.onTableClose) {
+        this.props.onTableClose(message);
+      }
     }
   };
   handleErrors = (e, rowIndex, errors) => {

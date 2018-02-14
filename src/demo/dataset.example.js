@@ -1,11 +1,12 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
 import { countries, currencies, colors, products } from "./datasources";
-import { getRowErrors, getErrors } from "../table/utils/utils";
+import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
 import { customMenuFunctions } from "./dataset.functions";
 // customMenuFunctions;
+
 const rollingAverage = {
   id: "rolling_avg",
   caption: "Rolling average",
@@ -34,7 +35,9 @@ const totalAmount = {
   accessor: "amt_€",
   format: "amt_€"
 };
-
+// const loadFileAction = e => {
+//   console.log("onClickLogFile", e);
+// };
 const meta = {
   table: {
     object: "dataset",
@@ -57,6 +60,13 @@ const meta = {
         caption: "Duplicate",
         enable: "is_selected"
       },
+      // {
+      //   type: "action",
+      //   caption: "Load",
+      //   enable: "is_selected",
+      //   action: loadFileAction,
+      //   jsxFunction: loadFileButton
+      // },
       {
         type: "save",
         caption: "Save",
@@ -269,11 +279,13 @@ export class MyDataset extends Component {
       meta,
       updatedRows: {},
       totalAmount: false,
-      rollingAverage: false
+      rollingAverage: false,
+      confirmationModal: false
     };
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
   }
+
   getLengths = ({ data, filteredData }) => {
     if (Array.isArray(data)) {
       this.setState({
@@ -497,7 +509,6 @@ export class MyDataset extends Component {
               />sum of amounts in € by country.
             </div>
           </div>
-
           <textarea
             readOnly
             rows="6"

@@ -130,7 +130,11 @@
   100% {
   }
 }
-
+.zebulon-action-button {
+}
+.zebulon-action-button-disabled {
+  color: grey;
+}
 /*-----------------------------------------------*/
 /*.zebulon-layout {
   box-sizing: border-box;

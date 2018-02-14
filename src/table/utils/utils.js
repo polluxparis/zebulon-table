@@ -1,17 +1,48 @@
+import React from "react";
 import { utils } from "zebulon-controls";
 
 // -----------------------------------------------------------
 // Error management
 // -----------------------------------------------------------
 export const rollback = status => {
-  Object.keys(status.rowUpdated).forEach(
-    key => (status.rowUpdated[key] = null)
-  );
-  Object.keys(status.row).forEach(
-    key => (status.rowUpdated[key] = status.row[key])
-  );
+  if (!status.new_) {
+    Object.keys(status.rowUpdated).forEach(
+      key => (status.rowUpdated[key] = null)
+    );
+    Object.keys(status.row).forEach(
+      key => (status.rowUpdated[key] = status.row[key])
+    );
+  }
   status.updated_ = false;
   status.errors = {};
+};
+export const rollbackAll = (updatedRows, data) => {
+  Object.keys(updatedRows).forEach(index => {
+    const status = updatedRows[index];
+    if (status.new_) {
+      data.splice(status.rowUpdated.index_, 1);
+    } else if (status.updated_) {
+      rollback(status);
+    }
+  });
+};
+
+export const getRowStatus = (updatedRows, row) => {
+  let status = updatedRows[row.index_];
+  if (!status) {
+    status = {
+      updated_: true,
+      rowUpdated: row,
+      row: { ...row },
+      errors: {}
+    };
+    updatedRows[row.index_] = status;
+  }
+  return status;
+};
+export const setStatus = (status, type) => {
+  status[type] = true;
+  status.timeStamp = new Date().getTime();
 };
 //------------------------------------------------------------
 export const manageRowError = (updatedRows, index, object, type, error) => {
@@ -147,3 +178,102 @@ export const exportFunctions = functions => {
 // ----------------------------------
 // common data access (row or fiels)
 // ----------------------------------
+export const loadFileButton = ({
+  disabled,
+  index,
+  style,
+  onClick,
+  className
+}) => {
+  const onLoad = e => {
+    const file = document.getElementById("file-selector").files[0];
+    const reader = new FileReader();
+    reader.onload = ee => {
+      onClick({ ...ee, file, text: reader.result });
+    };
+    reader.readAsText(file);
+  };
+  return (
+    <div key={index} style={{ ...style, display: "inherit" }}>
+      <input
+        type="file"
+        id="file-selector"
+        onChange={onLoad}
+        style={{ display: "none" }}
+      />
+      <button
+        style={{ width: "inherit" }}
+        className={className}
+        disabled={disabled}
+        onClick={() => document.getElementById("file-selector").click()}
+      >
+        Load
+      </button>
+    </div>
+  );
+};
+
+export class ConfirmationModal extends React.Component {
+  render() {
+    // Render nothing if the "show" prop is false
+    if (!this.props.show) {
+      return null;
+    }
+
+    // The gray background
+    const backdropStyle = {
+      position: "fixed",
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: "rgba(0,0,0,0.3)",
+      padding: 50
+    };
+
+    // The modal "window"
+    const modalStyle = {
+      display: "flex",
+      flexDirection: "column",
+      backgroundColor: "#fff",
+      justifyContent: "space-between",
+      borderRadius: 5,
+      width: "fit-content",
+      minWidth: 200,
+      minHeight: 100,
+      height: "fit-content",
+      margin: "0 auto",
+      padding: 20,
+      zIndex: 1000,
+      opacity: 1
+    };
+
+    return (
+      <div className="backdrop" style={backdropStyle}>
+        <div className="modal" style={modalStyle}>
+          <div>{this.props.children}</div>
+          <div className="footer" style={{ display: "flex" }}>
+            <button
+              style={{ minWidth: 70, margin: 5 }}
+              onClick={this.props.onYes}
+            >
+              Yes
+            </button>
+            <button
+              style={{ minWidth: 70, margin: 5 }}
+              onClick={this.props.onNo}
+            >
+              No
+            </button>
+            <button
+              style={{ minWidth: 70, margin: 5 }}
+              onClick={this.props.onCancel}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
