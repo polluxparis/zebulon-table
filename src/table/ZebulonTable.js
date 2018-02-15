@@ -37,13 +37,14 @@ export class ZebulonTable extends Component {
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
-    this.closeAnswer = ok => {
-      this.setState({ closeAnswer: null });
-      if (this.props.closeAnswer) {
-        this.props.closeAnswer(ok);
-      }
-      return ok;
-    };
+    this.saveConfirmationAnswer = ok => ok;
+    //  {
+    //   this.setState({ saveConfirmationAnswer: null });
+    //   if (this.props.saveConfirmationRequired) {
+    //     this.props.saveConfirmationRequired(ok);
+    //   }
+    //   return ok;
+    // };
   }
   setFilters = (filters, columns) => {
     columns.forEach(column => {
@@ -229,7 +230,7 @@ export class ZebulonTable extends Component {
       updatedRows,
       filters,
       status,
-      closeRequired
+      saveConfirmationRequired
     } = nextProps;
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
@@ -255,11 +256,23 @@ export class ZebulonTable extends Component {
     if (this.props.keyEvent !== keyEvent) {
       this.handleKeyEvent(keyEvent);
     }
-    if (closeRequired) {
-      if (Object.keys(this.state.updatedRows).length) {
-        this.setState({ confirmationModal: true });
+    if (saveConfirmationRequired) {
+      this.saveConfirmationAnswer = ok => {
+        saveConfirmationRequired(ok);
+        this.saveConfirmationAnswer = ok => ok;
+        return ok;
+      };
+      if (
+        Object.values(this.state.updatedRows).find(
+          status => status.new_ || status.deleted_ || status.updated_
+        ) !== undefined
+      ) {
+        this.setState({
+          confirmationModal: true,
+          modal: { text: "Do you want to save before?", type: "YesNoCancel" }
+        });
       } else {
-        this.closeAnswer(true);
+        this.saveConfirmationAnswer(true);
       }
     }
   }
@@ -350,6 +363,27 @@ export class ZebulonTable extends Component {
   //   }
   //   return ok;
   // };
+  errorHandler = (message, action) => {
+    let handler = this.props.errorHandler && this.props.errorHandler[action];
+    if (action === "onTableQuit" || action === "onSave") {
+      handler = handler && (message.updatedRows || {}).nErrors;
+    } else if (action === "onRowQuit") {
+      handler = handler && (message.status.errors || {}).n_;
+    }
+    if (handler) {
+      const ok = this.props.errorHandler[action](message);
+      if (ok === false) {
+        if (message.error) {
+          this.setState({
+            confirmationModal: true,
+            modal: { text: message.error, type: "Ok" }
+          });
+        }
+        return false;
+      }
+    }
+    return true;
+  };
   onSave = () => {
     const message = {
       updatedRows: this.state.updatedRows,
@@ -365,20 +399,15 @@ export class ZebulonTable extends Component {
   onSave_ = message => {
     // local checks and process
     if (!this.onSaveBefore(message)) return false;
-    if (
-      (message.updatedRows || {}).nErrors &&
-      this.props.errorHandler &&
-      this.props.errorHandler.onSave &&
-      !this.props.errorHandler.onSave(message)
-    ) {
-      return this.closeAnswer(false);
+    if (!this.errorHandler(message, "onSave")) {
+      return this.saveConfirmationAnswer(false);
     }
     const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
     message.callback = this.onSaveAfter;
     if (onSave) {
       const ok = onSave(message);
       if (ok === false) {
-        return this.closeAnswer(false);
+        return this.saveConfirmationAnswer(false);
       } else if (ok === true) {
         message.callback(message);
       }
@@ -391,38 +420,72 @@ export class ZebulonTable extends Component {
     return true;
   };
   onSaveAfter = message => {
+    if (message.error) {
+      this.setState({
+        confirmationModal: true,
+        modal: { text: message.error, type: "Ok" }
+      });
+      return this.saveConfirmationAnswer(false);
+    }
     const onSaveAfter =
       this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
     if (onSaveAfter && onSaveAfter(message) === false) {
-      return this.closeAnswer(false);
+      return this.saveConfirmationAnswer(false);
     }
     this.setState({ updatedRows: {} });
-    return this.closeAnswer(true);
+    return this.saveConfirmationAnswer(true);
   };
   // confirmation modal management for external close
-  onYes = () => {
-    this.setState({ confirmationModal: false, closeAnswer: true });
-    this.onSave();
+  onConfirm = button => {
+    if (button === "yes") {
+      this.setState({ confirmationModal: false, saveConfirmationAnswer: true });
+      if (!this.table.onTableQuit(true)) {
+        return this.saveConfirmationAnswer(false);
+      }
+      this.onSave();
+    } else if (button === "no") {
+      rollbackAll(this.state.updatedRows, this.state.data);
+      this.setState({
+        confirmationModal: false,
+        saveConfirmationAnswer: null,
+        updatedRows: {}
+      });
+      this.saveConfirmationAnswer(true);
+    } else if (button === "cancel") {
+      this.setState({
+        confirmationModal: false,
+        saveConfirmationAnswer: false
+      });
+      this.saveConfirmationAnswer(false);
+    } else if (button === "ok") {
+      this.setState({
+        confirmationModal: false,
+        saveConfirmationAnswer: false
+      });
+    }
   };
-  onNo = () => {
-    rollbackAll(this.state.updatedRows, this.state.data);
-    this.setState({
-      confirmationModal: false,
-      closeAnswer: null,
-      updatedRows: {}
-    });
-    this.closeAnswer(true);
-  };
-  onCancel = () => {
-    this.setState({ confirmationModal: false, closeAnswer: false });
-    this.closeAnswer(false);
-  };
+
+  // onNo = () => {
+  //   rollbackAll(this.state.updatedRows, this.state.data);
+  //   this.setState({
+  //     confirmationModal: false,
+  //     saveConfirmationAnswer: null,
+  //     updatedRows: {}
+  //   });
+  //   this.saveConfirmationAnswer(true);
+  // };
+  // onCancel = () => {
+  //   this.setState({ confirmationModal: false, saveConfirmationAnswer: false });
+  //   this.saveConfirmationAnswer(false);
+  // };
+  // onOk = () => {};
 
   render() {
     let div = (
       <div
         style={{ fontSize: `${this.zoomValue * 100}%`, position: "relative" }}
         className="zebulon-table"
+        id={`zebulon-table-&{this.props.id}`}
       >
         <Table
           id={this.props.id}
@@ -457,19 +520,15 @@ export class ZebulonTable extends Component {
           onGetData={this.props.onGetData}
           onGetPage={this.props.onGetPage}
           onSave={this.onSave}
-          // onSaveBefore={this.props.onSaveBefore}
-          // onSaveAfter={this.props.onSaveAfter}
           callbacks={this.props.callbacks}
-          errorHandler={this.props.errorHandler || {}}
+          errorHandler={this.errorHandler}
           navigationKeyHandler={this.props.navigationKeyHandler}
           contextualMenu={this.props.contextualMenu}
-        />{" "}
+        />
         <ConfirmationModal
           show={this.state.confirmationModal}
-          children="Do you want to save before closing the table?"
-          onYes={this.onYes}
-          onNo={this.onNo}
-          onCancel={this.onCancel}
+          detail={this.state.modal}
+          onConfirm={this.onConfirm}
         />
       </div>
     );

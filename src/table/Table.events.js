@@ -458,21 +458,6 @@ export class TableEvent extends TableMenu {
     this.tableUpdated = true;
     const status = getRowStatus(this.state.updatedRows, row);
     setStatus(status, "updated_");
-    // let updatedRow = this.state.updatedRows[row.index_];
-    // if (!updatedRow) {
-    //   updatedRow = {
-    //     row: { ...row, [column.id]: this.previousValue },
-    //     errors: {},
-    //     updated_: true,
-    //     rowUpdated: row,
-    //     timeStamp: new Date().getTime()
-    //   };
-    //   // eslint-disable-next-line
-    //   this.state.updatedRows[row.index_] = updatedRow;
-    // } else if (!updatedRow.updated_) {
-    //   updatedRow.updated_ = true;
-    //   updatedRow.timeStamp = new Date().getTime();
-    // }
     const message = {
       value,
       previousValue: this.previousValue,
@@ -483,12 +468,9 @@ export class TableEvent extends TableMenu {
       data: this.state.data,
       params: this.props.params
     };
-    let b = this.onChange_(message);
-    if (!b && this.props.errorHandler.onChange) {
-      b = this.props.errorHandler.onChange(message);
-    }
-    // console.log("onChange", message);
-    return b;
+    return (
+      this.onChange_(message) && this.props.errorHandler(message, "onChange")
+    );
   };
   onChange_ = message => {
     if (
@@ -517,12 +499,11 @@ export class TableEvent extends TableMenu {
       data: this.state.data,
       params: this.props.params
     };
-    let b = this.onCellQuit_(message);
-    if (!b && this.props.errorHandler.onCellQuit) {
-      b = this.props.errorHandler.onCellQuit(message);
-    }
-    // console.log("onCellQuit", message);
-    return b;
+    return (
+      !this.updated ||
+      (this.onCellQuit_(message) &&
+        this.props.errorHandler(message, "onCellQuit"))
+    );
   };
   onCellQuit_ = message => {
     const onCellQuit =
@@ -562,15 +543,9 @@ export class TableEvent extends TableMenu {
       updatedRows: this.state.updatedRows,
       params: this.props.params
     };
-
-    let b = this.onRowQuit_(message);
-    if (
-      (!b || (message.status.errors || {}).n_) &&
-      this.props.errorHandler.onRowQuit
-    ) {
-      b = this.props.errorHandler.onRowQuit(message);
-    }
-    return b;
+    return (
+      this.onRowQuit_(message) && this.props.errorHandler(message, "onRowQuit")
+    );
   };
   onRowQuit_ = message => {
     if (this.rowUpdated) {
@@ -578,7 +553,6 @@ export class TableEvent extends TableMenu {
       this.state.meta.properties
         .filter(property => property.mandatory)
         .forEach(property => {
-          // const error = message.status.errors[property.id] || {};
           // mandatory data
           manageRowError(
             this.state.updatedRows,
@@ -656,11 +630,10 @@ export class TableEvent extends TableMenu {
       data: this.state.data,
       params: this.props.params
     };
-    let b = this.onTableQuit_(message);
-    if (!b && this.props.errorHandler.onTableQuit) {
-      b = this.props.errorHandler.onTableQuit(message);
-    }
-    return b;
+    return (
+      this.onTableQuit_(message) &&
+      this.props.errorHandler(message, "onTableQuit")
+    );
   };
   onTableQuit_ = message => {
     if (this.range.end.rows) {

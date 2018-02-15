@@ -219,58 +219,63 @@ export class ConfirmationModal extends React.Component {
     if (!this.props.show) {
       return null;
     }
-
-    // The gray background
-    const backdropStyle = {
-      position: "fixed",
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: "rgba(0,0,0,0.3)",
-      padding: 50
-    };
-
-    // The modal "window"
-    const modalStyle = {
-      display: "flex",
-      flexDirection: "column",
-      backgroundColor: "#fff",
-      justifyContent: "space-between",
-      borderRadius: 5,
-      width: "fit-content",
-      minWidth: 200,
-      minHeight: 100,
-      height: "fit-content",
-      margin: "0 auto",
-      padding: 20,
-      zIndex: 1000,
-      opacity: 1
-    };
-
+    const { text, type } = this.props.detail;
+    let buttons;
+    if (type === "YesNoCancel") {
+      buttons = [
+        <button
+          style={{ minWidth: 70, margin: 5 }}
+          onClick={() => this.props.onConfirm("yes")}
+          tabIndex={0}
+          key={0}
+          autoFocus={true}
+        >
+          Yes
+        </button>,
+        <button
+          style={{ minWidth: 70, margin: 5 }}
+          onClick={() => this.props.onConfirm("no")}
+          tabIndex={1}
+          key={1}
+        >
+          No
+        </button>,
+        <button
+          style={{ minWidth: 70, margin: 5 }}
+          onClick={() => this.props.onConfirm("cancel")}
+          tabIndex={2}
+          key={2}
+        >
+          Cancel
+        </button>
+      ];
+    } else if (type === "Ok") {
+      buttons = [
+        <button
+          style={{ minWidth: 70, margin: 5 }}
+          onClick={() => this.props.onConfirm("ok")}
+          tabIndex={0}
+          key={0}
+          autoFocus={true}
+        >
+          Ok
+        </button>
+      ];
+    }
+    const body = Array.isArray(text) ? (
+      text.map((line, index) => <div key={index}>{line}</div>)
+    ) : (
+      <div>{text}</div>
+    );
     return (
-      <div className="backdrop" style={backdropStyle}>
-        <div className="modal" style={modalStyle}>
-          <div>{this.props.children}</div>
+      <div className="backdrop zebulon-modal-backdrop">
+        <div
+          className="modal zebulon-modal-confirmation"
+          style={{ display: "flex", top: 100 }}
+        >
+          {body}
           <div className="footer" style={{ display: "flex" }}>
-            <button
-              style={{ minWidth: 70, margin: 5 }}
-              onClick={this.props.onYes}
-            >
-              Yes
-            </button>
-            <button
-              style={{ minWidth: 70, margin: 5 }}
-              onClick={this.props.onNo}
-            >
-              No
-            </button>
-            <button
-              style={{ minWidth: 70, margin: 5 }}
-              onClick={this.props.onCancel}
-            >
-              Cancel
-            </button>
+            {buttons}
           </div>
         </div>
       </div>

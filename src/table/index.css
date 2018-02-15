@@ -135,6 +135,30 @@
 .zebulon-action-button-disabled {
   color: grey;
 }
+.zebulon-modal-backdrop {
+  position: fixed;
+  top: 0px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 50px;
+}
+.zebulon-modal-confirmation {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  justify-content: space-between;
+  border-radius: 5px;
+  width: fit-content;
+  min-width: 200px;
+  min-height: 100px;
+  height: fit-content;
+  margin: 0 auto;
+  padding: 20px;
+  z-index: 1000;
+  opacity: 1;
+}
 /*-----------------------------------------------*/
 /*.zebulon-layout {
   box-sizing: border-box;

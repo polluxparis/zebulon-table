@@ -14,6 +14,16 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * Computed columns.
 * Server communication.
 ## Help and suggestions would be welcome.
+## Table of contents
+* [Getting started.](#zegetting-started)
+* [Zebulon table props.](#zebulon-table-props)
+* [Data set.](#data-set)
+* [Available functions and callbacks.](#Available-functions-and-callbacks)
+* [Meta description.](#meta-description)
+* [Saving updated data.](#saving-updated-data)
+* [Error management.](#error-management)
+* [Working with a redux store.](#working-with-a-redux-store)
+
 ## Getting started
 Install `zebulon-table` using npm.
 ```shell
@@ -114,7 +124,22 @@ ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 | [navigationKeyHandler](#key-events-and-navigation-key-handler) | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
 | isActive | boolean | Indicator that the component is active| 
 | [errorHandler](#error-handler) | object | Custom error management|
-| [contextualMenu](#custom-contextual-menu) | object | Custom contextual menu |
+| [contextualMenu](#custom-contextual-menu) | object | Custom contextual menu|
+| [saveConfirmationRequired](#requiring-save-with-bconfirmation) | callback | callback to execute after save requirement|
+| [onChange](#available-functions-and-callbacks) | table event callback | Change of cell value |
+| [onCellEnter](#available-functions-and-callbacks) | table event callback | Enter a cell|
+| [onCellQuit](#available-functions-and-callbacks) | table event callback | Quit a cell|
+| [onRowNew](#available-functions-and-callbacks) | table event callback | Add a new row|
+| [onRowEnter](#available-functions-and-callbacks) | table event callback | Enter a row|
+| [onRowQuit](#available-functions-and-callbacks) | table event callback | Quit a row|
+| [onTableEnter](#available-functions-and-callbacks) | table event callback | Enter the table (active)|
+| [onTableQuit](#available-functions-and-callbacks) | table event callback | Quit the table|
+| [onTableClose](#available-functions-and-callbacks) | table event callback | Close the table |
+| [onFilter](#available-functions-and-callbacks) | table event callback | Change filters|
+| [onSort](#available-functions-and-callbacks) | table event callback | Change sorts|
+| [onGetData](#available-functions-and-callbacks) | table event callback | Get data|
+| [onGetPage](#available-functions-and-callbacks) | table event callback | Get a new page |
+| [onSave](#available-functions-and-callbacks) | table event callback | Save updated data|
 ###
 ## Data set
 The data set (data property) can be:
@@ -336,13 +361,11 @@ The updatedRows prop is an object with an entry for each updated rows in the tab
     errors:{[column]:{[type]:error text}}
 }
 ```
-N.B. By default, errors are not blocking in the table. You'll have to manage the blocking yourself with the Error Handler.
-
-If you pass an updatedRows prop as an empty object, it will mutate at each update in the table. Validation functions should update the error entry if needed. In consequence, the component calling the table component can know at any time all the changes since the loading of data.
-A function, manageRowError, is available in /src/table/utils (and exported) to set or remove errors. 
-
-## Error handler
-onQuit functions can be cancelled if the onQuit function returns false or if the function passed as the errorHandler prop returns false. Parameters are the same as for the onQuit function. To create interractions with the user, you'll have to block the UI thread as with window.alert or window.confirm.   
+If you pass an updatedRows prop as an empty object, it will mutate at each update in the table. Validation functions should update the error property (updatedRows.errors) if needed. In consequence, the component calling the table component can know at any time all the changes since the loading (or refresh) of data.
+exported functions to manage errors log.
+* manageRowError (updatedRows, index, object, type, error): log or remove an error in the row status object.
+* getRowErrors (status, rowIndex): return an array with logged errors of the specified row (absolute index).
+* getErrors :return an array with all the errors logged for the dataset.
 
 ## Filtering and sorting
 Filtering and sorting can be done directly in the table.
@@ -381,7 +404,35 @@ You can find an example in src/demo/datasource.
 ### Actual restrictions
 * Filters with existing values is not implemented yet, values must be given by the server.
 * Computed columns with aggregation are not available.
-## Using a Redux store
+## Save updated data
+### Steps
+* Complete validations (onCellQuit, onRowQuit)
+* props.onSaveBefore function execution,
+* errorHandler.onSave function execution,
+* props.onSave function execution,
+* this.onSaveAfter function execution,
+N.B. props.onSave is called with this.onSaveAfter as a callback. If the onSave is executed asynchronously (server update), the props.onSave should return undefined and the callback called with the updated message when the execution is completed, else mutate the message and return true or false.
+The message can be completed with an error message (message.error).
+### Requiring save with confirmation
+You may need to save the update before an action called from outside of the component (exit, reload...). In this case, you can pass as a property (saveConfirmationRequired) the function to callback after the saving. If any update has occured, a confirmation modal (Yes, No, Cancel) will be popped up.
+* On Yes, updated data will be saved and, if no errors occurs during the process, the callback will be executed with parameter = true.
+* On no (or if no update), updates are rolledback and the callback will be executed with parameter = true.
+* On Cancel the callback will be executed with parameter = false.
+## Error management
+By default, errors are not blocking but logged in the "updatedRows" property. 
+Validator functions should be used to log those errors.
+### Error handler
+You can manage errors in your own way with the "errorHandler" property.
+It is an object containing for each level of error management a function to execute when an error occurs.
+Returning a string from the errorHandler function will be interpreted as an error message an popped up in an alert.
+Returning false (or a string) from the errorHandler function will stop the action.
+### Error management levels
+* onChange (cell)
+* onCellQuit (cell)
+* onRowQuit (row)
+* onTableQuit (table)
+N.B. If an error occurs during the "save" process, you can add an "error" entry in the callback message with the error message that will be popped up as well.
+## Working with a Redux store
 When using a store, you can create a container mapping the actions to the meta description in the mergeProps function as in the following example:
 ```js
 import { connect } from "react-redux";
@@ -426,7 +477,6 @@ const mapDispatchToProps = (dispatch, ownProps) => ({
 const mergeProps = (stateProps, dispatchProps, ownProps) => {
   const { getMeta, ...restStateProps } = stateProps;
   const { select, save, ...restDispatchProps } = dispatchProps;
-  const meta = metaQuery({ submit });
   return {
     meta: getMeta(select, save),
     ...restStateProps,
