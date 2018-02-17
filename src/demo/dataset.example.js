@@ -5,6 +5,7 @@ import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
 import { customMenuFunctions } from "./dataset.functions";
+import { metaThirdparties } from "./thirdparties";
 // customMenuFunctions;
 
 const rollingAverage = {
@@ -20,7 +21,7 @@ const rollingAverage = {
   sortAccessor: "row.d",
   windowStart: "since30d",
   hidden: true,
-  windowEnd: "row.d",
+  windowEnd: x => x,
   format: "amt_€"
 };
 const totalAmount = {
@@ -204,14 +205,14 @@ const meta = {
     },
     {
       id: "currency_id",
-      width: 10,
+      width: 0,
       dataType: "number",
       hidden: true
     },
     {
       id: "currency",
       caption: "Currency",
-      width: 10,
+      width: 0,
       dataType: "object",
       mandatory: true,
       hidden: true,
@@ -228,6 +229,33 @@ const meta = {
       filterType: "values",
       editable: true,
       select: currencies
+    },
+    {
+      id: "thirdparty_id",
+      width: 0,
+      dataType: "number",
+      hidden: true
+    },
+    {
+      id: "thirdparty",
+      caption: "Thirdparty",
+      width: 0,
+      dataType: "object",
+      mandatory: true,
+      hidden: true,
+      accessor: "thirdparty",
+      primaryKeyAccessor: "thirdparty.id",
+      setForeignKeyAccessor: ({ value, row }) => (row.thirdparty_id = value)
+    },
+    {
+      id: "thirdparty_cd",
+      caption: "Thirdparty",
+      width: 80,
+      dataType: "string",
+      accessor: "thirdparty.cd",
+      filterType: "values",
+      editable: true,
+      foreignObject: "thirdparties"
     },
     {
       id: "qty",
@@ -277,10 +305,12 @@ export class MyDataset extends Component {
       filteredDataLength: 0,
       loadedDataLength: 0,
       meta,
+      metaThirdparties,
       updatedRows: {},
       totalAmount: false,
       rollingAverage: false,
-      confirmationModal: false
+      confirmationModal: false,
+      activeTable: "dataset"
     };
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
@@ -336,37 +366,39 @@ export class MyDataset extends Component {
   };
   errorHandler = {
     onRowQuit: message => {
-      if (message.updated) {
-        return window.confirm(
-          "Errors: " +
-            getRowErrors(message.status, message.row.index_).map(
-              error => `\n${error.rowIndex} ${error.error}`
-            )
-        );
-      }
-      return true;
+      message.error = ["Errors: "].concat(
+        getRowErrors(message.status, message.row.index_).map(
+          error => `\n Order# ${message.row.id} : ${error.error}`
+        )
+      );
+      return false;
     },
     onSave: message => {
-      return window.alert(
-        "Can't save with errors: " +
-          getErrors(message.updatedRows).map(
-            error => `\n${error.rowIndex} ${error.error}`
-          )
+      message.error = ["Can't save with errors: "].concat(
+        getErrors(message.updatedRows).map(
+          error =>
+            `\nOrder# ${message.updatedRows[error.rowIndex].rowUpdated
+              .id} : ${error.error}`
+        )
       );
+      return false;
     }
   };
+  onActivation = table => this.setState({ activeTable: table });
   render() {
     const { keyEvent, functions } = this.props;
     const {
       filters,
       sorts,
       meta,
+      metaThp,
       dataLength,
       filteredDataLength,
       loadedDataLength,
       pageStartIndex,
       radioDataset,
-      status
+      status,
+      activeTable
     } = this.state;
     let header = null,
       footer = null;
@@ -561,8 +593,29 @@ export class MyDataset extends Component {
           onGetPage={this.getPageLengths}
           // contextualMenu={customMenuFunctions}
           ref={ref => (this.table = ref)}
+          isActive={activeTable === "dataset"}
+          onActivation={() => this.onActivation("dataset")}
         />
         {footer}
+        <ZebulonTable
+          key="thirdparties"
+          id="thirdparties"
+          meta={metaThirdparties}
+          // filters={filters}
+          // sorts={sorts}
+          status={status}
+          sizes={sizes}
+          functions={functions}
+          keyEvent={keyEvent}
+          errorHandler={this.errorHandler}
+          // navigationKeyHandler={navigationKeyHandler}
+          // onFilter={this.getLengths}
+          // onGetPage={this.getPageLengths}
+          // contextualMenu={customMenuFunctions}
+          ref={ref => (this.thp = ref)}
+          isActive={activeTable === "thirdparties"}
+          onActivation={() => this.onActivation("thirdparties")}
+        />
       </div>
     );
   }

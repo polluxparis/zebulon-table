@@ -237,6 +237,9 @@ const filterEmpty = (id, position, width, height) => {
 // ↑↓
 export class Headers extends Component {
   handleClick = (column, double) => {
+    if (!this.props.isActive && this.props.onActivation) {
+      this.props.onActivation();
+    }
     const { onSort } = this.props;
     if (!double) {
       this.timer = setTimeout(() => {
@@ -380,9 +383,9 @@ export class Headers extends Component {
                   false,
                   onChange,
                   column.filterType === "values" ? openFilter : () => {},
-                  this.handleDragStart,
-                  this.handleDragOver,
-                  this.handleDrop,
+                  // this.handleDragStart,
+                  // this.handleDragOver,
+                  // this.handleDrop,
                   focusedId
                 )
               );

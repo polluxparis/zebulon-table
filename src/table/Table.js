@@ -17,6 +17,7 @@ export class Table extends TableFilterSort {
     super(props);
 
     let filteredData = this.filters(props.data, props.filters);
+
     let status = props.status;
     if (props.meta.serverPagination && status.loaded) {
       status = { loaded: false, loading: true };
@@ -32,6 +33,11 @@ export class Table extends TableFilterSort {
         });
       });
     }
+    //  else if (this.props.callbackForeignKey && filteredData.length < 2) {
+    //   this.props.callbackForeignKey(
+    //     filteredData.length ? filteredData.length[0] : false
+    //   );
+    // } // a voir serverPagination
     this.sorts(filteredData, props.meta.properties);
     this.state = {
       data: props.data,
@@ -154,7 +160,12 @@ export class Table extends TableFilterSort {
       auditedRow,
       audits
     } = this.state;
-
+    if (this.props.callbackForeignKey && filteredData.length < 2) {
+      this.props.callbackForeignKey(
+        filteredData.length ? filteredData[0] : false
+      );
+      return null;
+    }
     if (!visible) {
       return null;
     } else if (status.loading || status.loadingConfig) {
@@ -506,6 +517,8 @@ export class Table extends TableFilterSort {
         componentId={this.props.id}
         auditedRow={auditedRow}
         auditStatus={auditStatus}
+        isActive={this.props.isActive}
+        onActivation={this.props.onActivation}
       />
     );
     let lockedLockedHeader = null;
@@ -526,6 +539,8 @@ export class Table extends TableFilterSort {
           componentId={this.props.id}
           auditedRow={auditedRow}
           auditStatus={auditStatus}
+          isActive={this.props.isActive}
+          onActivation={this.props.onActivation}
         />
       );
     }

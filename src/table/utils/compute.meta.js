@@ -7,7 +7,7 @@ export const getFunction = (functions, object, type, value) => {
     if (indexDot !== -1) {
       let v = value;
       if (value.slice(0, indexDot) === "row") {
-        v = value.slice(indexDot);
+        v = value.slice(indexDot + 1);
       }
       const keys = v.split(".");
       return ({ row }) => {
@@ -107,20 +107,27 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     "accessor",
     meta.row.audit
   );
-  meta.table.actions.forEach(action => {
-    if (action.action) {
-      action.actionFunction =
-        typeof action.action === "function"
-          ? action.action
-          : getFunction(functions, meta.table.object, "action", action.action);
-    }
-    action.enableFunction = getFunction(
-      functions,
-      meta.table.object,
-      "editable",
-      action.enable
-    );
-  });
+  if (meta.table.actions) {
+    meta.table.actions.forEach(action => {
+      if (action.action) {
+        action.actionFunction =
+          typeof action.action === "function"
+            ? action.action
+            : getFunction(
+                functions,
+                meta.table.object,
+                "action",
+                action.action
+              );
+      }
+      action.enableFunction = getFunction(
+        functions,
+        meta.table.object,
+        "editable",
+        action.enable
+      );
+    });
+  }
   // properties
   meta.properties.forEach((column, index) => {
     if (column.id === "index_" && column.hidden === undefined) {

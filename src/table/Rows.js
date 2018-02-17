@@ -7,49 +7,47 @@ export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
-  getRatios = props => {
-    const {
-      height,
-      width,
-      rowHeight,
-      scroll,
-      data,
-      dataLength,
-      meta,
-      noVerticalScrollbar
-    } = props;
-    // const meta = props.meta.properties;
-    const lastColumn = meta.properties[meta.properties.length - 1];
-    const columnsWidth =
-      lastColumn.position +
-      lastColumn.computedWidth -
-      (meta.lockedWidth || 0) * !noVerticalScrollbar;
-    const horizontalDisplay =
-      (width -
-        ((dataLength || data.length) * rowHeight > height
-          ? constants.ScrollbarSize
-          : 0)) /
-      columnsWidth;
-    const verticalDisplay =
-      (height - (columnsWidth > width ? constants.ScrollbarSize : 0)) /
-      ((dataLength || data.length) * rowHeight);
-    return {
-      vertical: {
-        display: verticalDisplay,
-        position: Math.min(
-          scroll.rows.startIndex / (dataLength || data.length),
-          1 - verticalDisplay
-        )
-      },
-      horizontal: {
-        display: horizontalDisplay,
-        position: Math.min(
-          scroll.columns.position / columnsWidth,
-          1 - horizontalDisplay
-        )
-      }
-    };
-  };
+  // getRatios = props => {
+  //   const {
+  //     height,
+  //     width,
+  //     rowHeight,
+  //     scroll,
+  //     data,
+  //     dataLength,
+  //     meta,
+  //     noVerticalScrollbar
+  //   } = props;
+  //   this.getRowWidth(props.meta);
+  //   const horizontalDisplay =
+  //     (width -
+  //       ((dataLength || data.length) * rowHeight > height
+  //         ? constants.ScrollbarSize
+  //         : 0)) /
+  //     this.rowWidth;
+  //   const verticalDisplay =
+  //     (height - (this.rowWidth > width ? constants.ScrollbarSize : 0)) /
+  //     ((dataLength || data.length) * rowHeight);
+  //   return {
+  //     vertical: {
+  //       display: verticalDisplay,
+  //       position: Math.min(
+  //         scroll.rows.startIndex / (dataLength || data.length),
+  //         1 - verticalDisplay
+  //       )
+  //     },
+  //     horizontal: {
+  //       display: horizontalDisplay,
+  //       position: Math.max(
+  //         Math.min(
+  //           scroll.columns.position / this.rowWidth,
+  //           1 - horizontalDisplay
+  //         ),
+  //         0
+  //       )
+  //     }
+  //   };
+  // };
 
   cell = (
     row,

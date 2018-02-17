@@ -404,7 +404,7 @@ You can find an example in src/demo/datasource.
 ### Actual restrictions
 * Filters with existing values is not implemented yet, values must be given by the server.
 * Computed columns with aggregation are not available.
-## Save updated data
+## Saving updated data
 ### Steps
 * Complete validations (onCellQuit, onRowQuit)
 * props.onSaveBefore function execution,

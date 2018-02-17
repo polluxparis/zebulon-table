@@ -73,7 +73,7 @@ export class Input extends Component {
         validatedValue;
       if (!this.validateInput(value)) return;
       // selection of an object
-      if (column.reference) {
+      if (column.reference && column.select) {
         validatedValue = column.selectItems[e.target.value];
       } else if (dataType === "boolean") {
         if (inputType === "filter" && this.state.value === false)
@@ -93,8 +93,14 @@ export class Input extends Component {
       if (onChange)
         if (onChange(validatedValue, row, column, filterTo) === false) return;
       if (row) {
-        row[column.reference || column.id] = validatedValue;
-        if (column.setForeignKeyAccessorFunction) {
+        const columnId =
+          column.reference && column.select ? column.reference : column.id;
+        row[columnId] = validatedValue;
+        if (
+          column.setForeignKeyAccessorFunction &&
+          column.reference &&
+          column.select
+        ) {
           column.setForeignKeyAccessorFunction({
             value: column.primaryKeyAccessorFunction({
               row: { [column.reference]: validatedValue }

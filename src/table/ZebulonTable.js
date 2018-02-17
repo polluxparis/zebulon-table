@@ -1,7 +1,8 @@
 import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
-import { utils } from "zebulon-controls";
+import { utils, ConfirmationModal } from "zebulon-controls";
+import { metaThirdparties } from "../demo/thirdparties";
 
 import {
   computeMeta,
@@ -11,7 +12,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { ConfirmationModal, rollbackAll } from "./utils/utils";
+import { rollbackAll } from "./utils/utils";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -292,11 +293,15 @@ export class ZebulonTable extends Component {
       computeMeta(this.state.meta, this.zoomValue, this.state.functions);
       return;
     }
-    this.keyEvent = true;
-    if (!this.table) return;
-    else if (e.type === "copy") this.handleCopy(e);
-    else if (e.type === "paste") this.handlePaste(e);
-    else if (e.type === "keydown") this.handleKeyDown(e);
+    if (e.key === "Escape" && this.state.confirmationModal) {
+      this.setState({ confirmationModal: false });
+    } else {
+      this.keyEvent = true;
+      if (!this.table) return;
+      else if (e.type === "copy") this.handleCopy(e);
+      else if (e.type === "paste") this.handlePaste(e);
+      else if (e.type === "keydown") this.handleKeyDown(e);
+    }
   };
   handleKeyDown = e => {
     if (
@@ -479,8 +484,36 @@ export class ZebulonTable extends Component {
   //   this.saveConfirmationAnswer(false);
   // };
   // onOk = () => {};
-
+  onForeignKey = (foreignObject, filters, callback) => {
+    const element = (
+      <ZebulonTable
+        key="thirdparties"
+        id="thirdparties"
+        meta={metaThirdparties}
+        filters={filters}
+        status={{}}
+        sizes={{ height: 300, width: 500 }}
+        functions={this.state.functions}
+        ref={ref => (this.thp = ref)}
+        // isActive={activeTable === "thirdparties"}
+        // onActivation={() => this.onActivation("thirdparties")}
+      />
+    );
+    this.setState({
+      confirmationModal: true,
+      modal: { text: element, type: "foreignKey", callback }
+    });
+    this.keyEvent = false;
+  };
   render() {
+    // if (
+    //   Array.isArray(this.state.data) &&
+    //   this.props.callbackForeignKey &&
+    //   this.state.data.length === 1
+    // ) {
+    //   this.props.callbackForeignKey(this.state.data[0]);
+    //   return null;
+    // }
     let div = (
       <div
         style={{ fontSize: `${this.zoomValue * 100}%`, position: "relative" }}
@@ -504,6 +537,7 @@ export class ZebulonTable extends Component {
             (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
           }
           isActive={this.props.isActive}
+          onActivation={this.props.onActivation}
           ref={ref => (this.table = ref)}
           getActions={this.props.getActions}
           onChange={this.props.onChange}
@@ -524,6 +558,8 @@ export class ZebulonTable extends Component {
           errorHandler={this.errorHandler}
           navigationKeyHandler={this.props.navigationKeyHandler}
           contextualMenu={this.props.contextualMenu}
+          callbackForeignKey={this.props.callbackForeignKey}
+          onForeignKey={this.onForeignKey}
         />
         <ConfirmationModal
           show={this.state.confirmationModal}

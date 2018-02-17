@@ -4,7 +4,7 @@ import { Observable } from "rx-lite";
 import { filtersFunction, sortsFunction } from "../table/utils/filters.sorts";
 // import { computeData } from "../table/utils/compute.data";
 import { utils } from "zebulon-controls";
-
+import { thirdparties } from "./thirdparties";
 // -------------------------------------------
 // simulation of the different ways to provide
 // a dataset to the table and server communication
@@ -87,6 +87,7 @@ export const getProduct = id => products[id];
 
 export const getMockDataset = nRow => {
 	const d = [];
+	const thp = Object.values(thirdparties);
 	for (let i = 0; i < nRow; i++) {
 		const row = {};
 		row.product_id = Math.floor(
@@ -97,6 +98,8 @@ export const getMockDataset = nRow => {
 			Math.random() * (Object.keys(countries).length - 0.001)
 		);
 		row.currency_id = countries[row.country_id].currency_id;
+		row.thirdparty_id =
+			thp[Math.floor(Math.random() * (thp.length - 0.001))].id;
 		row.color = colors[Math.floor(Math.random() * (colors.length - 0.001))];
 		row.qty = Math.round(1000 * Math.random()) + 125;
 		row.d = new Date(
