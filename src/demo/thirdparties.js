@@ -1,10 +1,21 @@
-export const get_thp = () => Object.values(thirdparties);
+import React, { Component } from "react";
+import { ZebulonTable } from "../table/ZebulonTable";
+import { functions } from "../table/MetaDescriptions";
+import { functionsTable } from "../table/utils/compute.meta";
+import { filtersFunction } from "../table/utils/filters.sorts";
+export const get_thp = ({ params, meta, filters }) => {
+	let data = Object.values(thirdparties);
+	if (filters) {
+		data = data.filter(filtersFunction(filters, params, data));
+	}
+	return new Promise(resolve => setTimeout(resolve, 20)).then(() => data);
+};
 // export const thirdparty = id => thirdparties[id];
 export const metaThirdparties = {
 	table: {
 		object: "thirdparties",
-		// editable: true,
 		select: get_thp,
+		filteredByServer: true,
 		primaryKey: "id",
 		caption: "Thirdparties"
 	},
@@ -528,3 +539,28 @@ export const thirdparties = [
 	acc[thirdparty.id] = thirdparty;
 	return acc;
 }, {});
+export class MyThirdparties extends Component {
+	constructor(props) {
+		super(props);
+		const functionsObject = {
+			...functions,
+			thirdparties: {} //thirdpartiesFunctions
+		};
+		this.state = { functions: functionsTable(functionsObject), status: {} };
+	}
+	render() {
+		return React.cloneElement(
+			<ZebulonTable
+				key="thirdparties"
+				id="thirdparties"
+				meta={metaThirdparties}
+				// filters={filters}
+				status={this.state.status}
+				// sizes={{ height: 300, width: 500 }}
+				functions={this.state.functions}
+				ref={ref => (this.zebulonTable = ref)}
+			/>,
+			{ ...this.props }
+		);
+	}
+}

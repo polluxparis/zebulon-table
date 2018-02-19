@@ -146,6 +146,7 @@ export class Input extends Component {
       className,
       style,
       onClick,
+      onDoubleClick,
       onMouseOver,
       // onFocus,
       filterTo,
@@ -174,6 +175,7 @@ export class Input extends Component {
           style={style}
           onClick={onClick}
           onMouseOver={onMouseOver}
+          onDoubleClick={onDoubleClick}
         >
           {value}
         </div>

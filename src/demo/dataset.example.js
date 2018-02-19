@@ -5,7 +5,7 @@ import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
 import { customMenuFunctions } from "./dataset.functions";
-import { metaThirdparties } from "./thirdparties";
+import { MyThirdparties } from "./thirdparties";
 // customMenuFunctions;
 
 const rollingAverage = {
@@ -231,21 +231,13 @@ const meta = {
       select: currencies
     },
     {
-      id: "thirdparty_id",
-      width: 0,
-      dataType: "number",
-      hidden: true
-    },
-    {
       id: "thirdparty",
       caption: "Thirdparty",
       width: 0,
       dataType: "object",
       mandatory: true,
       hidden: true,
-      accessor: "thirdparty",
-      primaryKeyAccessor: "thirdparty.id",
-      setForeignKeyAccessor: ({ value, row }) => (row.thirdparty_id = value)
+      primaryKeyAccessor: "thirdparty.id"
     },
     {
       id: "thirdparty_cd",
@@ -255,7 +247,7 @@ const meta = {
       accessor: "thirdparty.cd",
       filterType: "values",
       editable: true,
-      foreignObject: "thirdparties"
+      foreignObject: MyThirdparties
     },
     {
       id: "qty",
@@ -305,7 +297,7 @@ export class MyDataset extends Component {
       filteredDataLength: 0,
       loadedDataLength: 0,
       meta,
-      metaThirdparties,
+      // metaThirdparties,
       updatedRows: {},
       totalAmount: false,
       rollingAverage: false,
@@ -412,13 +404,15 @@ export class MyDataset extends Component {
           style={{
             display: "block",
             padding: 5,
-            height: 30,
+            height: 50,
             boxSizing: "border-box"
           }}
         >
-          Dummy dataset with 4 joined tables: orders (date,#,color,quantitiy),
-          products(id, shape, size, price), countries (id, code) and currencies
-          (id, code, symbol, rate).
+          Dummy dataset with 5 joined tables: orders (date,#,color,quantitiy),
+          products(id, shape, size, price), countries (id, code), currencies
+          (id, code, symbol, rate) and thirdparties (id,code). Thirdparties are
+          managed with a foreign key controlled by an other zebulon table
+          component.
         </div>
         <div style={{ display: "flex" }}>
           <div
@@ -597,25 +591,6 @@ export class MyDataset extends Component {
           onActivation={() => this.onActivation("dataset")}
         />
         {footer}
-        <ZebulonTable
-          key="thirdparties"
-          id="thirdparties"
-          meta={metaThirdparties}
-          // filters={filters}
-          // sorts={sorts}
-          status={status}
-          sizes={sizes}
-          functions={functions}
-          keyEvent={keyEvent}
-          errorHandler={this.errorHandler}
-          // navigationKeyHandler={navigationKeyHandler}
-          // onFilter={this.getLengths}
-          // onGetPage={this.getPageLengths}
-          // contextualMenu={customMenuFunctions}
-          ref={ref => (this.thp = ref)}
-          isActive={activeTable === "thirdparties"}
-          onActivation={() => this.onActivation("thirdparties")}
-        />
       </div>
     );
   }

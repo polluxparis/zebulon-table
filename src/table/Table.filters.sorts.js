@@ -119,7 +119,7 @@ export class TableFilterSort extends TableEvent {
       return false;
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
-    filter.top = this.rowHeight; // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
+    filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
     filter.left = e.target.offsetLeft;
     // column.position + this.rowHeight - this.state.scroll.columns.position;
     this.setState({

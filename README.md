@@ -172,6 +172,70 @@ The data set (data property) can be:
 ### Object properties and foreign keys
 A row entry can be an object, a pointer to an object or a foreign key referencing an object. Foreign keys can be used to retrieve an object using the accessor of and "object property".
 Accessors are executed only when the component renders, except for "object properties": the referenced object is stored initialy in the dataset and then, it's properties can be referenced by the other columns.
+The foreign object can be manage as
+* a select input (meta.properties[x].select) as an array of objects or an object of objects,
+N.B.
+```js
+    {
+      id: "currency_id",
+      width: 0,
+      dataType: "number",
+      hidden: true
+    },
+    {
+      id: "currency",
+      caption: "Currency",
+      width: 0,
+      dataType: "object",
+      mandatory: true,
+      hidden: true,
+      accessor: "currency",
+      primaryKeyAccessor: "currency.id",
+      setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
+    },
+    {
+      id: "currency_cd",
+      caption: "Currency",
+      width: 100,
+      dataType: "string",
+      accessor: "currency.code",
+      filterType: "values",
+      editable: true,
+      select: currencies
+    }
+```
+* a zebulon table class (meta.properties[x].foreignObject)
+On cellQuit of the column with a foreign object, if no row match the filter (starts with the value entered in the column not case sensitive), the quit action will be canceled, if only 1 row match, the row will be set as the object else the referenced class will be displayed filtered as a modal dialog to select the appropriate row.
+```js
+    {
+      id: "thirdparty",
+      caption: "Thirdparty",
+      width: 0,
+      dataType: "object",
+      mandatory: true,
+      hidden: true,
+      primaryKeyAccessor: "thirdparty.id"
+    },
+    {
+      id: "thirdparty_cd",
+      caption: "Thirdparty",
+      width: 80,
+      dataType: "string",
+      accessor: "thirdparty.cd",
+      filterType: "values",
+      editable: true,
+      foreignObject: MyThirdparties
+    },
+```
+N.B.
+You may want to use a select input for limited items lists (eg currencies), in this case, it may be loaded on the client as an object of object 
+{
+  [primary key 1]:{id:[primary key 1],code:...},
+  [primary key 2]:{id:[primary key 2],code:...}},
+  ...
+} and referenced in the object accessor. Only the primary is needed in the original dataset.
+For more important foreign object (eg thirdparties), it is not loaded on the client but required from the server when needed. The referenced object should be loaded in the original dataset.
+
 ## Available functions and callbacks
 In the manipulation of the dataset, you may need to call functions for data calculation, formating, validation...
 Those functions are passed (functions property) to the component as 
@@ -337,6 +401,7 @@ Custom sort function. Parameters :(sortAccesor(rowA),sortAccesor(rowB)).
 ##### Filter type
 Filtering method used for the column.
 * starts : value.startsWith(filterValue) 
+* startsNoCase : value.toUpperCase().startsWith(filterValue.toUpperCase()) 
 * =
 * \>=
 * <=

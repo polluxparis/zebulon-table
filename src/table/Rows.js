@@ -63,7 +63,8 @@ export class Rows extends ScrollableGrid {
     onMouseOver,
     onChange,
     onFocus,
-    rowIndex
+    rowIndex,
+    onDoubleClick
   ) => {
     const { editable, value, select } = cellData(
       row,
@@ -97,6 +98,7 @@ export class Rows extends ScrollableGrid {
         onClick={onClick}
         onMouseOver={onMouseOver}
         onFocus={onFocus}
+        onDoubleClick={onDoubleClick || (() => {})}
       />
     );
   };
@@ -179,7 +181,8 @@ export class Rows extends ScrollableGrid {
             this.props.onChange,
             // () => {}, //onDoubleClick,
             onFocus,
-            rowIndex
+            rowIndex,
+            this.props.onDoubleClick
           )
         );
         left += column.computedWidth;

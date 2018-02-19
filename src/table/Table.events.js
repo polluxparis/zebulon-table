@@ -614,13 +614,24 @@ export class TableEvent extends TableMenu {
       this.updated
     ) {
       const element = document.activeElement;
-      const filters = { ["cd"]: { id: "cd", filterType: "starts", v: value } };
+      const col = column.accessor.replace(column.reference + ".", "");
+      const filters = {
+        [col]: { id: col, filterType: "startsNoCase", v: value }
+      };
       // ReactDOM.render(element, document.getElementById("root"));
       this.props.onForeignKey(column.foreignObject, filters, data => {
         // console.log("foreignObject", data);
         if (data === false) {
           element.focus();
         } else {
+          if (column.setForeignKeyAccessorFunction) {
+            column.setForeignKeyAccessorFunction({
+              value: column.primaryKeyAccessorFunction({
+                row: data
+              }),
+              row
+            });
+          }
           row.thirdparty_id = data.id;
           row.thirdparty = data;
           row.thirdparty_cd = data.cd;

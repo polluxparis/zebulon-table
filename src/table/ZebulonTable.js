@@ -2,13 +2,14 @@ import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
 import { utils, ConfirmationModal } from "zebulon-controls";
-import { metaThirdparties } from "../demo/thirdparties";
+import { MyThirdparties } from "../demo/thirdparties";
 
 import {
   computeMeta,
   computeMetaFromData,
   functionsTable,
-  getFunction
+  getFunction,
+  getSizes
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
@@ -21,9 +22,11 @@ export class ZebulonTable extends Component {
     this.state = {
       meta: props.meta,
       updatedRows: props.updatedRows || {},
-      sizes: props.sizes,
+      sizes: props.sizes || {},
       keyEvent: props.keyEvent,
-      confirmationModal: false
+      confirmationModal: false,
+      params: props.params || {},
+      sorts: props.sorts || {}
     };
     this.zoomValue = props.sizes.zoom || 1;
     this.keyEvent = false;
@@ -33,19 +36,12 @@ export class ZebulonTable extends Component {
     } else {
       this.state.functions = functionsTable(props.functions);
     }
-    this.sorts = props.sorts;
+    this.sorts = this.state.sorts;
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
     this.saveConfirmationAnswer = ok => ok;
-    //  {
-    //   this.setState({ saveConfirmationAnswer: null });
-    //   if (this.props.saveConfirmationRequired) {
-    //     this.props.saveConfirmationRequired(ok);
-    //   }
-    //   return ok;
-    // };
   }
   setFilters = (filters, columns) => {
     columns.forEach(column => {
@@ -84,7 +80,7 @@ export class ZebulonTable extends Component {
         dataObject: meta.table.object,
         params,
         meta,
-        filters: getFilters(meta.properties, filters),
+        filters: getFilters(meta.properties, filters || {}),
         sorts: this.sorts
           ? Object.values(this.sorts)
           : getSorts(meta.properties)
@@ -102,7 +98,7 @@ export class ZebulonTable extends Component {
       data = data({
         params,
         meta,
-        filters: getFilters(meta.properties, filters),
+        filters: getFilters(meta.properties, filters || {}),
         sorts: this.sorts
           ? Object.values(this.sorts)
           : getSorts(meta.properties)
@@ -135,6 +131,7 @@ export class ZebulonTable extends Component {
       computeMetaFromData(data, meta, zoom, functions);
       computeData(data, meta, startIndex);
     }
+    this.initSizes(meta, data);
     if (filters && meta.properties.length !== 0) {
       this.setFilters(filters, meta.properties);
     }
@@ -192,7 +189,6 @@ export class ZebulonTable extends Component {
           this.state.data.length,
           this.state.filters
         );
-        // console.log("observable", x.length);
         if (this.observable) {
           this.setState({
             data: this.state.data.concat(x),
@@ -207,6 +203,38 @@ export class ZebulonTable extends Component {
         }),
       () => this.setState({ status: { loaded: true, loading: false } })
     );
+  };
+  initSizes = (meta, data) => {
+    const { sizes } = this.state;
+    if (!sizes.height || !sizes.width) {
+      const tableSizes = getSizes(
+        meta,
+        sizes.rowHeight || meta.row.height || 25
+      );
+      if (!sizes.height && data) {
+        sizes.height =
+          meta.table.height ||
+          Math.min(
+            sizes.maxHeight || 1000,
+            Math.max(
+              sizes.minHeight || 100,
+              tableSizes.headersHeight + data.length * tableSizes.rowHeight
+            )
+          );
+      }
+      if (!sizes.width) {
+        sizes.width =
+          meta.row.width ||
+          Math.min(
+            sizes.maxWidth || 2000,
+            Math.max(
+              sizes.minWidth || 100,
+              tableSizes.headersWidth + tableSizes.rowWidth
+            )
+          );
+      }
+      // this.setState({ sizes });
+    }
   };
   componentDidMount() {
     if (!this.props.keyEvent === undefined) {
@@ -278,13 +306,17 @@ export class ZebulonTable extends Component {
     }
   }
   shouldComponentUpdate(nextProps, nextState) {
-    if (this.keyEvent) {
-      this.keyEvent = false;
+    if (this.keyEvent && !this.state.confirmationModal) {
       return false;
     }
+    this.keyEvent = false;
     return true;
   }
   handleKeyEvent = e => {
+    if (this.state.confirmationModal) {
+      this.setState({ keyEvent: e });
+      return;
+    }
     const zoom = utils.isZoom(e);
     if (zoom && (this.props.isActive === undefined || this.props.isActive)) {
       e.preventDefault();
@@ -333,41 +365,6 @@ export class ZebulonTable extends Component {
   // ----------------------------------------
   // comunication with server
   // ----------------------------------------
-  // select = ({ from, columns, where }) => {
-  //   if (this.props.select) return this.props.select(from, columns, where);
-  // };
-  // save = (data, updatedRows, params) => {
-  //   let ok = true,
-  //     updatedData = Object.keys(updatedRows).map(index => ({
-  //       ...updatedRows[index],
-  //       initialRow: updatedRows[index].row,
-  //       row: data[index]
-  //     }));
-  //   if (this.props.check) {
-  //     ok = this.props.check(updatedData, params);
-  //   }
-  //   if (ok && this.props.save) {
-  //     this.props.save(updatedData, params);
-  //   } else {
-  //     if (ok && this.props.delete) {
-  //       const deletedData = updatedData.filter(row => row.deleted_);
-  //       ok = this.props.delete(deletedData, params);
-  //     }
-  //     if (ok && this.props.insert) {
-  //       const insertedData = updatedData.filter(
-  //         row => row.inserted_ && !row.deleted_
-  //       );
-  //       ok = this.props.insert(insertedData, params);
-  //     }
-  //     if (ok && this.props.update) {
-  //       updatedData = updatedData.filter(
-  //         row => row.updated_ && !row.inserted_ && !row.deleted_
-  //       );
-  //       ok = this.props.update(updatedData, params);
-  //     }
-  //   }
-  //   return ok;
-  // };
   errorHandler = (message, action) => {
     let handler = this.props.errorHandler && this.props.errorHandler[action];
     if (action === "onTableQuit" || action === "onSave") {
@@ -443,14 +440,19 @@ export class ZebulonTable extends Component {
   // confirmation modal management for external close
   onConfirm = button => {
     if (button === "yes") {
-      this.setState({ confirmationModal: false, saveConfirmationAnswer: true });
       if (!this.table.onTableQuit(true)) {
-        return this.saveConfirmationAnswer(false);
+        return this.onConfirm("cancel");
       }
+      this.setState({
+        modalCancel: false,
+        confirmationModal: false,
+        saveConfirmationAnswer: true
+      });
       this.onSave();
     } else if (button === "no") {
       rollbackAll(this.state.updatedRows, this.state.data);
       this.setState({
+        modalCancel: false,
         confirmationModal: false,
         saveConfirmationAnswer: null,
         updatedRows: {}
@@ -458,45 +460,25 @@ export class ZebulonTable extends Component {
       this.saveConfirmationAnswer(true);
     } else if (button === "cancel") {
       this.setState({
+        modalCancel: true,
         confirmationModal: false,
         saveConfirmationAnswer: false
       });
       this.saveConfirmationAnswer(false);
     } else if (button === "ok") {
       this.setState({
+        modalCancel: false,
         confirmationModal: false,
         saveConfirmationAnswer: false
       });
     }
   };
-
-  // onNo = () => {
-  //   rollbackAll(this.state.updatedRows, this.state.data);
-  //   this.setState({
-  //     confirmationModal: false,
-  //     saveConfirmationAnswer: null,
-  //     updatedRows: {}
-  //   });
-  //   this.saveConfirmationAnswer(true);
-  // };
-  // onCancel = () => {
-  //   this.setState({ confirmationModal: false, saveConfirmationAnswer: false });
-  //   this.saveConfirmationAnswer(false);
-  // };
-  // onOk = () => {};
-  onForeignKey = (foreignObject, filters, callback) => {
+  onForeignKey = (ForeignObject, filters, callback) => {
     const element = (
-      <ZebulonTable
-        key="thirdparties"
-        id="thirdparties"
-        meta={metaThirdparties}
+      <ForeignObject
+        sizes={{ minHeight: 200, maxHeight: 400, minWidth: 300, maxWidth: 800 }}
         filters={filters}
-        status={{}}
-        sizes={{ height: 300, width: 500 }}
-        functions={this.state.functions}
-        ref={ref => (this.thp = ref)}
-        // isActive={activeTable === "thirdparties"}
-        // onActivation={() => this.onActivation("thirdparties")}
+        keyEvent={this.state.keyEvent}
       />
     );
     this.setState({
@@ -506,19 +488,11 @@ export class ZebulonTable extends Component {
     this.keyEvent = false;
   };
   render() {
-    // if (
-    //   Array.isArray(this.state.data) &&
-    //   this.props.callbackForeignKey &&
-    //   this.state.data.length === 1
-    // ) {
-    //   this.props.callbackForeignKey(this.state.data[0]);
-    //   return null;
-    // }
     let div = (
       <div
         style={{ fontSize: `${this.zoomValue * 100}%`, position: "relative" }}
         className="zebulon-table"
-        id={`zebulon-table-&{this.props.id}`}
+        id={`zebulon-table-${this.props.id}`}
       >
         <Table
           id={this.props.id}
@@ -541,6 +515,7 @@ export class ZebulonTable extends Component {
           ref={ref => (this.table = ref)}
           getActions={this.props.getActions}
           onChange={this.props.onChange}
+          onDoubleClick={this.props.onDoubleClick}
           onCellEnter={this.props.onCellEnter}
           onCellQuit={this.props.onCellQuit}
           onRowNew={this.props.onRowNew}
@@ -560,11 +535,13 @@ export class ZebulonTable extends Component {
           contextualMenu={this.props.contextualMenu}
           callbackForeignKey={this.props.callbackForeignKey}
           onForeignKey={this.onForeignKey}
+          modal={this.state.confirmationModal || this.state.modalCancel}
         />
         <ConfirmationModal
           show={this.state.confirmationModal}
           detail={this.state.modal}
           onConfirm={this.onConfirm}
+          keyEvent={this.state.keyEvent}
         />
       </div>
     );

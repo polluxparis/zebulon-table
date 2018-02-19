@@ -36,6 +36,30 @@ export const getFunction = (functions, object, type, value) => {
     }
   }
 };
+export const getSizes = (meta, rowHeight) => {
+  const headersLength =
+    1 +
+    !meta.table.noFilter *
+      (1 +
+        (meta.properties.findIndex(
+          column => column.filterType === "between"
+        ) !==
+          -1));
+  const headersHeight =
+    (meta.table.caption ? 30 : 0) -
+    headersLength * rowHeight * meta.zoom -
+    ((meta.table.actions || []).length ? 30 : 0);
+
+  const lastColumn = meta.properties[meta.properties.length - 1];
+  const rowWidth = lastColumn.position + lastColumn.computedWidth;
+  const headersWidth = !meta.table.noStatus * rowHeight * meta.zoom;
+  return {
+    headersHeight,
+    headersWidth,
+    rowWidth,
+    rowHeight: rowHeight * meta.zoom
+  };
+};
 export const computeMetaPositions = (meta, zoom) => {
   let position = 0;
   meta.visibleIndexes = [];
@@ -64,6 +88,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
   // table
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
+  meta.zoom = zoom;
   meta.table.selectFunction = getFunction(
     functions,
     meta.table.object,

@@ -126,12 +126,25 @@ export class Table extends TableFilterSort {
           }
         }
       });
+      if (
+        status.loaded &&
+        this.props.callbackForeignKey &&
+        filteredData.length < 2
+      ) {
+        this.props.callbackForeignKey(
+          filteredData.length ? filteredData[0] : false
+        );
+        return null;
+      }
     }
     this.rowHeight = nextProps.rowHeight;
     if (nextProps.visible && !this.props.visible) this.onTableEnter();
     else if (!nextProps.visible && this.props.visible) {
       this.onTableQuit();
     }
+  }
+  shouldComponentUpdate(nextProps, nextState) {
+    return !nextProps.modal;
   }
   componentWillUnmount() {
     return this.onTableClose();
@@ -160,12 +173,6 @@ export class Table extends TableFilterSort {
       auditedRow,
       audits
     } = this.state;
-    if (this.props.callbackForeignKey && filteredData.length < 2) {
-      this.props.callbackForeignKey(
-        filteredData.length ? filteredData[0] : false
-      );
-      return null;
-    }
     if (!visible) {
       return null;
     } else if (status.loading || status.loadingConfig) {
@@ -371,6 +378,7 @@ export class Table extends TableFilterSort {
           noUpdate={noUpdate}
           componentId={this.props.id}
           checkable={meta.table.checkable}
+          onDoubleClick={this.props.onDoubleClick}
         />
       );
     }
@@ -467,6 +475,7 @@ export class Table extends TableFilterSort {
         ref={ref => (this.rows = ref)}
         noUpdate={noUpdate}
         style={style}
+        onDoubleClick={this.props.onDoubleClick}
       />
     );
     let lockedColumns = null;
@@ -493,6 +502,7 @@ export class Table extends TableFilterSort {
           ref={ref => (this.rows = ref)}
           noUpdate={noUpdate}
           noVerticalScrollbar={true}
+          onDoubleClick={this.props.onDoubleClick}
         />
       );
     }
