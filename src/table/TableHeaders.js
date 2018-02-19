@@ -16,7 +16,8 @@ export const editCell = (
   handleErrors,
   componentId,
   checkable,
-  onChange
+  onChange,
+  onDoubleclick
 ) => {
   let glyph;
   if (status.deleted_) {
@@ -59,6 +60,7 @@ export const editCell = (
         onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
+        onDoubleClick={onDoubleclick || (() => {})}
       >
         {glyph}
       </div>
@@ -237,6 +239,9 @@ const filterEmpty = (id, position, width, height) => {
 // ↑↓
 export class Headers extends Component {
   handleClick = (column, double) => {
+    if (!this.props.isActive && this.props.onActivation) {
+      this.props.onActivation();
+    }
     const { onSort } = this.props;
     if (!double) {
       this.timer = setTimeout(() => {
@@ -380,9 +385,9 @@ export class Headers extends Component {
                   false,
                   onChange,
                   column.filterType === "values" ? openFilter : () => {},
-                  this.handleDragStart,
-                  this.handleDragOver,
-                  this.handleDrop,
+                  // this.handleDragStart,
+                  // this.handleDragOver,
+                  // this.handleDrop,
                   focusedId
                 )
               );
@@ -501,7 +506,8 @@ export class Status extends Component {
       handleErrors,
       dataLength,
       componentId,
-      checkable
+      checkable,
+      onDoubleClick
     } = this.props;
     const updatedRows = this.state.updatedRows;
     let index = 0,
@@ -542,7 +548,8 @@ export class Status extends Component {
             (e, errors) => handleErrors(e, ix, errors),
             componentId,
             checkable,
-            this.onChange
+            this.onChange,
+            onDoubleClick
           )
         );
       }

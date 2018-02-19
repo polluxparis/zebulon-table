@@ -63,7 +63,9 @@ export const computeData = (data, meta, startIndex) => {
   const calcObjects = calcIndex || meta.serverPagination || true;
   if (calcObjects) {
     foreignObjects = meta.properties.filter(
-      column => column.primaryKeyAccessor !== undefined
+      column =>
+        column.primaryKeyAccessor !== undefined &&
+        column.accessorFunction !== undefined
     );
   }
   if (calcIndex || calcObjects) {

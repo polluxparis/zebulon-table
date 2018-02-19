@@ -7,7 +7,7 @@ export const getFunction = (functions, object, type, value) => {
     if (indexDot !== -1) {
       let v = value;
       if (value.slice(0, indexDot) === "row") {
-        v = value.slice(indexDot);
+        v = value.slice(indexDot + 1);
       }
       const keys = v.split(".");
       return ({ row }) => {
@@ -35,6 +35,30 @@ export const getFunction = (functions, object, type, value) => {
       return v.length ? v[0].functionJS : undefined;
     }
   }
+};
+export const getSizes = (meta, rowHeight) => {
+  const headersLength =
+    1 +
+    !meta.table.noFilter *
+      (1 +
+        (meta.properties.findIndex(
+          column => column.filterType === "between"
+        ) !==
+          -1));
+  const headersHeight =
+    (meta.table.caption ? 30 : 0) -
+    headersLength * rowHeight * meta.zoom -
+    ((meta.table.actions || []).length ? 30 : 0);
+
+  const lastColumn = meta.properties[meta.properties.length - 1];
+  const rowWidth = lastColumn.position + lastColumn.computedWidth;
+  const headersWidth = !meta.table.noStatus * rowHeight * meta.zoom;
+  return {
+    headersHeight,
+    headersWidth,
+    rowWidth,
+    rowHeight: rowHeight * meta.zoom
+  };
 };
 export const computeMetaPositions = (meta, zoom) => {
   let position = 0;
@@ -64,6 +88,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
   // table
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
+  meta.zoom = zoom;
   meta.table.selectFunction = getFunction(
     functions,
     meta.table.object,
@@ -107,20 +132,27 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     "accessor",
     meta.row.audit
   );
-  meta.table.actions.forEach(action => {
-    if (action.action) {
-      action.actionFunction =
-        typeof action.action === "function"
-          ? action.action
-          : getFunction(functions, meta.table.object, "action", action.action);
-    }
-    action.enableFunction = getFunction(
-      functions,
-      meta.table.object,
-      "editable",
-      action.enable
-    );
-  });
+  if (meta.table.actions) {
+    meta.table.actions.forEach(action => {
+      if (action.action) {
+        action.actionFunction =
+          typeof action.action === "function"
+            ? action.action
+            : getFunction(
+                functions,
+                meta.table.object,
+                "action",
+                action.action
+              );
+      }
+      action.enableFunction = getFunction(
+        functions,
+        meta.table.object,
+        "editable",
+        action.enable
+      );
+    });
+  }
   // properties
   meta.properties.forEach((column, index) => {
     if (column.id === "index_" && column.hidden === undefined) {

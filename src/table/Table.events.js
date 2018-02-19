@@ -1,4 +1,8 @@
 import React from "react";
+// import ReactDOM from "react-dom";
+
+// import { ZebulonTable } from "../table/ZebulonTable";
+
 import { TableMenu } from "./Table.menu";
 import { utils } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
@@ -375,6 +379,9 @@ export class TableEvent extends TableMenu {
     }
   };
   selectRange_ = (range, row, type, noFocus) => {
+    if (!this.props.isActive && this.props.onActivation) {
+      this.props.onActivation();
+    }
     const { updatedRows, selectedRange, meta } = this.state;
     // avoid focus on cell when changing filters (set to false on changed filter ok)
     this.hasFocus = !noFocus;
@@ -383,72 +390,165 @@ export class TableEvent extends TableMenu {
       range.start = {};
       this.hasFocus = false;
     }
+    let ok = true;
     const prevEnd = selectedRange.end;
     const prevStart = selectedRange.start;
     const endChanged =
       prevEnd.rows !== range.end.rows || prevEnd.columns !== range.end.columns;
-    if (endChanged || type) {
-      this.closeOpenedWindows();
-      if (this.row && type !== "enter") {
-        if (
-          this.onCellQuit(
-            this.row[this.column.id],
-            this.previousValue,
-            this.row,
-            this.column
-          ) === false
-        ) {
-          return false;
+    const enter = () => {
+      if (endChanged || type) {
+        if (prevEnd.rows !== range.end.rows || type === "enter") {
+          this.rowUpdated = false;
+          if (range.end.rows !== undefined) {
+            this.row = row || this.getRow(range.end.rows);
+            this.previousRow = { ...this.row };
+          } else {
+            this.row = undefined;
+            this.previousRow = undefined;
+          }
         }
+        this.updated = false;
+        if (range.end.rows !== undefined) {
+          this.column = meta.properties[range.end.columns];
+          this.previousValue = this.row[this.column.id];
+          if (prevEnd.rows !== range.end.rows || type === "enter") {
+            this.onRowEnter(this.row);
+          }
+          this.onCellEnter(this.previousValue, this.row, this.column);
+          if (meta.properties[range.end.columns].dataType === "text") {
+            this.handleText(range.end, this.row, this.column);
+          }
+        } else {
+          this.column = undefined;
+          this.previousValue = undefined;
+        }
+      }
+      if (
+        endChanged ||
+        prevStart.rows !== range.start.rows ||
+        prevStart.columns !== range.start.columns
+      ) {
+        this.setState({ selectedRange: range });
+        this.range = range;
+      }
+      return true;
+    };
+    const quit = () => {
+      const rowQuit = () => {
         if (prevEnd.rows !== range.end.rows || row) {
           if (
-            this.onRowQuit(
+            !this.onRowQuit(
               this.row,
               this.previousRow,
-              updatedRows[this.row.index_]
-            ) === false
+              updatedRows[this.row.index_],
+              enter
+            )
           ) {
             return false;
           }
         }
-      }
-      if (type === "quit") return true;
-      if (prevEnd.rows !== range.end.rows || type === "enter") {
-        this.rowUpdated = false;
-        if (range.end.rows !== undefined) {
-          this.row = row || this.getRow(range.end.rows);
-          this.previousRow = { ...this.row };
-        } else {
-          this.row = undefined;
-          this.previousRow = undefined;
+        return enter();
+      };
+      if (endChanged || type) {
+        this.closeOpenedWindows();
+        if (this.row && type !== "enter") {
+          if (
+            this.onCellQuit(
+              this.row[this.column.id],
+              this.previousValue,
+              this.row,
+              this.column,
+              rowQuit
+            )
+          ) {
+            return rowQuit();
+          } else {
+            return false;
+          }
         }
       }
-      this.updated = false;
-      if (range.end.rows !== undefined) {
-        this.column = meta.properties[range.end.columns];
-        this.previousValue = this.row[this.column.id];
-        if (prevEnd.rows !== range.end.rows || type === "enter") {
-          this.onRowEnter(this.row);
-        }
-        this.onCellEnter(this.previousValue, this.row, this.column);
-        if (meta.properties[range.end.columns].dataType === "text") {
-          this.handleText(range.end, this.row, this.column);
-        }
-      } else {
-        this.column = undefined;
-        this.previousValue = undefined;
-      }
-    }
-    if (
-      endChanged ||
-      prevStart.rows !== range.start.rows ||
-      prevStart.columns !== range.start.columns
-    ) {
-      this.setState({ selectedRange: range });
-      this.range = range;
-    }
-    return true;
+      return enter();
+    };
+    return quit();
   };
+  // selectRange_ = (range, row, type, noFocus) => {
+  //   if (!this.props.isActive && this.props.onActivation) {
+  //     this.props.onActivation();
+  //   }
+  //   const { updatedRows, selectedRange, meta } = this.state;
+  //   // avoid focus on cell when changing filters (set to false on changed filter ok)
+  //   this.hasFocus = !noFocus;
+  //   if (range.end.rows > this.getDataLength() - 1) {
+  //     range.end = {};
+  //     range.start = {};
+  //     this.hasFocus = false;
+  //   }
+  //   const prevEnd = selectedRange.end;
+  //   const prevStart = selectedRange.start;
+  //   const endChanged =
+  //     prevEnd.rows !== range.end.rows || prevEnd.columns !== range.end.columns;
+  //   if (endChanged || type) {
+  //     this.closeOpenedWindows();
+  // if (this.row && type !== "enter") {
+  //   if (
+  //     this.onCellQuit(
+  //       this.row[this.column.id],
+  //       this.previousValue,
+  //       this.row,
+  //       this.column
+  //     ) === false
+  //   ) {
+  //     return false;
+  //   }
+  //   if (prevEnd.rows !== range.end.rows || row) {
+  //     if (
+  //       this.onRowQuit(
+  //         this.row,
+  //         this.previousRow,
+  //         updatedRows[this.row.index_]
+  //       ) === false
+  //     ) {
+  //       return false;
+  //     }
+  //   }
+  // }
+  //     if (type === "quit") return true;
+  //     if (prevEnd.rows !== range.end.rows || type === "enter") {
+  //       this.rowUpdated = false;
+  //       if (range.end.rows !== undefined) {
+  //         this.row = row || this.getRow(range.end.rows);
+  //         this.previousRow = { ...this.row };
+  //       } else {
+  //         this.row = undefined;
+  //         this.previousRow = undefined;
+  //       }
+  //     }
+  //     this.updated = false;
+  //     if (range.end.rows !== undefined) {
+  //       this.column = meta.properties[range.end.columns];
+  //       this.previousValue = this.row[this.column.id];
+  //       if (prevEnd.rows !== range.end.rows || type === "enter") {
+  //         this.onRowEnter(this.row);
+  //       }
+  //       this.onCellEnter(this.previousValue, this.row, this.column);
+  //       if (meta.properties[range.end.columns].dataType === "text") {
+  //         this.handleText(range.end, this.row, this.column);
+  //       }
+  //     } else {
+  //       this.column = undefined;
+  //       this.previousValue = undefined;
+  //     }
+  //   }
+  //   if (
+  //     endChanged ||
+  //     prevStart.rows !== range.start.rows ||
+  //     prevStart.columns !== range.start.columns
+  //   ) {
+  //     this.setState({ selectedRange: range });
+  //     this.range = range;
+  //   }
+  //   return true;
+  // };
   // -------------------------------
   //  Cell events
   //  -------------------------------
@@ -486,25 +586,65 @@ export class TableEvent extends TableMenu {
     }
     return true;
   };
-  onCellQuit = (value, previousValue, row, column) => {
-    const status = this.state.updatedRows[row.index_];
-    const message = {
-      updated: this.updated,
-      value,
-      previousValue,
-      row,
-      status,
-      column,
-      meta: this.state.meta,
-      data: this.state.data,
-      params: this.props.params
+
+  onCellQuit = (value, previousValue, row, column, callback) => {
+    const cellQuit = () => {
+      const status = this.state.updatedRows[row.index_];
+      const message = {
+        updated: this.updated,
+        value,
+        previousValue,
+        row,
+        status,
+        column,
+        meta: this.state.meta,
+        data: this.state.data,
+        params: this.props.params
+      };
+      return (
+        !this.updated ||
+        (this.onCellQuit_(message) &&
+          this.props.errorHandler(message, "onCellQuit"))
+      );
     };
-    return (
-      !this.updated ||
-      (this.onCellQuit_(message) &&
-        this.props.errorHandler(message, "onCellQuit"))
-    );
+    if (
+      !utils.isNullValue(value) &&
+      column.reference &&
+      column.foreignObject &&
+      this.updated
+    ) {
+      const element = document.activeElement;
+      const col = column.accessor.replace(column.reference + ".", "");
+      const filters = {
+        [col]: { id: col, filterType: "startsNoCase", v: value }
+      };
+      // ReactDOM.render(element, document.getElementById("root"));
+      this.props.onForeignKey(column.foreignObject, filters, data => {
+        // console.log("foreignObject", data);
+        if (data === false) {
+          element.focus();
+        } else {
+          if (column.setForeignKeyAccessorFunction) {
+            column.setForeignKeyAccessorFunction({
+              value: column.primaryKeyAccessorFunction({
+                row: data
+              }),
+              row
+            });
+          }
+          row.thirdparty_id = data.id;
+          row.thirdparty = data;
+          row.thirdparty_cd = data.cd;
+          if (cellQuit()) {
+            callback();
+          }
+        }
+      });
+      return;
+    }
+    return cellQuit();
   };
+  // promiseonCellQuit = new Promise(resolve => quit())
   onCellQuit_ = message => {
     const onCellQuit =
       this.props.onCellQuit || this.state.meta.properties.onQuitFunction;
@@ -529,7 +669,7 @@ export class TableEvent extends TableMenu {
   // -------------------------------
   //  row events
   //  -------------------------------
-  onRowQuit = (row, previousRow, status) => {
+  onRowQuit = (row, previousRow, status, callback) => {
     if (!status) {
       return true;
     }
@@ -708,51 +848,6 @@ export class TableEvent extends TableMenu {
       this.setState({ toolTip });
     }
   };
-  // -------------------------------
-  //  Save events
-  //  -------------------------------
-  // onSave = () => {
-  //   const message = {
-  //     updatedRows: this.state.updatedRows,
-  //     meta: this.state.meta,
-  //     data: this.state.data,
-  //     params: this.props.params
-  //   };
-  //   if (this.onSave_(message)) {
-  //     this.setState({ data: message.data, updatedRows: {} });
-  //     return true;
-  //   }
-  //   return false;
-  // };
-  // onSave_ = message => {
-  //   if (!this.onSaveBefore(message)) return false;
-  //   if (
-  //     (message.updatedRows || {}).nErrors &&
-  //     this.props.errorHandler.onSave &&
-  //     !this.props.errorHandler.onSave(message)
-  //   ) {
-  //     return false;
-  //   }
-  //   const onSave = this.props.onSave || this.state.meta.table.onSaveFunction;
-  //   if (onSave && onSave(message) === false) {
-  //     return false;
-  //   }
-  //   return true;
-  // };
-  // onSaveBefore = message => {
-  //   const onSaveBefore =
-  //     this.props.onSaveBefore || this.state.meta.table.onSaveBeforeFunction;
-  //   if (onSaveBefore && onSaveBefore(message) === false) return false;
-  //   return true;
-  // };
-  // onSaveAfter = message => {
-  //   const onSaveAfter =
-  //     this.props.onSaveAfter || this.state.meta.table.onSaveAfterFunction;
-  //   if (onSaveAfter && onSaveAfter(message) === false) {
-  //     return false;
-  //   }
-  //   return true;
-  // };
   //-------------------------------------------
   // end events
   // ------------------------------------------

@@ -54,9 +54,15 @@ export const filterFunction = (column, params, data, updatedRows) => {
     };
   } else if (column.filterType === "<=") {
     column.f = row => facc(row) <= column.v;
-  } else {
+  } else if (column.filterType === "starts") {
     column.f = row =>
       String(facc(row) || "").startsWith(String(column.v || ""));
+  } else if (column.filterType === "startsNoCase") {
+    const v = column.v.toUpperCase();
+    column.f = row =>
+      String(facc(row) || "")
+        .toUpperCase()
+        .startsWith(String(v) || "");
   }
 };
 // -----------------------------
@@ -89,15 +95,23 @@ export const getFilters = (columns, filters) => {
     return filters;
   }
   return columns.reduce((acc, column) => {
+    let v = column.v,
+      vTo = column.vTo,
+      filterType = column.filterType;
+    if (filters[column.id]) {
+      (v = filters[column.id].v),
+        (vTo = filters[column.id].vTo),
+        (filterType = filters[column.id].filterType);
+    }
     if (
-      !utils.isNullOrUndefined(column.v) ||
+      !utils.isNullOrUndefined(v) ||
       (column.filterType === "between" && !utils.isNullOrUndefined(column.vTo))
     ) {
       acc[column.id] = {
         id: column.id,
-        filterType: column.filterType,
-        v: column.v,
-        vTo: column.vTo,
+        filterType,
+        v,
+        vTo,
         accessor: column.accessor,
         accessorFunction: column.accessorFunction
       };

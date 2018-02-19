@@ -1,6 +1,8 @@
 import React from "react";
 import { utils } from "zebulon-controls";
 import { computeData, aggregations } from "../table/utils/compute.data";
+import { getThirdparty } from "./thirdparties";
+
 import {
 	get_array,
 	get_promise,
@@ -164,6 +166,7 @@ export const datasetFunctions = {
 		country: ({ row }) => getCountry(row.country_id),
 		currency: ({ row }) => getCurrency(row.currency_id),
 		product: ({ row }) => getProduct(row.product_id),
+		thirdparty: ({ row }) => getThirdparty(row.thirdparty_id),
 		flag: ({ row }) => {
 			if (
 				!row.country ||
