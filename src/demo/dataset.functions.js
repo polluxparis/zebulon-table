@@ -16,7 +16,7 @@ import {
 
 const onSave = message => {
 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
-		alert("Save updates");
+		// alert("Save updates");
 		if (message.callback) {
 			message.callback(message);
 		}
@@ -25,6 +25,7 @@ const onSave = message => {
 const audits = {};
 const onSaveAfter = message => {
 	const { updatedRows, meta } = message;
+	// audits
 	Object.keys(updatedRows).forEach(key => {
 		if (!audits[key]) {
 			audits[key] = [];

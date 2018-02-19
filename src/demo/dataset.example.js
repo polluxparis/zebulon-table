@@ -359,11 +359,11 @@ export class MyDataset extends Component {
   errorHandler = {
     onRowQuit: message => {
       message.error = ["Errors: "].concat(
-        getRowErrors(message.status, message.row.index_).map(
-          error => `\n Order# ${message.row.id} : ${error.error}`
-        )
+        getRowErrors(message.status, message.row.index_)
+          .map(error => `\n Order# ${message.row.id} : ${error.error}`)
+          .concat(["Do you wan't to continue?"])
       );
-      return false;
+      return true;
     },
     onSave: message => {
       message.error = ["Can't save with errors: "].concat(
@@ -373,7 +373,11 @@ export class MyDataset extends Component {
               .id} : ${error.error}`
         )
       );
-      return false;
+      if (message.error.length > 1) {
+        return false;
+      }
+      message.error = null;
+      return true;
     }
   };
   onActivation = table => this.setState({ activeTable: table });
@@ -567,7 +571,7 @@ export class MyDataset extends Component {
       />
     );
 
-    sizes.height = sizes.height - 200;
+    sizes.height = sizes.height - 215;
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}

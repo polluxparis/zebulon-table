@@ -57,7 +57,7 @@ export const editCell = (
         className={className}
         style={style}
         onClick={() => onClick(index)}
-        onDoubleClick={e => onDoubleClick(e, status)}
+        // onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
         onDoubleClick={onDoubleclick || (() => {})}

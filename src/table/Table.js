@@ -503,6 +503,7 @@ export class Table extends TableFilterSort {
           noUpdate={noUpdate}
           noVerticalScrollbar={true}
           onDoubleClick={this.props.onDoubleClick}
+          locked={locked}
         />
       );
     }

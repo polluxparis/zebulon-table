@@ -140,7 +140,7 @@ export class TableEvent extends TableMenu {
       } else if (button.type === "duplicate") {
         return this.handleDuplicate(rowIndex || 0);
       } else if (button.type === "save") {
-        return this.props.onSave();
+        return this.canSave(this.props.onSave);
       } else if (button.type === "detail" && button.content) {
         this.setState({ detail: button });
       } else {
@@ -607,40 +607,39 @@ export class TableEvent extends TableMenu {
           this.props.errorHandler(message, "onCellQuit"))
       );
     };
-    if (
-      !utils.isNullValue(value) &&
-      column.reference &&
-      column.foreignObject &&
-      this.updated
-    ) {
+    if (column.reference && column.foreignObject && this.updated) {
       const element = document.activeElement;
       const col = column.accessor.replace(column.reference + ".", "");
-      const filters = {
-        [col]: { id: col, filterType: "startsNoCase", v: value }
-      };
-      // ReactDOM.render(element, document.getElementById("root"));
-      this.props.onForeignKey(column.foreignObject, filters, data => {
-        // console.log("foreignObject", data);
-        if (data === false) {
-          element.focus();
-        } else {
-          if (column.setForeignKeyAccessorFunction) {
-            column.setForeignKeyAccessorFunction({
-              value: column.primaryKeyAccessorFunction({
-                row: data
-              }),
-              row
-            });
+      if (!utils.isNullValue(value)) {
+        const filters = {
+          [col]: { id: col, filterType: "startsNoCase", v: value }
+        };
+        // ReactDOM.render(element, document.getElementById("root"));
+        this.props.onForeignKey(column.foreignObject, filters, data => {
+          // console.log("foreignObject", data);
+          if (data === false) {
+            element.focus();
+          } else {
+            if (column.setForeignKeyAccessorFunction) {
+              column.setForeignKeyAccessorFunction({
+                value: column.primaryKeyAccessorFunction({
+                  row: data
+                }),
+                row
+              });
+            }
+            // row.thirdparty_id = data.id;
+            row[column.reference] = data;
+            // row.thirdparty_cd = data.cd;
+            if (cellQuit() && callback) {
+              callback();
+            }
           }
-          row.thirdparty_id = data.id;
-          row.thirdparty = data;
-          row.thirdparty_cd = data.cd;
-          if (cellQuit()) {
-            callback();
-          }
-        }
-      });
-      return;
+        });
+        return;
+      } else {
+        row[column.reference] = undefined;
+      }
     }
     return cellQuit();
   };
@@ -673,6 +672,7 @@ export class TableEvent extends TableMenu {
     if (!status) {
       return true;
     }
+    const element = document.activeElement;
     const message = {
       updated: this.rowUpdated,
       row,
@@ -683,9 +683,17 @@ export class TableEvent extends TableMenu {
       updatedRows: this.state.updatedRows,
       params: this.props.params
     };
-    return (
-      this.onRowQuit_(message) && this.props.errorHandler(message, "onRowQuit")
-    );
+    if (callback) {
+      message.callback = (button, type) => {
+        if (button === "yes") {
+          callback();
+        } else {
+          element.focus();
+        }
+      };
+    }
+    const ok = this.onRowQuit_(message);
+    return ok && this.props.errorHandler(message, "onRowQuit");
   };
   onRowQuit_ = message => {
     if (this.rowUpdated) {
@@ -753,57 +761,84 @@ export class TableEvent extends TableMenu {
       this.props.onTableEnter(message);
     }
   };
-  canQuit = () => {
-    if (this.onTableQuit(true)) {
+  canSave = callback => {
+    if (this.onTableQuit(callback, true)) {
       this.tableUpdated = false;
       return true;
     }
     return false;
   };
-  onTableQuit = bExternal => {
-    if (bExternal && !this.tableUpdated) {
+  onTableQuit = (callback, save) => {
+    if (!this.tableUpdated) {
       return true;
     }
     const message = {
       updatedRows: this.state.updatedRows,
       meta: this.state.meta,
       data: this.state.data,
-      params: this.props.params
+      params: this.props.params,
+      callback,
+      save
     };
-    return (
-      this.onTableQuit_(message) &&
-      this.props.errorHandler(message, "onTableQuit")
-    );
+    return this.onTableQuit_(message);
   };
   onTableQuit_ = message => {
-    if (this.range.end.rows) {
-      if (
-        !this.onCellQuit(
+    const tableQuit = () => {
+      let ok = true;
+      this.previousRow = { ...this.row };
+      const onTableQuit =
+        this.props.onTableQuit || this.state.meta.table.onQuit || (() => true);
+      ok =
+        onTableQuit(message) &&
+        this.props.errorHandler(
+          message,
+          message.save ? "onSave" : "onTableQuit"
+        );
+      if (ok === false) {
+        return false;
+      } else if (ok === true && message.callback) {
+        ok = message.callback();
+      }
+      return ok;
+    };
+    const rowQuit = () => {
+      let ok = true;
+      if (!utils.isNullValue(this.range.end.rows)) {
+        this.previousValue = this.row[this.column.id];
+        ok = this.onRowQuit(
+          this.row,
+          this.previousRow,
+          this.state.updatedRows[this.row.index_],
+          tableQuit
+        );
+      }
+      if (ok === false) {
+        return false;
+      } else if (ok === true) {
+        ok = tableQuit();
+      }
+      return ok;
+    };
+
+    const cellQuit = () => {
+      let ok = true;
+      if (!utils.isNullValue(this.range.end.rows)) {
+        ok = this.onCellQuit(
           this.row[this.column.id],
           this.previousValue,
           this.row,
-          this.column
-        )
-      ) {
-        return false;
+          this.column,
+          rowQuit
+        );
+        if (ok === false) {
+          return false;
+        } else if (ok === true) {
+          ok = rowQuit();
+        }
+        return ok;
       }
-      this.previousValue = this.row[this.column.id];
-      if (
-        !this.onRowQuit(
-          this.row,
-          this.previousRow,
-          this.state.updatedRows[this.row.index_]
-        )
-      ) {
-        return false;
-      }
-      this.previousRow = { ...this.row };
-    }
-    const onTableQuit = this.props.onTableQuit || this.state.meta.table.onQuit;
-    if (onTableQuit && onTableQuit(message) === false) {
-      return false;
-    }
-    return true;
+    };
+    return cellQuit();
   };
   beforeTableClose = () => {
     const message = {

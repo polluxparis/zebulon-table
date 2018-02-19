@@ -307,6 +307,7 @@ export class ZebulonTable extends Component {
   }
   shouldComponentUpdate(nextProps, nextState) {
     if (this.keyEvent && !this.state.confirmationModal) {
+      this.keyEvent = false;
       return false;
     }
     this.keyEvent = false;
@@ -370,7 +371,7 @@ export class ZebulonTable extends Component {
     if (action === "onTableQuit" || action === "onSave") {
       handler = handler && (message.updatedRows || {}).nErrors;
     } else if (action === "onRowQuit") {
-      handler = handler && (message.status.errors || {}).n_;
+      handler = handler && message.updated && (message.status.errors || {}).n_;
     }
     if (handler) {
       const ok = this.props.errorHandler[action](message);
@@ -380,8 +381,20 @@ export class ZebulonTable extends Component {
             confirmationModal: true,
             modal: { text: message.error, type: "Ok" }
           });
+          return false;
         }
-        return false;
+      } else if (message.error) {
+        this.setState({
+          confirmationModal: true,
+          modal: {
+            text: message.error,
+            type: "YesNo",
+            callback: (button, type) => {
+              (message.callback || (() => {}))(button, type);
+            }
+          }
+        });
+        return;
       }
     }
     return true;
@@ -438,18 +451,20 @@ export class ZebulonTable extends Component {
     return this.saveConfirmationAnswer(true);
   };
   // confirmation modal management for external close
-  onConfirm = button => {
+  onConfirm = (button, type) => {
     if (button === "yes") {
-      if (!this.table.onTableQuit(true)) {
-        return this.onConfirm("cancel");
-      }
       this.setState({
         modalCancel: false,
         confirmationModal: false,
         saveConfirmationAnswer: true
       });
-      this.onSave();
-    } else if (button === "no") {
+      if (type === "YesNoCancel") {
+        if (!this.table.onTableQuit(true)) {
+          return this.onConfirm("cancel");
+        }
+        this.onSave();
+      }
+    } else if (button === "no" && type === "YesNoCancel") {
       rollbackAll(this.state.updatedRows, this.state.data);
       this.setState({
         modalCancel: false,
@@ -465,7 +480,8 @@ export class ZebulonTable extends Component {
         saveConfirmationAnswer: false
       });
       this.saveConfirmationAnswer(false);
-    } else if (button === "ok") {
+    } else {
+      // if (button === "ok") {
       this.setState({
         modalCancel: false,
         confirmationModal: false,
