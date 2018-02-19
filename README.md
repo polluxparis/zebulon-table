@@ -18,6 +18,7 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * [Getting started.](#zegetting-started)
 * [Zebulon table props.](#zebulon-table-props)
 * [Data set.](#data-set)
+* [Foreign keys.](#object-properties-and-foreign-keys)
 * [Available functions and callbacks.](#Available-functions-and-callbacks)
 * [Meta description.](#meta-description)
 * [Saving updated data.](#saving-updated-data)
