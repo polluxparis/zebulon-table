@@ -71,6 +71,7 @@ export const colors = [
 	"grey",
 	"black"
 ];
+
 export const products = {};
 for (let i = 0; i < 200; i++) {
 	products[i] = {
