@@ -108,7 +108,7 @@ export class Table extends TableFilterSort {
         meta: nextProps.meta,
         status,
         updatedRows: nextProps.updatedRows,
-        selectedRange: { start: {}, end: {} },
+        // selectedRange: { start: {}, end: {} },
         scroll: {
           rows: {
             index: 0,

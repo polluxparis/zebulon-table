@@ -365,7 +365,7 @@ export class MyDataset extends Component {
       );
       return true;
     },
-    onSave: message => {
+    onSaveBefore: message => {
       message.error = ["Can't save with errors: "].concat(
         getErrors(message.updatedRows).map(
           error =>

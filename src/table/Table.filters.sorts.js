@@ -153,6 +153,17 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onChangeFilterValues = filter => {
+    this.setState({ openedFilter: undefined });
+    const ok = this.props.onSave(ok => {
+      if (ok) {
+        this.onChangeFilterValues_(filter);
+      }
+    }, true);
+    if (ok !== undefined) {
+      this.onChangeFilterValues_(filter);
+    }
+  };
+  onChangeFilterValues_ = filter => {
     const { openedFilter, filters, meta, data } = this.state;
     const column = filters[openedFilter];
     column.v = filter;
@@ -160,10 +171,8 @@ export class TableFilterSort extends TableEvent {
     const filteredData = this.filters(data, filters);
     if (!meta.serverPagination) {
       this.sorts(filteredData, meta.properties);
-      this.setState({ filteredData, openedFilter: undefined });
+      this.setState({ filteredData });
       this.selectRange(this.range, undefined, "enter");
-    } else {
-      this.setState({ openedFilter: undefined });
     }
   };
   // ----------------------------------------
