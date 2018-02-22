@@ -17,7 +17,30 @@ export const metaThirdparties = {
 		select: get_thp,
 		filteredByServer: true,
 		primaryKey: "id",
-		caption: "Thirdparties"
+		caption: "Thirdparties",
+		actions: [
+			{ type: "insert", caption: "New", enable: true },
+			{
+				type: "delete",
+				caption: "Delete",
+				enable: "is_selected"
+			},
+			{
+				type: "duplicate",
+				caption: "Duplicate",
+				enable: "is_selected"
+			},
+			{
+				type: "save",
+				caption: "Save",
+				enable: true
+			},
+			{
+				type: "refresh",
+				caption: "Refresh",
+				enable: true
+			}
+		]
 	},
 	row: {
 		audit: undefined //"audit"
@@ -548,6 +571,22 @@ export class MyThirdparties extends Component {
 		};
 		this.state = { functions: functionsTable(functionsObject), status: {} };
 	}
+	componentWillReceiveProps(nextProps) {
+		console.log(nextProps);
+	}
+	// componentWillUnMount() {
+	// 	console.log("unmount");
+	// }
+	// componentDidUnMount() {
+	// 	console.log("unmount1");
+	// }
+	// componentDidUnmount() {
+	// 	console.log("unmount2");
+	// }
+	componentWillUnmount() {
+		console.log("unmount3");
+	}
+
 	render() {
 		return React.cloneElement(
 			<ZebulonTable
@@ -555,10 +594,9 @@ export class MyThirdparties extends Component {
 				id="thirdparties"
 				meta={metaThirdparties}
 				// filters={filters}
-				status={this.state.status}
+				// status={this.state.status}
 				// sizes={{ height: 300, width: 500 }}
 				functions={this.state.functions}
-				ref={ref => (this.zebulonTable = ref)}
 			/>,
 			{ ...this.props }
 		);

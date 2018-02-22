@@ -95,6 +95,12 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     "dml",
     meta.table.onSave
   );
+  meta.table.onTableChangeFunction = getFunction(
+    functions,
+    meta.table.object,
+    "dml",
+    meta.table.onTableChange
+  );
   meta.table.onSaveFunction = getFunction(
     functions,
     meta.table.object,

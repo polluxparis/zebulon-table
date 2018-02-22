@@ -158,9 +158,7 @@ export class Table extends TableFilterSort {
     this.setState({ checkAll: checked_, updatedRows: this.state.updatedRows });
   };
   render() {
-    const height = this.props.height,
-      width = this.props.width;
-    const { visible, params } = this.props;
+    const { height, width, isModal, visible, params } = this.props;
     let {
       status,
       meta,
@@ -173,6 +171,7 @@ export class Table extends TableFilterSort {
       auditedRow,
       audits
     } = this.state;
+    let actions = auditedRow || isModal ? [] : meta.table.actions || [];
     if (!visible) {
       return null;
     } else if (status.loading || status.loadingConfig) {
@@ -321,7 +320,7 @@ export class Table extends TableFilterSort {
       height -
       (meta.table.caption ? 30 : 0) -
       headersLength * this.rowHeight -
-      ((meta.table.actions || []).length ? 30 : 0);
+      (actions.length ? 30 : 0);
     // -----------------------------
     // simulation of audit
     // -----------------------------
@@ -385,61 +384,59 @@ export class Table extends TableFilterSort {
     // -----------------------------
     //   action buttons
     // -----------------------------
-    const actions = auditedRow
-      ? []
-      : (meta.table.actions || []).map((action, index) => {
-          if (!this.doubleclickAction && action.type === "detail") {
-            this.doubleclickAction = action;
-          }
-          let enable = action.enable || false;
-          if (status.loadingPage) {
-            enable = false;
-          } else if (action.enableFunction) {
-            const row =
-              selectedRange.end.rows !== undefined
-                ? this.getRow(selectedRange.end.rows)
-                : { index_: undefined };
-            const status = updatedRows[row.index_];
-            enable = action.enableFunction({ row, status });
-          }
-          const lastColumn = meta.properties[meta.properties.length - 1];
-          const actionsWidth =
-            Math.min(
-              lastColumn.position +
-                lastColumn.computedWidth +
-                this.rowHeight * (statusBar !== null),
-              width - 4 * meta.table.actions.length
-            ) / meta.table.actions.length;
-          const style = {
-            width: actionsWidth,
-            margin: 2,
-            marginTop: 6
-            // backgroundColor: "lightgrey"
-          };
-          const className = enable
-            ? "zebulon-action-button"
-            : "zebulon-action-button-disabled";
-          if (action.jsxFunction) {
-            return action.jsxFunction({
-              disabled: !enable,
-              className,
-              index,
-              style,
-              onClick: e => this.handleClickButton(index, e)
-            });
-          }
-          return (
-            <button
-              key={index}
-              disabled={!enable}
-              className={className}
-              style={style}
-              onClick={e => this.handleClickButton(index, e)}
-            >
-              {action.caption}
-            </button>
-          );
+    actions = actions.map((action, index) => {
+      if (!this.doubleclickAction && action.type === "detail") {
+        this.doubleclickAction = action;
+      }
+      let enable = action.enable || false;
+      if (status.loadingPage) {
+        enable = false;
+      } else if (action.enableFunction) {
+        const row =
+          selectedRange.end.rows !== undefined
+            ? this.getRow(selectedRange.end.rows)
+            : { index_: undefined };
+        const status = updatedRows[row.index_];
+        enable = action.enableFunction({ row, status });
+      }
+      const lastColumn = meta.properties[meta.properties.length - 1];
+      const actionsWidth =
+        Math.min(
+          lastColumn.position +
+            lastColumn.computedWidth +
+            this.rowHeight * (statusBar !== null),
+          width - 4 * actions.length
+        ) / actions.length;
+      const style = {
+        width: actionsWidth,
+        margin: 2,
+        marginTop: 6
+        // backgroundColor: "lightgrey"
+      };
+      const className = enable
+        ? "zebulon-action-button"
+        : "zebulon-action-button-disabled";
+      if (action.jsxFunction) {
+        return action.jsxFunction({
+          disabled: !enable,
+          className,
+          index,
+          style,
+          onClick: e => this.handleClickButton(index, e)
         });
+      }
+      return (
+        <button
+          key={index}
+          disabled={!enable}
+          className={className}
+          style={style}
+          onClick={e => this.handleClickButton(index, e)}
+        >
+          {action.caption}
+        </button>
+      );
+    });
     let style = {};
     const locked =
       !utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth;

@@ -115,6 +115,9 @@ export class TableFilterSort extends TableEvent {
     return filter;
   };
   openFilter = (e, column) => {
+    if (column.filterType !== "values") {
+      return this.closeOpenedWindows();
+    }
     if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
       return false;
     let filter = this.state.filters[column.id];
@@ -127,8 +130,17 @@ export class TableFilterSort extends TableEvent {
       filters: { ...this.state.filters, [column.id]: filter }
     });
   };
-
   onChangeFilter = (e, row, column, filterTo) => {
+    const ok = this.props.onTableChange("filter", ok => {
+      if (ok) {
+        this.onChangeFilter_(e, row, column, filterTo);
+      }
+    });
+    if (ok) {
+      this.onChangeFilter_(e, row, column, filterTo);
+    }
+  };
+  onChangeFilter_ = (e, row, column, filterTo) => {
     const { selectedRange, filters, meta, data, updatedRows } = this.state;
     if (this.selectRange(selectedRange, this.row, "quit") === false)
       return false;
@@ -153,18 +165,19 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onChangeFilterValues = filter => {
+    const openedFilter = this.state.openedFilter;
     this.setState({ openedFilter: undefined });
-    const ok = this.props.onSave(ok => {
+    const ok = this.props.onTableChange("filter", ok => {
       if (ok) {
-        this.onChangeFilterValues_(filter);
+        this.onChangeFilterValues_(openedFilter, filter);
       }
-    }, true);
-    if (ok !== undefined) {
-      this.onChangeFilterValues_(filter);
+    });
+    if (ok) {
+      this.onChangeFilterValues_(openedFilter, filter);
     }
   };
-  onChangeFilterValues_ = filter => {
-    const { openedFilter, filters, meta, data } = this.state;
+  onChangeFilterValues_ = (openedFilter, filter) => {
+    const { filters, meta, data } = this.state;
     const column = filters[openedFilter];
     column.v = filter;
     filters[column.id] = column;

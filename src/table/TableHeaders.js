@@ -384,7 +384,7 @@ export class Headers extends Component {
                   columnWidth,
                   false,
                   onChange,
-                  column.filterType === "values" ? openFilter : () => {},
+                  openFilter,
                   // this.handleDragStart,
                   // this.handleDragOver,
                   // this.handleDrop,
@@ -414,7 +414,7 @@ export class Headers extends Component {
                     columnWidth,
                     column.filterType === "between",
                     onChange,
-                    column.filterType === "values" ? openFilter : () => {},
+                    openFilter,
                     // this.handleDragOver,
                     // this.handleDrop,
                     focusedId

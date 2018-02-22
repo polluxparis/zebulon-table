@@ -47,6 +47,7 @@ const meta = {
     primaryKey: "id",
     onSave: "onSave",
     onSaveAfter: "onSaveAfter",
+    onTableChange: "onTableChange",
     noFilter: false,
     caption: "Dataset",
     actions: [
@@ -71,6 +72,11 @@ const meta = {
       {
         type: "save",
         caption: "Save",
+        enable: true
+      },
+      {
+        type: "refresh",
+        caption: "Refresh",
         enable: true
       }
     ]
@@ -247,7 +253,8 @@ const meta = {
       accessor: "thirdparty.cd",
       filterType: "values",
       editable: true,
-      foreignObject: MyThirdparties
+      foreignObject: MyThirdparties,
+      noRefresh: false
     },
     {
       id: "qty",
@@ -358,29 +365,33 @@ export class MyDataset extends Component {
   };
   errorHandler = {
     onRowQuit: message => {
-      message.error = ["Errors: "].concat(
+      message.modalBody = ["Errors: "].concat(
         getRowErrors(message.status, message.row.index_)
           .map(error => `\n Order# ${message.row.id} : ${error.error}`)
           .concat(["Do you wan't to continue?"])
       );
       return true;
     },
+    onTableChange: message => true,
     onSaveBefore: message => {
-      message.error = ["Can't save with errors: "].concat(
+      message.modalBody = ["Can't save with errors: "].concat(
         getErrors(message.updatedRows).map(
           error =>
             `\nOrder# ${message.updatedRows[error.rowIndex].rowUpdated
               .id} : ${error.error}`
         )
       );
-      if (message.error.length > 1) {
+      if (message.modalBody.length > 1) {
         return false;
       }
-      message.error = null;
+      message.modalBody = null;
       return true;
     }
   };
   onActivation = table => this.setState({ activeTable: table });
+  handleRefresh = () => {
+    this.setState({ status: { loading: true } });
+  };
   render() {
     const { keyEvent, functions } = this.props;
     const {

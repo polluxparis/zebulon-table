@@ -127,15 +127,18 @@ export const getMockDataset = nRow => {
 // 		{ user_: "titi", time_: new Date(), country_id: 0, currency_id: 0 }
 // 	]);
 // };
+export let data;
 export const get_array = ({ params, meta, filters }) => {
-	const data = getMockDataset(25000).data;
-	// this is necessary only because for demo, we are using the same filters and sorts functions as the client
-	// to simulate server actions
-	data.forEach(row => {
-		row.product = getProduct(row.product_id);
-		row.country = getCountry(row.country_id);
-		row.currency = getCurrency(row.currency_id);
-	});
+	if (!data) {
+		data = getMockDataset(25000).data;
+		// this is necessary only because for demo, we are using the same filters and sorts functions as the client
+		// to simulate server actions
+		data.forEach(row => {
+			row.product = getProduct(row.product_id);
+			row.country = getCountry(row.country_id);
+			row.currency = getCurrency(row.currency_id);
+		});
+	}
 	return data;
 };
 // -------------------------------------------

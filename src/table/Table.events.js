@@ -86,8 +86,9 @@ export class TableEvent extends TableMenu {
       e.clipboardData.getData("text"),
       this.state.meta.properties,
       this.state.selectedRange.end,
-      cell => this.selectRange_({ start: cell, end: cell }),
+      cell => this.selectRange_({ start: cell, end: cell }, undefined, "enter"),
       this.onChange,
+      this.canQuit,
       this.state.filteredData,
       this.state.updatedRows,
       this.state.data,
@@ -141,6 +142,8 @@ export class TableEvent extends TableMenu {
         return this.handleDuplicate(rowIndex || 0);
       } else if (button.type === "save") {
         return this.props.onSave();
+      } else if (button.type === "refresh") {
+        this.props.onTableChange("refresh");
       } else if (button.type === "detail" && button.content) {
         this.setState({ detail: button });
       } else {
@@ -430,6 +433,9 @@ export class TableEvent extends TableMenu {
       }
     };
     this.closeOpenedWindows();
+    if (type === "enter") {
+      return enter(true);
+    }
     return quit();
   };
   // -------------------------------
