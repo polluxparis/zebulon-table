@@ -119,19 +119,20 @@ export class Input extends Component {
   };
   handleFocus = e => {
     const { column, inputType, onFocus, row } = this.props;
-    if (inputType === "filter" && column.filterType === "values") {
+    if (inputType === "filter") {
       onFocus(e, row, column);
-    } else if (inputType === "filter") {
-      this.focused = true;
-      console.log("focus", this.state.value);
-      const formatedValue = formatValue(
-        this.props,
-        this.state.value,
-        this.focused
-      );
-      this.setState({
-        formatedValue
-      });
+      if (column.filterType !== "values") {
+        this.focused = true;
+        // console.log("focus", this.state.value);
+        const formatedValue = formatValue(
+          this.props,
+          this.state.value,
+          this.focused
+        );
+        this.setState({
+          formatedValue
+        });
+      }
     }
   };
   render() {

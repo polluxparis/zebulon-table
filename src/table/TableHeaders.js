@@ -57,7 +57,7 @@ export const editCell = (
         className={className}
         style={style}
         onClick={() => onClick(index)}
-        onDoubleClick={e => onDoubleClick(e, status)}
+        // onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
         onDoubleClick={onDoubleclick || (() => {})}
@@ -384,7 +384,7 @@ export class Headers extends Component {
                   columnWidth,
                   false,
                   onChange,
-                  column.filterType === "values" ? openFilter : () => {},
+                  openFilter,
                   // this.handleDragStart,
                   // this.handleDragOver,
                   // this.handleDrop,
@@ -414,7 +414,7 @@ export class Headers extends Component {
                     columnWidth,
                     column.filterType === "between",
                     onChange,
-                    column.filterType === "values" ? openFilter : () => {},
+                    openFilter,
                     // this.handleDragOver,
                     // this.handleDrop,
                     focusedId

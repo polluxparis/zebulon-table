@@ -2,6 +2,7 @@ import React from "react";
 import { utils } from "zebulon-controls";
 import { computeData, aggregations } from "../table/utils/compute.data";
 import { getThirdparty } from "./thirdparties";
+import { data } from "./datasources";
 
 import {
 	get_array,
@@ -14,17 +15,18 @@ import {
 	// getAudits
 } from "./datasources";
 
-const onSave = message => {
+const onSave = (message, callback) => {
 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
-		alert("Save updates");
-		if (message.callback) {
-			message.callback(message);
+		// alert("Save updates");
+		if (callback) {
+			callback(message);
 		}
 	});
 };
 const audits = {};
 const onSaveAfter = message => {
 	const { updatedRows, meta } = message;
+	// audits
 	Object.keys(updatedRows).forEach(key => {
 		if (!audits[key]) {
 			audits[key] = [];
@@ -48,11 +50,18 @@ const onSaveAfter = message => {
 		}
 		delete updatedRows[key];
 	});
+	return true;
 };
 const getAudits = ({ row }) => {
 	return new Promise(resolve => setTimeout(resolve, 20)).then(
 		() => audits[row.index_]
 	);
+};
+const onTableChange = message => {
+	if (message.type === "refresh" || message.type === "filter") {
+		message.modalBody = "Do you want to save before refresh?";
+	}
+	return true;
 };
 export const datasetFunctions = {
 	selects: {
@@ -196,7 +205,8 @@ export const datasetFunctions = {
 		get_observable,
 		get_pagination_manager,
 		onSave,
-		onSaveAfter
+		onSaveAfter,
+		onTableChange
 	}
 };
 export const customMenuFunctions = {

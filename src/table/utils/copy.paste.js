@@ -61,35 +61,32 @@ export const buildPasteArray = (
   selectedCell,
   selectCell,
   onChange,
+  canQuit,
   filteredData,
   updatedRows,
   data,
   params
 ) => {
   const columnSeparator = type === "csv" ? "," : "\t";
-  // let { columnIndex, rowIndex } = cell;
+
   const lines = clipboard.replace(/\r/g, "").split("\n");
   lines.pop();
   const cells = lines.map(line => line.split(columnSeparator));
-  // const nRows = lines.length,
-  //   nColumns = cells[0].length;
+
+  const cellsValue = [];
   cells.forEach((rowCells, rowIndex) => {
-    const cell = {};
     const row = filteredData[selectedCell.rows + rowIndex];
     let columnIndex = 0;
     rowCells.forEach(value => {
-      cell.rows = selectedCell.rows + rowIndex;
-      cell.columns = selectedCell.columns + columnIndex;
-      let column = columns[cell.columns];
-      while (
-        column.hidden &&
-        selectedCell.columns + columnIndex < columns.length
-      ) {
-        columnIndex++;
-        cell.columns = selectedCell.columns + columnIndex;
-        column = columns[cell.columns];
+      let column = columns[selectedCell.columns + columnIndex];
+      while (column.hidden && column.index_ < columns.length) {
+        column = columns[column.index_ + 1];
       }
-      columnIndex++;
+      const cell = {
+        rows: selectedCell.rows + rowIndex,
+        columns: column.index_
+      };
+
       const editable = column.editableFunction
         ? column.editableFunction({
             column,
@@ -100,42 +97,78 @@ export const buildPasteArray = (
           })
         : column.editable;
       if (editable) {
-        if (!selectCell(cell)) {
-          return;
-        }
         let v = value;
         const { dataType, format } = column;
-        if (column.reference && column.selectItems) {
-          const item = Object.values(column.selectItems).find(
-            item =>
-              column.accessorFunction({ row: { [column.reference]: item } }) ===
-              v
-          );
-          row[column.reference] = item;
-          if (column.setForeignKeyAccessorFunction) {
-            column.setForeignKeyAccessorFunction({
-              value: column.primaryKeyAccessorFunction({
-                row: { [column.reference]: item }
-              }),
-              row
-            });
-          }
-        } else {
-          if (dataType === "boolean") {
-            v = v === "true";
-          } else if (dataType === "date") {
-            v = utils.stringToDate(v, format);
-          } else if (dataType === "number") {
-            v = v === "" ? null : Number(value);
-          }
-          row[column.id] = v;
+        if (dataType === "boolean") {
+          v = v === "true";
+        } else if (dataType === "date") {
+          v = utils.stringToDate(v, format);
+        } else if (dataType === "number") {
+          v = v === "" ? null : Number(value);
         }
-
-        if (!onChange(v, row, column)) {
-          return;
-        }
+        cell.value = v;
+        cell.columnId = column.id;
+        cellsValue.push(cell);
       }
+      columnIndex = column.index_ + 1;
     });
   });
+  //  mangement of callback and users interractions
+  cellsValue.reverse();
+  const cellValue = (ok_, previousRow) => {
+    if (!ok_ || cellsValue.length === 0) {
+      return;
+    }
+    let ok = ok_;
+    const cell = cellsValue.pop();
+    const cellV = ok_ => {
+      const endCell = ok_ => {
+        if (ok_ && cellsValue.length) {
+          cellValue(ok_, cell.rows);
+        }
+      };
+      if (!ok_) {
+        return false;
+      }
+      selectCell(cell);
+      const row = filteredData[cell.rows];
+      const column = columns[cell.columns];
+      // can change value
+      if (!onChange(cell.value, row, column)) {
+        return false;
+      }
+      row[cell.columnId] = cell.value;
+      // object in select input
+      if (column.reference && column.selectItems) {
+        const item = Object.values(column.selectItems).find(
+          item =>
+            column.accessorFunction({ row: { [column.reference]: item } }) ===
+            cell.value
+        );
+        row[column.reference] = item;
+        if (column.setForeignKeyAccessorFunction) {
+          column.setForeignKeyAccessorFunction({
+            value: column.primaryKeyAccessorFunction({
+              row: { [column.reference]: item }
+            }),
+            row
+          });
+        }
+      }
+      // can quit cell
+      const ok = canQuit("cellQuit", endCell);
+      if (ok !== undefined) {
+        endCell(ok);
+      }
+    };
+    // can quit row
+    if (previousRow !== undefined && previousRow !== cell.rows) {
+      ok = canQuit("rowQuit", cellV);
+    }
+    if (ok !== undefined) {
+      cellV(ok);
+    }
+  };
+  cellValue(true, undefined);
   return cells;
 };
