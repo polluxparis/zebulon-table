@@ -31,7 +31,7 @@ export const getRowStatus = (updatedRows, row) => {
   let status = updatedRows[row.index_];
   if (!status) {
     status = {
-      updated_: true,
+      // updated_: true,
       rowUpdated: row,
       row: { ...row },
       errors: {}

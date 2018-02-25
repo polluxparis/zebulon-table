@@ -3,7 +3,7 @@ import { Table } from "./Table";
 import "./index.css";
 import { utils, ConfirmationModal } from "zebulon-controls";
 import { MyThirdparties } from "../demo/thirdparties";
-
+import { get_observable2 } from "../demo/datasources";
 import {
   computeMeta,
   computeMetaFromData,
@@ -75,17 +75,16 @@ export class ZebulonTable extends Component {
     this.observable = null;
     let { data, meta, params, filters } = props,
       status = { loaded: false, loading: true };
+    const message = {
+      dataObject: meta.table.object,
+      params,
+      meta,
+      filters: getFilters(meta.properties, filters || {}),
+      sorts: this.sorts ? Object.values(this.sorts) : getSorts(meta.properties)
+    };
     if (typeof data === "function") {
       // this.select = data;
-      data = data({
-        dataObject: meta.table.object,
-        params,
-        meta,
-        filters: getFilters(meta.properties, filters || {}),
-        sorts: this.sorts
-          ? Object.values(this.sorts)
-          : getSorts(meta.properties)
-      });
+      data = data(message);
     } else if ((meta && props.onGetData) || meta.table.select) {
       data =
         props.onGetData ||
@@ -96,14 +95,7 @@ export class ZebulonTable extends Component {
           meta.table.select
         );
       // this.select = data;
-      data = data({
-        params,
-        meta,
-        filters: getFilters(meta.properties, filters || {}),
-        sorts: this.sorts
-          ? Object.values(this.sorts)
-          : getSorts(meta.properties)
-      });
+      data = data(message);
     }
     if (Array.isArray(data)) {
       this.initData(
@@ -116,10 +108,11 @@ export class ZebulonTable extends Component {
         sorts
       );
       status = { loaded: true, loading: false };
+      this.subscribe(message);
     } else if (utils.isPromise(data)) {
-      this.resolvePromise(data);
+      this.resolvePromise(data, message);
     } else if (utils.isObservable(data)) {
-      this.subscribeObservable(data);
+      this.subscribeObservable(data, message);
       data = [];
     } else {
       data = [];
@@ -142,7 +135,7 @@ export class ZebulonTable extends Component {
       this.sorts = null;
     }
   };
-  resolvePromise = data => {
+  resolvePromise = (data, message) => {
     data
       .then(data => {
         if (!this.state.meta.serverPagination) {
@@ -169,6 +162,7 @@ export class ZebulonTable extends Component {
           return data;
         }
         this.setState({ data, status: { loaded: true, loading: false } });
+        this.subscribe(message);
         return data;
       })
       .catch(error =>
@@ -178,7 +172,7 @@ export class ZebulonTable extends Component {
         })
       );
   };
-  subscribeObservable = observable => {
+  subscribeObservable = (observable, message) => {
     this.observable = observable;
     this.observable.subscribe(
       x => {
@@ -202,8 +196,37 @@ export class ZebulonTable extends Component {
           data: [],
           status: { loaded: false, loading: false, error: e }
         }),
-      () => this.setState({ status: { loaded: true, loading: false } })
+      () => {
+        this.setState({ status: { loaded: true, loading: false } });
+        this.subscribe(message);
+        console.log("end");
+        // this.observable.unsubscribe();
+      }
     );
+  };
+  subscribe = message => {
+    if (this.state.meta.table.subscription) {
+      message.indexPk = this.state.meta.indexPk;
+      message.data = this.state.data;
+      message.updatedRows = this.state.updatedRows;
+      this.observable = this.state.meta.table.observableFunction(message);
+      const {
+        onNext,
+        onError,
+        onCompleted
+      } = this.state.meta.table.observerFunctions;
+      const onNextFunction = data => {
+        onNext(data, message);
+        this.setState({ status: { loaded: true, loading: false } });
+      };
+      const onErrorFunction = error => {
+        onError(error, message);
+        this.setState({ status: { loaded: false, loading: false, error } });
+      };
+      this.observable.subscribe(onNextFunction, onErrorFunction, () =>
+        onCompleted(message)
+      );
+    }
   };
   initSizes = (meta, data) => {
     const { sizes } = this.state;
@@ -425,6 +448,27 @@ export class ZebulonTable extends Component {
           }
         });
         return;
+      } else if (message.conflicts) {
+        const resolveConflicts = (ok, data) => {
+          if (ok) {
+            // back to server version
+            data.forEach(index => {
+              message.data[index] = message.updatedRows[index].row;
+              delete message.updatedRows[index];
+            });
+            callback(ok);
+          }
+        };
+        this.setState({
+          confirmationModal: true,
+          modal: {
+            body: this.onConflict(message.conflicts),
+            type: "conflict",
+            resolveConflicts
+          }
+        });
+        // this.onConflict(message.conflicts.callback);
+        return;
       }
     }
     return true;
@@ -483,10 +527,10 @@ export class ZebulonTable extends Component {
       type
     };
     let ok = onTableChange(message);
-    const save = (carryOn, button) => {
-      if (carryOn && button === "yes") {
+    const save = (carryOn, ok) => {
+      if (carryOn && ok) {
         this.onSave(callback);
-      } else if (carryOn && button === "no") {
+      } else if (carryOn) {
         rollbackAll(this.state.updatedRows, this.state.data);
         callback(true);
       } else {
@@ -499,14 +543,14 @@ export class ZebulonTable extends Component {
     }
   };
   onSave = callback => {
-    const save = () => {
-      const message = {
-        updatedRows: this.state.updatedRows,
-        meta: this.state.meta,
-        data: this.state.data,
-        params: this.props.params
-      };
-    };
+    // const save = () => {
+    //   const message = {
+    //     updatedRows: this.state.updatedRows,
+    //     meta: this.state.meta,
+    //     data: this.state.data,
+    //     params: this.props.params
+    //   };
+    // };
     const message = {
       updatedRows: this.state.updatedRows,
       meta: this.state.meta,
@@ -608,6 +652,34 @@ export class ZebulonTable extends Component {
     });
     this.keyEvent = false;
   };
+  onConflict = conflicts => {
+    const meta = {
+      ...this.state.meta,
+      table: {
+        ...this.state.meta.table,
+        editable: false,
+        select: undefined,
+        subscription: undefined,
+        caption: `${this.state.meta.table.caption}: conflict resolution.`
+      }
+    };
+    const data = [];
+    conflicts.forEach(conflict => {
+      data.push(conflict.server);
+      data.push(conflict.table);
+    });
+    return (
+      <ZebulonTable
+        sizes={{ minHeight: 200, maxHeight: 400, minWidth: 300, maxWidth: 800 }}
+        meta={meta}
+        data={data}
+        isModal={true}
+        // filters={filters}
+        keyEvent={this.state.keyEvent}
+      />
+    );
+  };
+
   render() {
     let div = (
       <div

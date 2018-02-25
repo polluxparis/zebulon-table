@@ -503,8 +503,8 @@ export class TableEvent extends TableMenu {
       const filters = {
         [col]: { id: col, filterType: "startsNoCase", v: value }
       };
-      const callback = data => {
-        if (data === false) {
+      const callback = (ok, data) => {
+        if (!ok) {
           element.focus();
         } else {
           if (column.setForeignKeyAccessorFunction) {

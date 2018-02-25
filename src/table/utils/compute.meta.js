@@ -159,6 +159,36 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       );
     });
   }
+  if (meta.table.subscription) {
+    meta.table.observableFunction = getFunction(
+      functions,
+      meta.table.object,
+      "dml",
+      meta.table.subscription.observable
+    );
+    meta.table.observerFunctions = {
+      onNext: getFunction(
+        functions,
+        meta.table.object,
+        "observer",
+        (meta.table.subscription.observer || { onNext: "onNext" }).onNext
+      ),
+      onCompleted: getFunction(
+        functions,
+        meta.table.object,
+        "observer",
+        (meta.table.subscription.observer || { onCompleted: "onCompleted" })
+          .onCompleted
+      ),
+      onError: getFunction(
+        functions,
+        meta.table.object,
+        "observer",
+        (meta.table.subscription.observer || { onError: "onError" }).onError
+      )
+    };
+  }
+
   // properties
   meta.properties.forEach((column, index) => {
     if (column.id === "index_" && column.hidden === undefined) {

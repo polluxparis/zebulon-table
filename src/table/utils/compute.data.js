@@ -68,10 +68,17 @@ export const computeData = (data, meta, startIndex) => {
         column.accessorFunction !== undefined
     );
   }
+  const pk = meta.table.subscription ? meta.table.primaryKey : null;
   if (calcIndex || calcObjects) {
+    if (pk && !meta.indexPk) {
+      meta.indexPk = {};
+    }
     data.forEach((row, index) => {
       if (calcIndex) {
         row.index_ = index + (startIndex || 0);
+      }
+      if (pk) {
+        meta.indexPk[row[pk]] = row.index_;
       }
       if (calcObjects) {
         foreignObjects.forEach(
