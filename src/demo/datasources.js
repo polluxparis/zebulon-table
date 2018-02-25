@@ -164,10 +164,32 @@ export const get_observable = ({ params, meta, filters, sorts }) => {
 	while (i < data.length) {
 		data2.push(data.slice(i, (i += 1000)));
 	}
+	console.log("observable", i);
 	return Observable.interval(20)
 		.take(data2.length)
-		.map(i => data2[i]);
+		.map(i => {
+			console.log("observable1", i, data2.length);
+			return data2[i];
+		});
 };
+export const get_subscription = ({ params, meta, filters, sorts }) => {
+	const data = get_array({ params, filters });
+	const data2 = [[], [], []];
+	for (let i = 0; i < 10; i++) {
+		// const row = data[Math.floor(Math.random() * data.length)];
+		const row = { ...data[i] };
+		row.qty *= -1.01;
+		data2[Math.floor(i / 100)].push(row);
+	}
+	// console.log("observable", i);
+	return Observable.interval(1000)
+		.take(1)
+		.map(i => {
+			console.log("observable2", i, data2[i].length);
+			return data2[i];
+		});
+};
+
 // -------------------------------------------
 // pagination manager
 // -------------------------------------------

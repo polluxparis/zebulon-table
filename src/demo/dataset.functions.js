@@ -8,6 +8,7 @@ import {
 	get_array,
 	get_promise,
 	get_observable,
+	get_subscription,
 	get_pagination_manager,
 	getCountry,
 	getCurrency,
@@ -15,9 +16,24 @@ import {
 	// getAudits
 } from "./datasources";
 
+const onSaveBefore = (message, callback) => {
+	new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+		if (message.updatedRows.nConflicts) {
+			message.conflicts = Object.values(message.updatedRows)
+				.filter(status => status.conflict_)
+				.map(status => ({
+					server: status.row,
+					table: status.rowUpdated
+				}));
+		}
+		if (callback) {
+			callback(message);
+		}
+	});
+};
+
 const onSave = (message, callback) => {
 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
-		// alert("Save updates");
 		if (callback) {
 			callback(message);
 		}
@@ -204,8 +220,10 @@ export const datasetFunctions = {
 		get_promise,
 		get_observable,
 		get_pagination_manager,
+		get_subscription,
 		onSave,
 		onSaveAfter,
+		onSaveBefore,
 		onTableChange
 	}
 };

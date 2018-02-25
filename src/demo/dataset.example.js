@@ -47,9 +47,13 @@ const meta = {
     primaryKey: "id",
     onSave: "onSave",
     onSaveAfter: "onSaveAfter",
+    onSaveBefore: "onSaveBefore",
     onTableChange: "onTableChange",
     noFilter: false,
     caption: "Dataset",
+    subscription: {
+      observable: "get_subscription"
+    },
     actions: [
       { type: "insert", caption: "New", enable: true },
       {
@@ -299,7 +303,7 @@ export class MyDataset extends Component {
         product_lb: { id: "product_lb", direction: "desc", sortOrder: 1 },
         id: { id: "id", direction: "asc", sortOrder: 1 }
       },
-      radioDataset: "get_array",
+      radioDataset: "get_promise",
       dataLength: 0,
       filteredDataLength: 0,
       loadedDataLength: 0,
@@ -391,6 +395,17 @@ export class MyDataset extends Component {
   onActivation = table => this.setState({ activeTable: table });
   handleRefresh = () => {
     this.setState({ status: { loading: true } });
+  };
+  subscribe = () => {
+    const { meta, params } = this.table.state;
+    const message = {
+      dataObject: meta.table.object,
+      params,
+      meta,
+      filters: {},
+      sorts: []
+    };
+    this.table.subscribe(message);
   };
   render() {
     const { keyEvent, functions } = this.props;
@@ -569,17 +584,20 @@ export class MyDataset extends Component {
     const text =
       "Test key, navigation, zoom, scroll, wheel...\n• resize the grid using the handle at right, down corner. \n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters and sorts\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n. Resize and move columns by drag and drop.\n...";
     footer = (
-      <textarea
-        readOnly
-        rows="24"
-        cols="180"
-        value={text}
-        style={{
-          fontFamily: "sans-serif",
-          border: "unset"
-          // fontSize: "medium"
-        }}
-      />
+      <div>
+        <button onClick={this.subscribe}>Subscribe</button>
+        <textarea
+          readOnly
+          rows="24"
+          cols="180"
+          value={text}
+          style={{
+            fontFamily: "sans-serif",
+            border: "unset"
+            // fontSize: "medium"
+          }}
+        />
+      </div>
     );
 
     sizes.height = sizes.height - 215;

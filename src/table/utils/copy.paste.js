@@ -78,24 +78,27 @@ export const buildPasteArray = (
     const row = filteredData[selectedCell.rows + rowIndex];
     let columnIndex = 0;
     rowCells.forEach(value => {
+      let col = selectedCell.columns + columnIndex < columns.length;
       let column = columns[selectedCell.columns + columnIndex];
-      while (column.hidden && column.index_ < columns.length) {
-        column = columns[column.index_ + 1];
+      while (col && column.hidden && column.index_ + 1 < columns.length) {
+        columnIndex++;
+        col = selectedCell.columns + columnIndex < columns.length;
+        column = columns[selectedCell.columns + columnIndex];
       }
       const cell = {
         rows: selectedCell.rows + rowIndex,
         columns: column.index_
       };
-
-      const editable = column.editableFunction
-        ? column.editableFunction({
-            column,
-            row,
-            status: updatedRows[row.index_] || {},
-            data,
-            params
-          })
-        : column.editable;
+      const editable =
+        col && column.editableFunction
+          ? column.editableFunction({
+              column,
+              row,
+              status: updatedRows[row.index_] || {},
+              data,
+              params
+            })
+          : column.editable;
       if (editable) {
         let v = value;
         const { dataType, format } = column;
@@ -110,7 +113,7 @@ export const buildPasteArray = (
         cell.columnId = column.id;
         cellsValue.push(cell);
       }
-      columnIndex = column.index_ + 1;
+      columnIndex++;
     });
   });
   //  mangement of callback and users interractions

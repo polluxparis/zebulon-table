@@ -1,7 +1,7 @@
 // import React from "react";
 import { utils } from "zebulon-controls";
 import {
-	// computeData,
+	getRowStatus,
 	buildObject,
 	exportFunctions
 	// aggregations
@@ -38,6 +38,40 @@ const stringToFunction = (row, status) => {
 		return;
 	}
 };
+const onNext = (data, message) => {
+	console.log("onNext", data);
+	data.forEach(row => {
+		if (message.indexPk) {
+			const index = message.indexPk[row[message.meta.table.primaryKey]];
+			if (index !== undefined) {
+				row.index_ = index;
+				const status = message.updatedRows[index];
+				if (status) {
+					status.row = { ...row };
+					if (status.updated_ || status.deleted_) {
+						status.conflict_ = true;
+						message.updatedRows.nConflicts =
+							(message.updatedRows.nConflicts || 0) + 1;
+					} else {
+						message.data[index] = row;
+						status.rowUpdated = row;
+					}
+				} else {
+					message.data[index] = row;
+				}
+			} else {
+				message.indexPk[row[message.meta.table.primaryKey]] =
+					message.data.length;
+				message.data.push(row);
+			}
+		} else {
+			message.data.push(row);
+		}
+	});
+};
+const onCompleted = message => {};
+const onError = (e, message) => {};
+
 export const functions = {
 	properties: {
 		accessors: {},
@@ -141,6 +175,11 @@ export const functions = {
 				d.setDate(1);
 				return d;
 			}
+		},
+		observers: {
+			onNext,
+			onCompleted,
+			onError
 		}
 	}
 };
