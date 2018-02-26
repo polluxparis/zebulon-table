@@ -247,8 +247,6 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       } else {
         column.selectItems = select || [""];
       }
-    } else {
-      column.selectItems = select || [""];
     }
     // reference to an object
     if (

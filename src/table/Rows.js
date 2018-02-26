@@ -255,7 +255,10 @@ export class Rows extends ScrollableGrid {
       index++;
       i++;
     }
-    const style = { position: "absolute", top: this.props.scroll.rows.shift };
+    const style = {
+      position: "absolute",
+      top: this.props.scroll.rows.shift || 0
+    };
     // if (this.props.noVerticalScrollbar) {
     //   style.borderRight = "solid 0.03em rgba(0, 0, 0, 0.5)";
     // }

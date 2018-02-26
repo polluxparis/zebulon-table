@@ -508,6 +508,7 @@ export class TableEvent extends TableMenu {
       };
       const callback = (ok, data) => {
         if (!ok) {
+          this.noUpdate = true;
           element.focus();
         } else {
           if (column.setForeignKeyAccessorFunction) {
@@ -520,7 +521,7 @@ export class TableEvent extends TableMenu {
           }
           row[column.reference] = data;
         }
-        return cellQuit(data);
+        return cellQuit(ok);
       };
       this.props.onForeignKey(column.foreignObject, filters, callback);
       return;

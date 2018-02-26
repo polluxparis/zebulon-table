@@ -3,7 +3,7 @@ import { utils } from "zebulon-controls";
 import { computeData, aggregations } from "../table/utils/compute.data";
 import { getThirdparty } from "./thirdparties";
 import { data } from "./datasources";
-
+import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
 import {
 	get_array,
 	get_promise,
@@ -15,7 +15,9 @@ import {
 	getProduct
 	// getAudits
 } from "./datasources";
-
+// asynchronous function (check on the server simulation)
+// don't return as the next step will be executed by the callback
+// else it will be done twice
 const onSaveBefore = (message, callback) => {
 	new Promise(resolve => setTimeout(resolve, 20)).then(() => {
 		if (message.updatedRows.nConflicts) {
@@ -31,15 +33,19 @@ const onSaveBefore = (message, callback) => {
 		}
 	});
 };
-
+// asynchronous function (save on the server simulation)
+// don't return as the next step will be executed by the callback
+// else it will be done twice
 const onSave = (message, callback) => {
-	return new Promise(resolve => setTimeout(resolve, 20)).then(() => {
+	new Promise(resolve => setTimeout(resolve, 20)).then(() => {
 		if (callback) {
 			callback(message);
 		}
 	});
 };
 const audits = {};
+// synchronous function (keep audits of changes)
+// return true or false
 const onSaveAfter = message => {
 	const { updatedRows, meta } = message;
 	// audits
@@ -64,7 +70,7 @@ const onSaveAfter = message => {
 				});
 			audits[key].push(audit);
 		}
-		delete updatedRows[key];
+		// delete updatedRows[key];
 	});
 	return true;
 };
@@ -73,12 +79,37 @@ const getAudits = ({ row }) => {
 		() => audits[row.index_]
 	);
 };
-// const onTableChange = message => {
-// 	if (message.type === "refresh" || message.type === "filter") {
-// 		message.modalBody = "Do you want to save before refresh?";
-// 	}
-// 	return true;
-// };
+// errors an user interractions management
+export const errorHandler = {
+	onRowQuit: message => {
+		message.modalBody = ["Errors: "].concat(
+			getRowErrors(message.status, message.row.index_)
+				.map(error => `\n Order# ${message.row.id} : ${error.error}`)
+				.concat(["Do you wan't to continue?"])
+		);
+		return true;
+	},
+	onTableChange: message => {
+		if (message.type !== "sort") {
+			message.modalBody = "Do you want to save before refresh?";
+		}
+		return true;
+	},
+	onSaveBefore: message => {
+		message.modalBody = ["Can't save with errors: "].concat(
+			getErrors(message.updatedRows).map(
+				error =>
+					`\nOrder# ${message.updatedRows[error.rowIndex].rowUpdated
+						.id} : ${error.error}`
+			)
+		);
+		if (message.modalBody.length > 1) {
+			return false;
+		}
+		message.modalBody = null;
+		return true;
+	}
+};
 export const datasetFunctions = {
 	selects: {
 		titi_lb: ({ row, params, status, data }) => [
@@ -227,6 +258,7 @@ export const datasetFunctions = {
 		// onTableChange
 	}
 };
+
 export const customMenuFunctions = {
 	"row-header-menu": [
 		{

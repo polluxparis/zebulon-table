@@ -132,7 +132,8 @@ export class Table extends TableFilterSort {
         filteredData.length < 2
       ) {
         this.props.callbackForeignKey(
-          filteredData.length ? filteredData[0] : false
+          filteredData.length === 1,
+          filteredData[0]
         );
         return null;
       }
@@ -188,7 +189,8 @@ export class Table extends TableFilterSort {
         );
       }
     }
-    const noUpdate = !this.isInPage(scroll.rows);
+    const noUpdate = !this.isInPage(scroll.rows) || this.noUpdate;
+    this.noUpdate = false;
     let headersLength =
       1 +
       !meta.table.noFilter *
@@ -494,8 +496,8 @@ export class Table extends TableFilterSort {
           hasFocus={this.hasFocus}
           updatedRows={updatedRows}
           params={params}
-          navigationKeyHandler={this.props.navigationKeyHandler}
-          ref={ref => (this.rows = ref)}
+          // navigationKeyHandler={this.props.navigationKeyHandler}
+          // ref={ref => (this.rows = ref)}
           noUpdate={noUpdate}
           noVerticalScrollbar={true}
           onDoubleClick={this.props.onDoubleClick}

@@ -549,14 +549,6 @@ export class ZebulonTable extends Component {
     }
   };
   onSave = callback => {
-    // const save = () => {
-    //   const message = {
-    //     updatedRows: this.state.updatedRows,
-    //     meta: this.state.meta,
-    //     data: this.state.data,
-    //     params: this.props.params
-    //   };
-    // };
     const message = {
       updatedRows: this.state.updatedRows,
       meta: this.state.meta,
@@ -572,6 +564,9 @@ export class ZebulonTable extends Component {
     // local checks and process
     const end = ok_ => {
       if (ok_) {
+        Object.values(message.updatedRows)
+          .filter(status => status.deleted_)
+          .forEach(status => message.data.splice(status.row.index_, 1));
         this.setState({ updatedRows: {} });
       }
       if (callback) {
