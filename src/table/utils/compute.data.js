@@ -68,7 +68,7 @@ export const computeData = (data, meta, startIndex) => {
         column.accessorFunction !== undefined
     );
   }
-  const pk = meta.table.subscription ? meta.table.primaryKey : null;
+  const pk = meta.table.primaryKey;
   if (calcIndex || calcObjects) {
     if (pk && !meta.indexPk) {
       meta.indexPk = {};

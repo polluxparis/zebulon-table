@@ -243,6 +243,9 @@ export class TableEvent extends TableMenu {
   handleDuplicate = index => {
     if (this.row) {
       const row = { ...this.row, index_: this.getDataLength() };
+      if (this.state.meta.table.primaryKey) {
+        row[this.state.meta.table.primaryKey] = null;
+      }
       this.newRow(row, index);
     }
   };
@@ -547,10 +550,10 @@ export class TableEvent extends TableMenu {
   onRowQuit_ = (message, callback) => {
     if (message.rowUpdated) {
       message.status = this.state.updatedRows[message.row.index_];
+      // mandatory data
       this.state.meta.properties
         .filter(property => property.mandatory)
         .forEach(property => {
-          // mandatory data
           manageRowError(
             message.updatedRows,
             message.row.index_,
@@ -562,6 +565,23 @@ export class TableEvent extends TableMenu {
               : null
           );
         });
+      // duplicate key
+      const pk = this.state.meta.table.primaryKey;
+      if (pk) {
+        const keyIndex = this.state.meta.indexPk[message.row[pk]];
+        const error = keyIndex !== message.row.index_ && keyIndex !== undefined;
+        manageRowError(
+          message.updatedRows,
+          message.row.index_,
+          pk,
+          "duplicate key",
+          error ? "duplicate key." : null
+        );
+        if (!error) {
+          delete this.state.meta.indexPk[message.previousRow[pk]];
+          this.state.meta.indexPk[message.row[pk]] = message.row.index_;
+        }
+      }
       const onRowQuit =
         this.props.onRowQuit || this.state.meta.row.onQuitFunction;
       let ok = onRowQuit ? onRowQuit(message) : true;

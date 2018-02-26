@@ -356,7 +356,6 @@ export class Table extends TableFilterSort {
     // ----------------------------------
     // Status bar
     // ----------------------------------
-
     let statusBar;
     if (meta.table.noStatus) {
       statusBar = null;
@@ -556,7 +555,7 @@ export class Table extends TableFilterSort {
     if (statusBar !== null) {
       for (let i = 0; i < headersLength; i++) {
         let checkbox = null;
-        if (i === 0 && meta.table.checkable) {
+        if (i === 0 && meta.table.checkable === true) {
           checkbox = (
             <input
               type="checkbox"

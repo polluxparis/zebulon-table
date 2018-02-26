@@ -1,19 +1,27 @@
 # Zebulon table
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
+## Help and suggestions would be welcome.
 ## Main features
+#### User experience
 * Key navigation.
+* Copy, paste.
 * Sorting, filtering.
 * Formats.
-* Validations.
 * Foreign key management.
-* Copy, paste.
 * Column locks.
+* User interraction.
+#### Server communication
+* Rich server communication.
+* Validations.
+* Conflicts resolution.
+* Subscription to server events.
+#### Miscellaneous
 * Custom contextual menus.
 * Self description.
 * Computed columns.
-* Server communication.
-## Help and suggestions would be welcome.
+
+
 ## Table of contents
 * [Getting started.](#zegetting-started)
 * [Zebulon table props.](#zebulon-table-props)
@@ -21,8 +29,9 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * [Foreign keys.](#object-properties-and-foreign-keys)
 * [Available functions and callbacks.](#Available-functions-and-callbacks)
 * [Meta description.](#meta-description)
+* [Validation process](#)
 * [Saving updated data.](#saving-updated-data)
-* [Error management.](#error-management)
+* [Validations, error management and user interractions.](#error-management)
 * [Working with a redux store.](#working-with-a-redux-store)
 
 ## Getting started
@@ -473,9 +482,10 @@ You can find an example in src/demo/datasource.
 ## Saving updated data
 ### Steps
 * Complete validations (onCellQuit, onRowQuit)
-* props.onSaveBefore function execution,
+* onSaveBefore function execution,
+* errorHandler.onSaveBefore function execution,
+* onSave function execution,
 * errorHandler.onSave function execution,
-* props.onSave function execution,
 * this.onSaveAfter function execution,
 N.B. props.onSave is called with this.onSaveAfter as a callback. If the onSave is executed asynchronously (server update), the props.onSave should return undefined and the callback called with the updated message when the execution is completed, else mutate the message and return true or false.
 The message can be completed with an error message (message.error).

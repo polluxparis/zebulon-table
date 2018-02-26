@@ -148,8 +148,8 @@ const header = (
 
   return (
     <ContextualMenuClient
-      id={"column-header: " + column.index}
-      key={"column-header: " + column.index}
+      id={"column-header: " + column.index_}
+      key={"column-header: " + column.index_}
       column={column}
       menuId="column-header-menu"
       componentId={componentId}
@@ -493,6 +493,10 @@ export class Status extends Component {
         updatedRows[index] = { errors: {} };
       }
       updatedRows[index].checked_ = !updatedRows[index].checked_;
+      if (this.props.checkable === 2) {
+        updatedRows[index + 1 - 2 * (index % 2)].checked_ = !updatedRows[index]
+          .checked_;
+      }
       this.setState({ updatedRows });
     }
   };

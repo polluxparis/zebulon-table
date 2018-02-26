@@ -217,9 +217,19 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onSort = (column, doubleClick) => {
+    const ok = this.props.onTableChange("sort", ok => {
+      if (ok) {
+        this.onSort_(column, doubleClick);
+      }
+    });
+    if (ok) {
+      this.onSort_(column, doubleClick);
+    }
+  };
+  onSort_ = (column, doubleClick) => {
     const { filteredData, meta } = this.state;
     this.closeOpenedWindows();
-    if (this.selectRange(this.range, this.row) === false) {
+    if (this.selectRange(this.range, this.row, "quit") === false) {
       return false;
     }
     const columns = meta.properties;

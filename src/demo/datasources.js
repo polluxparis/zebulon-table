@@ -178,7 +178,7 @@ export const get_subscription = ({ params, meta, filters, sorts }) => {
 	for (let i = 0; i < 10; i++) {
 		// const row = data[Math.floor(Math.random() * data.length)];
 		const row = { ...data[i] };
-		row.qty *= -1.01;
+		row.qty = Math.floor(2000 * Math.random());
 		data2[Math.floor(i / 100)].push(row);
 	}
 	// console.log("observable", i);

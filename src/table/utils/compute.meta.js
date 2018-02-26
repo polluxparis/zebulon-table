@@ -46,8 +46,8 @@ export const getSizes = (meta, rowHeight) => {
         ) !==
           -1));
   const headersHeight =
-    (meta.table.caption ? 30 : 0) -
-    headersLength * rowHeight * meta.zoom -
+    (meta.table.caption ? 30 : 0) +
+    headersLength * rowHeight * meta.zoom +
     ((meta.table.actions || []).length ? 30 : 0);
 
   const lastColumn = meta.properties[meta.properties.length - 1];
@@ -160,13 +160,13 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     });
   }
   if (meta.table.subscription) {
-    meta.table.observableFunction = getFunction(
+    meta.table.subscription.observableFunction = getFunction(
       functions,
       meta.table.object,
       "dml",
       meta.table.subscription.observable
     );
-    meta.table.observerFunctions = {
+    meta.table.subscription.observerFunctions = {
       onNext: getFunction(
         functions,
         meta.table.object,

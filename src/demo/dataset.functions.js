@@ -22,8 +22,8 @@ const onSaveBefore = (message, callback) => {
 			message.conflicts = Object.values(message.updatedRows)
 				.filter(status => status.conflict_)
 				.map(status => ({
-					server: status.row,
-					table: status.rowUpdated
+					server: { ...status.row },
+					table: { ...status.rowUpdated }
 				}));
 		}
 		if (callback) {
@@ -73,12 +73,12 @@ const getAudits = ({ row }) => {
 		() => audits[row.index_]
 	);
 };
-const onTableChange = message => {
-	if (message.type === "refresh" || message.type === "filter") {
-		message.modalBody = "Do you want to save before refresh?";
-	}
-	return true;
-};
+// const onTableChange = message => {
+// 	if (message.type === "refresh" || message.type === "filter") {
+// 		message.modalBody = "Do you want to save before refresh?";
+// 	}
+// 	return true;
+// };
 export const datasetFunctions = {
 	selects: {
 		titi_lb: ({ row, params, status, data }) => [
@@ -223,8 +223,8 @@ export const datasetFunctions = {
 		get_subscription,
 		onSave,
 		onSaveAfter,
-		onSaveBefore,
-		onTableChange
+		onSaveBefore
+		// onTableChange
 	}
 };
 export const customMenuFunctions = {

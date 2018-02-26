@@ -108,7 +108,7 @@ export class ZebulonTable extends Component {
         sorts
       );
       status = { loaded: true, loading: false };
-      this.subscribe(message);
+      this.subscribe(message, this.state.meta.table.subscription);
     } else if (utils.isPromise(data)) {
       this.resolvePromise(data, message);
     } else if (utils.isObservable(data)) {
@@ -162,7 +162,7 @@ export class ZebulonTable extends Component {
           return data;
         }
         this.setState({ data, status: { loaded: true, loading: false } });
-        this.subscribe(message);
+        this.subscribe(message, this.state.meta.table.subscription);
         return data;
       })
       .catch(error =>
@@ -198,23 +198,19 @@ export class ZebulonTable extends Component {
         }),
       () => {
         this.setState({ status: { loaded: true, loading: false } });
-        this.subscribe(message);
+        this.subscribe(message, this.state.meta.table.subscription);
         console.log("end");
         // this.observable.unsubscribe();
       }
     );
   };
-  subscribe = message => {
-    if (this.state.meta.table.subscription) {
+  subscribe = (message, subscription) => {
+    if (subscription) {
       message.indexPk = this.state.meta.indexPk;
       message.data = this.state.data;
       message.updatedRows = this.state.updatedRows;
-      this.observable = this.state.meta.table.observableFunction(message);
-      const {
-        onNext,
-        onError,
-        onCompleted
-      } = this.state.meta.table.observerFunctions;
+      this.observable = subscription.observableFunction(message);
+      const { onNext, onError, onCompleted } = subscription.observerFunctions;
       const onNextFunction = data => {
         onNext(data, message);
         this.setState({ status: { loaded: true, loading: false } });
@@ -235,6 +231,9 @@ export class ZebulonTable extends Component {
         meta,
         sizes.rowHeight || meta.row.height || 25
       );
+      // if (this.props.isModal) {
+      //   tableSizes.headersHeight += 30;
+      // }
       if (!sizes.height && data) {
         sizes.height =
           meta.table.height ||
@@ -464,7 +463,7 @@ export class ZebulonTable extends Component {
           modal: {
             body: this.onConflict(message.conflicts),
             type: "conflict",
-            resolveConflicts
+            callback: resolveConflicts
           }
         });
         // this.onConflict(message.conflicts.callback);
@@ -509,16 +508,23 @@ export class ZebulonTable extends Component {
             }
           }
         : callback_;
-    const onTableChange =
-      this.props.onTableChange || this.state.meta.table.onTableChangeFunction;
     if (
-      !onTableChange ||
       Object.values(this.state.updatedRows).find(
         status => status.new_ || status.deleted_ || status.updated_
       ) === undefined
     ) {
       return callback(true);
     }
+    // const onTableChange =
+    //   this.props.onTableChange || this.state.meta.table.onTableChangeFunction;
+    // if (
+    //   !onTableChange ||
+    //   Object.values(this.state.updatedRows).find(
+    //     status => status.new_ || status.deleted_ || status.updated_
+    //   ) === undefined
+    // ) {
+    //   return callback(true);
+    // }
     const message = {
       updatedRows: this.state.updatedRows,
       meta: this.state.meta,
@@ -526,7 +532,7 @@ export class ZebulonTable extends Component {
       params: this.props.params,
       type
     };
-    let ok = onTableChange(message);
+    // let ok = onTableChange(message);
     const save = (carryOn, ok) => {
       if (carryOn && ok) {
         this.onSave(callback);
@@ -537,7 +543,7 @@ export class ZebulonTable extends Component {
         callback(false);
       }
     };
-    ok = ok && this.errorHandler(message, "onTableChange", save);
+    const ok = this.errorHandler(message, "onTableChange", save);
     if (ok !== undefined) {
       callback(ok);
     }
@@ -653,29 +659,53 @@ export class ZebulonTable extends Component {
     this.keyEvent = false;
   };
   onConflict = conflicts => {
+    const properties = [{ id: "From", width: 55 }];
+    this.state.meta.properties.forEach(property =>
+      properties.push({ ...property })
+    );
     const meta = {
       ...this.state.meta,
+      indexPk: {},
       table: {
         ...this.state.meta.table,
         editable: false,
+        checkable: 2,
         select: undefined,
         subscription: undefined,
+        noFilter: true,
         caption: `${this.state.meta.table.caption}: conflict resolution.`
-      }
+      },
+      properties
     };
     const data = [];
+    let index = 0,
+      updatedRows = {};
+
     conflicts.forEach(conflict => {
+      conflict.server.From = "Server";
+      updatedRows[index] = { checked_: true, index_: conflict.server.index_ };
+      conflict.server.index_ = index;
+
       data.push(conflict.server);
+      conflict.table.From = "Table";
+      conflict.table.index_ = index + 1;
+      updatedRows[index + 1] = { checked_: false };
       data.push(conflict.table);
+      index += 2;
     });
     return (
       <ZebulonTable
-        sizes={{ minHeight: 200, maxHeight: 400, minWidth: 300, maxWidth: 800 }}
+        sizes={{
+          minHeight: 200,
+          maxHeight: this.state.sizes.height,
+          minWidth: 300,
+          maxWidth: this.state.sizes.width
+        }}
         meta={meta}
         data={data}
         isModal={true}
-        // filters={filters}
-        keyEvent={this.state.keyEvent}
+        functions={this.state.functions}
+        updatedRows={updatedRows}
       />
     );
   };

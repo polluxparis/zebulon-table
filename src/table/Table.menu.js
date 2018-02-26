@@ -15,7 +15,18 @@ export class TableMenu extends Component {
                     meta.properties[data.column.index_].locked = true;
                 }
                 computeMetaPositions(meta);
-                this.setState({ scroll: this.state.scroll });
+                this.setState({
+                    scroll: {
+                        ...this.state.scroll,
+                        columns: {
+                            direction: 1,
+                            index: 0,
+                            position: 0,
+                            shift: 0,
+                            startIndex: 0
+                        }
+                    }
+                });
             }
         } else if (data.menuId === "row-header-menu") {
             if (item.id === 0) {

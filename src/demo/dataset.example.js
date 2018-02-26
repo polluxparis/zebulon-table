@@ -1,6 +1,13 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
-import { countries, currencies, colors, products } from "./datasources";
+import {
+  countries,
+  currencies,
+  colors,
+  products,
+  get_subscription
+} from "./datasources";
+import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
 import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
@@ -51,9 +58,9 @@ const meta = {
     onTableChange: "onTableChange",
     noFilter: false,
     caption: "Dataset",
-    subscription: {
-      observable: "get_subscription"
-    },
+    // subscription: {
+    //   observable: "get_subscription"
+    // },
     actions: [
       { type: "insert", caption: "New", enable: true },
       {
@@ -299,8 +306,8 @@ export class MyDataset extends Component {
       status: {},
       // filters: { qty: { id: "qty", filterType: "between", v: 123, vTo: 256 } },
       sorts: {
-        d: { id: "d", direction: "asc", sortOrder: 0 },
-        product_lb: { id: "product_lb", direction: "desc", sortOrder: 1 },
+        // d: { id: "d", direction: "asc", sortOrder: 0 },
+        // product_lb: { id: "product_lb", direction: "desc", sortOrder: 1 },
         id: { id: "id", direction: "asc", sortOrder: 1 }
       },
       radioDataset: "get_promise",
@@ -376,7 +383,12 @@ export class MyDataset extends Component {
       );
       return true;
     },
-    onTableChange: message => true,
+    onTableChange: message => {
+      if (message.type !== "sort") {
+        message.modalBody = "Do you want to save before refresh?";
+      }
+      return true;
+    },
     onSaveBefore: message => {
       message.modalBody = ["Can't save with errors: "].concat(
         getErrors(message.updatedRows).map(
@@ -398,6 +410,10 @@ export class MyDataset extends Component {
   };
   subscribe = () => {
     const { meta, params } = this.table.state;
+    const subscription = {
+      observableFunction: get_subscription,
+      observerFunctions: { onNext, onCompleted, onError }
+    };
     const message = {
       dataObject: meta.table.object,
       params,
@@ -405,7 +421,7 @@ export class MyDataset extends Component {
       filters: {},
       sorts: []
     };
-    this.table.subscribe(message);
+    this.table.subscribe(message, subscription);
   };
   render() {
     const { keyEvent, functions } = this.props;
@@ -584,8 +600,11 @@ export class MyDataset extends Component {
     const text =
       "Test key, navigation, zoom, scroll, wheel...\n• resize the grid using the handle at right, down corner. \n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters and sorts\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n. Resize and move columns by drag and drop.\n...";
     footer = (
-      <div>
-        <button onClick={this.subscribe}>Subscribe</button>
+      <div style={{ marginTop: 10, marginLeft: 2 }}>
+        <button onClick={this.subscribe}>
+          Subscription to one server event updating the quantity of the 10th
+          first rows by order#
+        </button>
         <textarea
           readOnly
           rows="24"

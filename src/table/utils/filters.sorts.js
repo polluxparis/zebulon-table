@@ -7,7 +7,7 @@ export const filterFunction = (column, params, data, updatedRows) => {
   const facc = row => {
     let f = column.accessorFunction;
     if (column.id === "status_") {
-      const status = updatedRows[row.index_] || {};
+      const status = (updatedRows || {})[row.index_] || {};
       return (
         1 * (status.updated_ || 0) +
         2 * (status.new_ || 0) +

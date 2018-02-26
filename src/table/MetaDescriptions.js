@@ -38,7 +38,7 @@ const stringToFunction = (row, status) => {
 		return;
 	}
 };
-const onNext = (data, message) => {
+export const onNext = (data, message) => {
 	console.log("onNext", data);
 	data.forEach(row => {
 		if (message.indexPk) {
@@ -69,8 +69,8 @@ const onNext = (data, message) => {
 		}
 	});
 };
-const onCompleted = message => {};
-const onError = (e, message) => {};
+export const onCompleted = message => {};
+export const onError = (e, message) => {};
 
 export const functions = {
 	properties: {
