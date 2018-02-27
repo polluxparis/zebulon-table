@@ -83,6 +83,17 @@ export const meta = {
         type: "refresh",
         caption: "Refresh",
         enable: true
+      },
+      {
+        type: "action",
+        caption: "Test",
+        enable: true,
+        onTableChange: "test",
+        action: ({ row, column }) =>
+          alert(
+            `test row: order# ${row.id} column: ${column ? column.id : null}`
+          ),
+        doubleClick: true
       }
     ]
   },

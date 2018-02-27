@@ -122,11 +122,18 @@ export class TableEvent extends TableMenu {
       />
     );
   };
-  handleClickButton = (index, e) => {
+  onDoubleClick = (row, column) => {
+    if (this.props.onDoubleClick) {
+      this.props.onDoubleClick(row, column);
+    } else if (this.doubleClickAction) {
+      this.handleClickButton(this.doubleClickAction, row, column);
+    }
+  };
+  handleClickButton = (index, row, column) => {
     this.closeOpenedWindows();
     const button = this.state.meta.table.actions[index];
     const rowIndex = this.state.selectedRange.end.rows;
-    let row = {};
+    // let row = {};
     if (rowIndex !== undefined) {
       row = this.getRow(rowIndex);
     }
@@ -144,26 +151,39 @@ export class TableEvent extends TableMenu {
         return this.props.onSave();
       } else if (button.type === "refresh") {
         this.props.onTableChange("refresh");
-      } else if (button.type === "detail" && button.content) {
-        this.setState({ detail: button });
       } else {
-        return this.handleAction(button, e);
+        if (button.type === "detail" && button.content) {
+          this.setState({ detail: button });
+        } else {
+          return this.handleAction(button, row, column);
+        }
       }
     }
   };
-  handleAction = (button, e) => {
+  handleAction = (button, row, column) => {
     if (button.action) {
       const { selectedRange, updatedRows, data, meta } = this.state;
-      button.actionFunction({
-        row: this.row,
-        selectedRange,
-        updatedRows,
-        data,
-        meta,
-        params: this.props.params,
-        action: button,
-        ...(e || {})
-      });
+      const f = () =>
+        button.actionFunction({
+          row: row || this.row,
+          column,
+          selectedRange,
+          updatedRows,
+          data,
+          meta,
+          params: this.props.params,
+          action: button
+          // ...(e || {})
+        });
+      if (button.onTableChange) {
+        this.props.onTableChange(button.onTableChange, ok => {
+          if (ok) {
+            f();
+          }
+        });
+      } else {
+        f();
+      }
       this.setState({ status: this.state.status });
     }
   };

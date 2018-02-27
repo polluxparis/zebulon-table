@@ -2,8 +2,8 @@ import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
 import { utils, ConfirmationModal } from "zebulon-controls";
-import { MyThirdparties } from "../demo/thirdparties";
-import { get_observable2 } from "../demo/datasources";
+// import { MyThirdparties } from "../demo/thirdparties";
+// import { get_observable2 } from "../demo/datasources";
 import {
   computeMeta,
   computeMetaFromData,
@@ -13,7 +13,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { rollbackAll } from "./utils/utils";
+import { rollbackAll, getErrors } from "./utils/utils";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -305,11 +305,13 @@ export class ZebulonTable extends Component {
     } else if (updatedRows && this.props.updatedRows !== updatedRows) {
       this.setState({ updatedRows });
     } else if (
-      this.props.data !== data ||
-      this.props.meta !== meta ||
-      this.props.status !== status ||
-      this.props.filters !== filters ||
-      this.props.refresh !== refresh
+      !saveConfirmationRequired &&
+      !this.props.saveConfirmationRequired &&
+      (this.props.data !== data ||
+        this.props.meta !== meta ||
+        this.props.status !== status ||
+        this.props.filters !== filters ||
+        this.props.refresh !== refresh)
     ) {
       const ok = this.onTableChange("refresh", ok => {
         if (ok) {
@@ -320,38 +322,9 @@ export class ZebulonTable extends Component {
         this.setState(this.getData(nextProps));
       }
     }
-    // if (saveConfirmationRequired) {
-    //   f (
-    //     Object.values(this.state.updatedRows).find(
-    //       status => status.new_ || status.deleted_ || status.updated_
-    //     ) !== undefined
-    //   ) {
-    //     this.confirmationModal = true;
-    //     const callback = (carryOn, button) => {
-    //       if (carryOn && button === "yes") {
-    //         this.table.canSave(ok => {
-    //           if (ok) {
-    //             this.onSave(saveConfirmationRequired);
-    //           }
-    //         });
-    //       } else if (carryOn && button === "no") {
-    //         saveConfirmationRequired(true);
-    //       } else {
-    //         saveConfirmationRequired(false);
-    //       }
-    //     };
-    //     this.setState({
-    //       confirmationModal: true,
-    //       modal: {
-    //         text: "Do you want to save before?",
-    //         type: "YesNoCancel",
-    //         callback
-    //       }
-    //     });
-    //   } else {
-    //     saveConfirmationRequired(true);
-    //   }
-    // }
+    if (saveConfirmationRequired && !this.props.saveConfirmationRequired) {
+      this.onTableChange("close", saveConfirmationRequired);
+    }
   }
   shouldComponentUpdate(nextProps, nextState) {
     if (this.keyEvent && !this.confirmationModal) {
@@ -415,39 +388,61 @@ export class ZebulonTable extends Component {
   // ----------------------------------------
   // comunication with server
   // ----------------------------------------
+  errorHandler_ = {
+    onTableChange: message => {
+      if (message.type !== "sort") {
+        message.modalBody = `Do you want to save before ${message.type}?`;
+      }
+      return true;
+    },
+    onSaveBefore: message => {
+      const errors = getErrors(message.updatedRows).map(
+        error =>
+          `\nOrder# ${message.updatedRows[error.rowIndex].rowUpdated
+            .id} : ${error.error}`
+      );
+      if (errors.length > 1) {
+        message.modalBody = ["Can't save with errors: "].concat(errors);
+      } else {
+        message.modalBody = null;
+      }
+      return true;
+    }
+  };
   errorHandler = (message, action, callback) => {
-    let handler = this.props.errorHandler && this.props.errorHandler[action];
-    if (action === "onTableQuit" || action === "onSave") {
-      handler = handler && (message.updatedRows || {}).nErrors;
-    } else if (action === "onRowQuit") {
-      handler =
-        handler && message.rowUpdated && (message.status.errors || {}).n_;
+    let handler = (this.props.errorHandler || this.errorHandler_)[action];
+    if (
+      (action === "onTableQuit" || action === "onSave") &&
+      !(message.updatedRows || {}).nErrors
+    ) {
+      handler = null;
+    } else if (action === "onRowQuit" && !(message.status.errors || {}).n_) {
+      handler = null;
     }
     if (handler) {
-      const ok = this.props.errorHandler[action](message);
+      const ok = handler(message);
+      const body = message.modalBody;
+      message.modalBody = null;
+      const conflicts = message.conflicts;
+      message.conflicts = null;
       if (ok === false) {
-        if (message.modalBody) {
+        if (body) {
           this.confirmationModal = true;
           this.setState({
             confirmationModal: true,
-            modal: { body: message.modalBody, type: "Ok" }
+            modal: { body, type: "Ok" }
           });
           return false;
         }
-      } else if (message.modalBody) {
+      } else if (body) {
         this.confirmationModal = true;
         const type = action === "onTableChange" ? "YesNoCancel" : "YesNo";
-        // if (action === "onTableChange") {
         this.setState({
           confirmationModal: true,
-          modal: {
-            body: message.modalBody,
-            type,
-            callback
-          }
+          modal: { body, type, callback }
         });
         return;
-      } else if (message.conflicts) {
+      } else if (conflicts) {
         const resolveConflicts = (ok, data) => {
           if (ok) {
             // back to server version
@@ -461,44 +456,16 @@ export class ZebulonTable extends Component {
         this.setState({
           confirmationModal: true,
           modal: {
-            body: this.onConflict(message.conflicts),
+            body: this.onConflict(conflicts),
             type: "conflict",
             callback: resolveConflicts
           }
         });
-        // this.onConflict(message.conflicts.callback);
         return;
       }
     }
     return true;
   };
-  // saveQuestion = callback => {
-  //   // if (
-  //   //   Object.values(this.state.updatedRows).find(
-  //   //     status => status.new_ || status.deleted_ || status.updated_
-  //   //   ) !== undefined
-  //   // ) {
-  //   this.confirmationModal = true;
-  //   const callback = (carryOn, button) => {
-  //     if (carryOn && button === "yes") {
-  //       callback();
-  //     } else if (carryOn && button === "no")!==undefined {
-  //       rollbackAll}(this.state.updatedRows, this.state.data);
-  //       return true;
-  //     } else {
-  //       return false;
-  //     }
-  //   };
-  //   this.setState({
-  //     confirmationModal: true,
-  //     modal: {
-  //       text: "Do you want to save before?",
-  //       type: "YesNoCancel",
-  //       callback
-  //     }
-  //   });
-  //   // }
-  // };
   onTableChange = (type, callback_) => {
     const callback =
       !callback_ && type === "refresh"
@@ -515,16 +482,6 @@ export class ZebulonTable extends Component {
     ) {
       return callback(true);
     }
-    // const onTableChange =
-    //   this.props.onTableChange || this.state.meta.table.onTableChangeFunction;
-    // if (
-    //   !onTableChange ||
-    //   Object.values(this.state.updatedRows).find(
-    //     status => status.new_ || status.deleted_ || status.updated_
-    //   ) === undefined
-    // ) {
-    //   return callback(true);
-    // }
     const message = {
       updatedRows: this.state.updatedRows,
       meta: this.state.meta,
@@ -633,6 +590,7 @@ export class ZebulonTable extends Component {
   onConfirm = (button, type) => {
     this.setState({
       modalCancel: false,
+      modal: null,
       confirmationModal: false
     });
     this.confirmationModal = false;
@@ -758,7 +716,7 @@ export class ZebulonTable extends Component {
           modal={this.state.confirmationModal || this.state.modalCancel}
         />
         <ConfirmationModal
-          show={this.state.confirmationModal}
+          show={this.confirmationModal}
           detail={this.state.modal}
           onConfirm={this.onConfirm}
           keyEvent={this.state.keyEvent}

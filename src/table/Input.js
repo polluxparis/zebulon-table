@@ -281,6 +281,7 @@ export class Input extends Component {
           className={className || "zebulon-input"}
           style={style}
           onDrop={e => e.preventDefault()}
+          onDoubleClick={onDoubleClick}
         >
           {input}
         </div>

@@ -16,8 +16,7 @@ export const editCell = (
   handleErrors,
   componentId,
   checkable,
-  onChange,
-  onDoubleclick
+  onChange
 ) => {
   let glyph;
   if (status.deleted_) {
@@ -60,7 +59,7 @@ export const editCell = (
         // onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
-        onDoubleClick={onDoubleclick || (() => {})}
+        onDoubleClick={onDoubleClick ? () => onDoubleClick(row) : () => {}}
       >
         {glyph}
       </div>
@@ -548,12 +547,11 @@ export class Status extends Component {
             row,
             updatedRow,
             this.onClick,
-            () => {},
+            onDoubleClick,
             (e, errors) => handleErrors(e, ix, errors),
             componentId,
             checkable,
-            this.onChange,
-            onDoubleClick
+            this.onChange
           )
         );
       }

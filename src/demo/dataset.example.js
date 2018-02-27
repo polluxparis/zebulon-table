@@ -31,7 +31,8 @@ export class MyDataset extends Component {
       totalAmount: false,
       rollingAverage: false,
       confirmationModal: false,
-      activeTable: "dataset"
+      activeTable: "dataset",
+      saveConfirmationRequired: false
     };
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
@@ -134,6 +135,63 @@ export class MyDataset extends Component {
     };
     this.table.subscribe(message, subscription);
   };
+  // radio buttons datasource
+  handleRadioDataset = e => {
+    console.log("radio", e.target);
+    const value = e.target.value;
+    this.setState({
+      saveConfirmationRequired: ok => {
+        console.log("confirmation", ok);
+        if (ok) {
+          if (value === "get_array") {
+            this.text =
+              "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
+          } else if (value === "get_promise") {
+            this.text =
+              "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
+          } else if (value === "get_observable") {
+            ("A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.");
+          } else if (value === "get_pagination_manager") {
+            this.text =
+              "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
+          }
+          this.setState({
+            radioDataset: value,
+            status: { loading: true },
+            saveConfirmationRequired: false
+          });
+        } else {
+          this.setState({
+            radioDataset: this.state.radioDataset,
+            saveConfirmationRequired: false
+          });
+        }
+      }
+    });
+    // e => {
+    //               this.text =
+    //                 "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
+    //               this.setState({
+    //                 radioDataset: "get_promise",
+    //                 status: { loading: true }
+    //               });
+    //             }
+    //          onChange={e => {
+    //               this.text =
+    //               this.setState({
+    //                 radioDataset: "get_observable",
+    //                 status: { loading: true }
+    //               });
+    //             }}
+    //             e => {
+    //               this.text =
+
+    //               this.setState({
+    //                 radioDataset: "get_pagination_manager",
+    //                 status: { loading: true }
+    //               });
+    //             }
+  };
   render() {
     const { keyEvent, functions } = this.props;
     const {
@@ -147,7 +205,8 @@ export class MyDataset extends Component {
       pageStartIndex,
       radioDataset,
       status,
-      activeTable
+      activeTable,
+      saveConfirmationRequired
     } = this.state;
     let header = null,
       footer = null;
@@ -194,14 +253,7 @@ export class MyDataset extends Component {
                 name="radioDataset"
                 value="get_array"
                 checked={radioDataset === "get_array"}
-                onChange={e => {
-                  this.text =
-                    "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
-                  this.setState({
-                    radioDataset: "get_array",
-                    status: { loading: true }
-                  });
-                }}
+                onChange={this.handleRadioDataset}
               />
               <label htmlFor="radioArray">an array </label>
               <input
@@ -210,14 +262,7 @@ export class MyDataset extends Component {
                 name="radioDataset"
                 value="get_promise"
                 checked={radioDataset === "get_promise"}
-                onChange={e => {
-                  this.text =
-                    "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
-                  this.setState({
-                    radioDataset: "get_promise",
-                    status: { loading: true }
-                  });
-                }}
+                onChange={this.handleRadioDataset}
               />
               <label htmlFor="radioPromise"> a promise </label>
               <input
@@ -226,14 +271,7 @@ export class MyDataset extends Component {
                 name="radioDataset"
                 value="get_observable"
                 checked={radioDataset === "get_observable"}
-                onChange={e => {
-                  this.text =
-                    "A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
-                  this.setState({
-                    radioDataset: "get_observable",
-                    status: { loading: true }
-                  });
-                }}
+                onChange={this.handleRadioDataset}
               />
               <label htmlFor="radioObservable"> an observable or </label>{" "}
               <input
@@ -242,15 +280,7 @@ export class MyDataset extends Component {
                 name="radioDataset"
                 value="get_pagination_manager"
                 checked={radioDataset === "get_pagination_manager"}
-                onChange={e => {
-                  this.text =
-                    "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
-
-                  this.setState({
-                    radioDataset: "get_pagination_manager",
-                    status: { loading: true }
-                  });
-                }}
+                onChange={this.handleRadioDataset}
               />
               <label htmlFor="radioPagination"> a pagination manager </label>
             </div>
@@ -352,6 +382,7 @@ export class MyDataset extends Component {
           ref={ref => (this.table = ref)}
           isActive={activeTable === "dataset"}
           onActivation={() => this.onActivation("dataset")}
+          saveConfirmationRequired={saveConfirmationRequired}
         />
         {footer}
       </div>

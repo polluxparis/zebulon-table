@@ -91,7 +91,7 @@ export const errorHandler = {
 	},
 	onTableChange: message => {
 		if (message.type !== "sort") {
-			message.modalBody = "Do you want to save before refresh?";
+			message.modalBody = `Do you want to save before ${message.type}?`;
 		}
 		return true;
 	},

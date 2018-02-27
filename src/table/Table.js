@@ -378,7 +378,7 @@ export class Table extends TableFilterSort {
           noUpdate={noUpdate}
           componentId={this.props.id}
           checkable={meta.table.checkable}
-          onDoubleClick={this.props.onDoubleClick}
+          onDoubleClick={this.onDoubleClick}
         />
       );
     }
@@ -386,8 +386,8 @@ export class Table extends TableFilterSort {
     //   action buttons
     // -----------------------------
     actions = actions.map((action, index) => {
-      if (!this.doubleclickAction && action.type === "detail") {
-        this.doubleclickAction = action;
+      if (!this.doubleClickAction && action.doubleClick) {
+        this.doubleClickAction = index;
       }
       let enable = action.enable || false;
       if (status.loadingPage) {
@@ -473,7 +473,7 @@ export class Table extends TableFilterSort {
         ref={ref => (this.rows = ref)}
         noUpdate={noUpdate}
         style={style}
-        onDoubleClick={this.props.onDoubleClick}
+        onDoubleClick={this.onDoubleClick}
       />
     );
     let lockedColumns = null;
@@ -500,7 +500,7 @@ export class Table extends TableFilterSort {
           // ref={ref => (this.rows = ref)}
           noUpdate={noUpdate}
           noVerticalScrollbar={true}
-          onDoubleClick={this.props.onDoubleClick}
+          onDoubleClick={this.onDoubleClick}
           locked={locked}
         />
       );
