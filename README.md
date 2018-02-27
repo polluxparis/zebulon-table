@@ -27,11 +27,9 @@ Zebulon table is a hight performance fully virtualized React editable table comp
 * [Zebulon table props.](#zebulon-table-props)
 * [Data set.](#data-set)
 * [Foreign keys.](#object-properties-and-foreign-keys)
-* [Available functions and callbacks.](#Available-functions-and-callbacks)
+* [Available functions and callbacks.](#available-functions-and-callbacks)
 * [Meta description.](#meta-description)
-* [Validation process](#)
-* [Saving updated data.](#saving-updated-data)
-* [Validations, error management and user interractions.](#error-management)
+* [Validation and saving process](#validation-and-saving-process)
 * [Working with a redux store.](#working-with-a-redux-store)
 
 ## Getting started
@@ -133,7 +131,7 @@ ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 | [keyEvent](#key-events-and-navigation-key-handler) | event | Keyboard event |
 | [navigationKeyHandler](#key-events-and-navigation-key-handler) | function(event, {nextCell, nextPageCell, endCell, selectCell}) | Custom function to overwrite key navigation in the grid|
 | isActive | boolean | Indicator that the component is active| 
-| [errorHandler](#error-handler) | object | Custom error management|
+| [errorHandler](#error-handler) | object | Custom error and user interractions management|
 | [contextualMenu](#custom-contextual-menu) | object | Custom contextual menu|
 | [saveConfirmationRequired](#requiring-save-with-bconfirmation) | callback | callback to execute after save requirement|
 | [onChange](#available-functions-and-callbacks) | table event callback | Change of cell value |
@@ -149,7 +147,9 @@ ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 | [onSort](#available-functions-and-callbacks) | table event callback | Change sorts|
 | [onGetData](#available-functions-and-callbacks) | table event callback | Get data|
 | [onGetPage](#available-functions-and-callbacks) | table event callback | Get a new page |
+| [onSaveBefore](#available-functions-and-callbacks) | table event callback | Checks before save|
 | [onSave](#available-functions-and-callbacks) | table event callback | Save updated data|
+| [onSaveAfter](#available-functions-and-callbacks) | table event callback | Post treatment after save|
 ###
 ## Data set
 The data set (data property) can be:
@@ -479,35 +479,58 @@ You can find an example in src/demo/datasource.
 ### Actual restrictions
 * Filters with existing values is not implemented yet, values must be given by the server.
 * Computed columns with aggregation are not available.
-## Saving updated data
-### Steps
-* Complete validations (onCellQuit, onRowQuit)
-* onSaveBefore function execution,
-* errorHandler.onSaveBefore function execution,
-* onSave function execution,
-* errorHandler.onSave function execution,
-* this.onSaveAfter function execution,
-N.B. props.onSave is called with this.onSaveAfter as a callback. If the onSave is executed asynchronously (server update), the props.onSave should return undefined and the callback called with the updated message when the execution is completed, else mutate the message and return true or false.
-The message can be completed with an error message (message.error).
-### Requiring save with confirmation
-You may need to save the update before an action called from outside of the component (exit, reload...). In this case, you can pass as a property (saveConfirmationRequired) the function to callback after the saving. If any update has occured, a confirmation modal (Yes, No, Cancel) will be popped up.
-* On Yes, updated data will be saved and, if no errors occurs during the process, the callback will be executed with parameter = true.
-* On no (or if no update), updates are rolledback and the callback will be executed with parameter = true.
-* On Cancel the callback will be executed with parameter = false.
-## Error management
-By default, errors are not blocking but logged in the "updatedRows" property. 
-Validator functions should be used to log those errors.
-### Error handler
-You can manage errors in your own way with the "errorHandler" property.
-It is an object containing for each level of error management a function to execute when an error occurs.
-Returning a string from the errorHandler function will be interpreted as an error message an popped up in an alert.
-Returning false (or a string) from the errorHandler function will stop the action.
-### Error management levels
-* onChange (cell)
-* onCellQuit (cell)
-* onRowQuit (row)
-* onTableQuit (table)
-N.B. If an error occurs during the "save" process, you can add an "error" entry in the callback message with the error message that will be popped up as well.
+## Validation and saving process
+### Validations, error handling and saving
+Each validation step will be executed in two phases:
+* A validation function called with a "message" as parameter to detect errors and conflicts. Errors and conflicts must be written, mutating the object, in the errors, conflicts entries of the message. Returning false will cancel the action and the second phase won't be executed. For validation functions that may be executed asynchronously (onSaveBefore, onSave, onSaveAfter), a callback is added as a second parameter that must be executed, if the process is asynchronous, with true (if succeed or handling errors is required) or false as parameter.
+* An "errorHandler" function to manage the interractions with the user.
+If no errors or conflicts are found in the message, the error handler will return true and the action will be resumed. Else the function defined in the errorHandler prop is then called with the message. 
+This prop function must build the element to display (as a string, an array of string or a JSX element) and to characterize the errors as blocking or subject to validation.
+For a blocking error, the error handler must return false and  a modal dialog will be displayed with an Ok button. The initial action is cancelled.
+Demo:
+In the demo, the error handler has been defined to consider any error as blocking for sae actions.
+
+For an alert, the error handler must return true. A modal dialog will be displayed with Yes and No buttons. The initial action is cancelled on No and resumed on Yes.
+Demo:
+In the demo, the error handler has been defined to consider errors on row quit as an alert.
+
+For conflicts, typically when same data has changed on the server and in the component, a "conflicts resolution" modal will be opened, (with an other instance  of the component) to choose the versions that must be kept.
+Demo:
+ In the demo, you can test the "conflicts resolution" modal by subscribing to server changes:
+* update one or several rows (in the 10th first ordered by order#)
+* click on the "subscription to server events" button. That will update the 10th first rows.
+* click on the save button.
+* check the row versions to keep.
+
+#### Cell level
+* onChange
+The component checks the data type of the changed value, then call the function in the onChange prop (or defined in the meta description).
+* onCellQuit
+If the cell has been updated and corresponds to a link with a foreign key on an other component (meta.property[*].foreignObject), the value is searched in the "foreign object". If no row match the value, the action is cancelled, if only one row match, the value is updated and the action continues else the component is opened, filtered by the value, to select the relevant row. 
+Then the onCellQuit prop function (or defined in the meta description) is called.
+Demo:
+The Thirdparty column is defined as a linked to a foreign object: MyThirdparties.
+#### Row level
+* onRowQuit
+If the row has been updated, the mandatory columns and the unicity of the primary key are checked. Errors are stored in the "message".
+Then the onRowQuit prop function (or defined in the meta description) is called.
+N.B. The unicity of the primary key is checked only on data loaded on the client. It should be done on the server side during the saving process. 
+#### Dataset level (saving process)
+When the updated data must be saves, cell validations and row validations are executed first.
+All these functions can be executed asynchronously.
+* onSaveBefore
+Execute the onSaveBefore prop function (or defined in the meta description).
+* onSave
+Execute the onSave prop function (or defined in the meta description).
+* onSaveAfter
+Execute the onSaveAfter prop function (or defined in the meta description).
+#### Table level
+Actions has refresh, filter ... may require to save data before.
+* onTableChange
+If data have been updated, a confirmation modal with Yes, No and Cancel buttons is displayed. On Yes the whole saving process is executed and the action is resumed (if no intermediate cancellation occurs), on No, all updates are rolledback and action is resumed, On Cancel, the process stops. 
+* saveConfirmationRequired prop
+You may need to save the update before an action called from outside of the component (exit, reload...). In this case, you can pass as a prop (saveConfirmationRequired) the function to callback after the saving.
+It will fired the onTableChange event and return the callback in case of success. 
 ## Working with a Redux store
 When using a store, you can create a container mapping the actions to the meta description in the mergeProps function as in the following example:
 ```js

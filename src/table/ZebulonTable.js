@@ -327,7 +327,7 @@ export class ZebulonTable extends Component {
     }
   }
   shouldComponentUpdate(nextProps, nextState) {
-    if (this.keyEvent && !this.confirmationModal) {
+    if (this.keyEvent && !this.state.confirmationModal) {
       this.keyEvent = false;
       return false;
     }
@@ -348,7 +348,7 @@ export class ZebulonTable extends Component {
       return;
     }
     if (e.key === "Escape" && this.state.confirmationModal) {
-      this.confirmationModal = false;
+      // this.confirmationModal = false;
       this.setState({ confirmationModal: false });
     } else {
       this.keyEvent = true;
@@ -427,7 +427,7 @@ export class ZebulonTable extends Component {
       message.conflicts = null;
       if (ok === false) {
         if (body) {
-          this.confirmationModal = true;
+          // this.confirmationModal = true;
           this.setState({
             confirmationModal: true,
             modal: { body, type: "Ok" }
@@ -435,7 +435,7 @@ export class ZebulonTable extends Component {
           return false;
         }
       } else if (body) {
-        this.confirmationModal = true;
+        // this.confirmationModal = true;
         const type = action === "onTableChange" ? "YesNoCancel" : "YesNo";
         this.setState({
           confirmationModal: true,
@@ -593,7 +593,7 @@ export class ZebulonTable extends Component {
       modal: null,
       confirmationModal: false
     });
-    this.confirmationModal = false;
+    // this.confirmationModal = false;
   };
   // foreign key modal
   onForeignKey = (ForeignObject, filters, callback) => {
@@ -604,7 +604,7 @@ export class ZebulonTable extends Component {
         keyEvent={this.state.keyEvent}
       />
     );
-    this.confirmationModal = true;
+    // this.confirmationModal = true;
     this.setState({
       confirmationModal: true,
       modal: { body: element, type: "foreignKey", callback }
@@ -716,7 +716,7 @@ export class ZebulonTable extends Component {
           modal={this.state.confirmationModal || this.state.modalCancel}
         />
         <ConfirmationModal
-          show={this.confirmationModal}
+          show={this.state.confirmationModal}
           detail={this.state.modal}
           onConfirm={this.onConfirm}
           keyEvent={this.state.keyEvent}
