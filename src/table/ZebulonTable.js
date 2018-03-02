@@ -85,9 +85,9 @@ export class ZebulonTable extends Component {
     if (typeof data === "function") {
       // this.select = data;
       data = data(message);
-    } else if ((meta && props.onGetData) || meta.table.select) {
+    } else if ((meta && props.select) || meta.table.select) {
       data =
-        props.onGetData ||
+        props.select ||
         getFunction(
           this.state.functions,
           meta.table.object || "dataset",
@@ -121,9 +121,12 @@ export class ZebulonTable extends Component {
     return { data, meta, status, filters, sorts };
   };
   initData = (data, meta, zoom, functions, startIndex, filters) => {
-    if (data) {
+    if (data && data.length) {
       computeMetaFromData(data, meta, zoom, functions);
       computeData(data, meta, startIndex);
+      if (this.props.onGetData) {
+        this.props.onGetData({ data, meta });
+      }
     }
     this.initSizes(meta, data);
     if (filters && meta.properties.length !== 0) {
@@ -199,7 +202,7 @@ export class ZebulonTable extends Component {
       () => {
         this.setState({ status: { loaded: true, loading: false } });
         this.subscribe(message, this.state.meta.table.subscription);
-        console.log("end");
+        // console.log("end");
         // this.observable.unsubscribe();
       }
     );
@@ -260,13 +263,13 @@ export class ZebulonTable extends Component {
     }
   };
   componentDidMount() {
-    if (!this.props.keyEvent === undefined) {
+    if (this.props.keyEvent === undefined) {
       document.addEventListener("copy", this.handleCopy);
       document.addEventListener("paste", this.handlePaste);
       document.addEventListener("keydown", this.handleKeyDown);
     }
   }
-  componentDidUnMount() {
+  componentWillUnmount() {
     if (this.props.keyEvent === undefined) {
       document.removeEventListener("copy", this.handleCopy);
       document.removeEventListener("paste", this.handlePaste);
@@ -285,12 +288,12 @@ export class ZebulonTable extends Component {
       saveConfirmationRequired,
       refresh
     } = nextProps;
-    console.log(
-      "zebulon-table",
-      this.props.status !== status,
-      nextProps,
-      this.props
-    );
+    // console.log(
+    //   "zebulon-table",
+    //   this.props.status !== status,
+    //   nextProps,
+    //   this.props
+    // );
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
         if (this.zoomValue !== sizes.zoom) {
@@ -305,19 +308,20 @@ export class ZebulonTable extends Component {
     } else if (updatedRows && this.props.updatedRows !== updatedRows) {
       this.setState({ updatedRows });
     } else if (
-      !saveConfirmationRequired &&
-      !this.props.saveConfirmationRequired &&
-      (this.props.data !== data ||
-        this.props.meta !== meta ||
-        this.props.status !== status ||
-        this.props.filters !== filters ||
-        this.props.refresh !== refresh)
+      this.props.data !== data ||
+      // this.props.meta !== meta ||
+      this.props.status !== status ||
+      this.props.filters !== filters ||
+      this.props.refresh !== refresh
     ) {
-      const ok = this.onTableChange("refresh", ok => {
-        if (ok) {
-          this.setState(this.getData(nextProps));
-        }
-      });
+      let ok = true;
+      if (!saveConfirmationRequired && !this.props.saveConfirmationRequired) {
+        ok = this.onTableChange("refresh", ok => {
+          if (ok) {
+            this.setState(this.getData(nextProps));
+          }
+        });
+      }
       if (ok) {
         this.setState(this.getData(nextProps));
       }
@@ -351,7 +355,9 @@ export class ZebulonTable extends Component {
       // this.confirmationModal = false;
       this.setState({ confirmationModal: false });
     } else {
-      this.keyEvent = true;
+      if (this.props.keyEvent) {
+        this.keyEvent = true;
+      }
       if (!this.table) return;
       else if (e.type === "copy") this.handleCopy(e);
       else if (e.type === "paste") this.handlePaste(e);
@@ -495,6 +501,7 @@ export class ZebulonTable extends Component {
         this.onSave(callback);
       } else if (carryOn) {
         rollbackAll(this.state.updatedRows, this.state.data);
+        this.setState({ updatedRows: {} });
         callback(true);
       } else {
         callback(false);
@@ -703,6 +710,7 @@ export class ZebulonTable extends Component {
           onTableClose={this.props.onTableClose}
           onFilter={this.props.onFilter}
           onSort={this.props.onSort}
+          select={this.props.select}
           onGetData={this.props.onGetData}
           onGetPage={this.props.onGetPage}
           onSave={this.onSave}

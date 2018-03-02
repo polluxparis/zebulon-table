@@ -88,23 +88,25 @@ export class TableFilterSort extends TableEvent {
               : id;
           items[id] = {
             id,
-            label: (column.formatFunction ||
-              (({ value }) =>
-                utils.formatValue(value, null, column.decimals)))({
-              value: label,
-              column,
-              row,
-              params: this.props.params,
-              status: updatedRows[row.index_],
-              data: data
-            })
+            label:
+              (column.formatFunction ||
+                (({ value }) =>
+                  utils.formatValue(value, null, column.decimals)))({
+                value: label,
+                column,
+                row,
+                params: this.props.params,
+                status: updatedRows[row.index_],
+                data: data
+              }) || id
           };
         });
         column.items = Object.values(items);
-        column.items.sort(
-          (itemA, itemB) =>
-            (itemA.label > itemB.label) - (itemA.label < itemB.label)
-        );
+        column.items.sort((itemA, itemB) => {
+          return utils.isNullValue(itemA.label)
+            ? -1
+            : (itemA.label > itemB.label) - (itemA.label < itemB.label);
+        });
         filter = column;
       }
     } else {

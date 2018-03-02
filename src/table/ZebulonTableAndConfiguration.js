@@ -13,11 +13,11 @@ import { utils } from "zebulon-controls";
 export class ZebulonTableAndConfiguration extends Component {
 	constructor(props) {
 		super(props);
-		this.sizes = {
-			...props.sizes,
-			height: props.sizes.height - 30 * (props.sizes.zoom || 1),
-			zoom: this.zoomValue
-		};
+		// this.sizes = {
+		// 	...props.sizes,
+		// 	height: props.sizes.height - 30 * (props.sizes.zoom || 1),
+		// 	zoom: this.zoomValue
+		// };
 		let f = props.functions || functions;
 		if (!Array.isArray(f)) {
 			f = functionsTable(f);
@@ -42,7 +42,8 @@ export class ZebulonTableAndConfiguration extends Component {
 			functionsUpdatedRows: {},
 			functions: f,
 			sizes: props.sizes,
-			filters: props.filters
+			filters: props.filters,
+			status: {}
 		};
 		this.zoomValue = props.sizes.zoom || 1;
 		this.state.propertiesMeta = metaDescriptions(
@@ -73,7 +74,8 @@ export class ZebulonTableAndConfiguration extends Component {
 					tab.id,
 					props.callbacks,
 					this.state.functions,
-					this.state.meta.properties
+					this.state.meta.properties,
+					this.state.data
 				);
 				computeMetaFromData(
 					this.state[tab.id],
@@ -86,85 +88,93 @@ export class ZebulonTableAndConfiguration extends Component {
 		this.errorHandler = this.props.errorHandler || {};
 	}
 	componentWillReceiveProps(nextProps) {
-		if (
-			nextProps.data !== this.props.data ||
-			nextProps.meta !== this.props.meta ||
-			nextProps.filters !== this.props.filters ||
-			nextProps.functions !== this.props.functions
-		) {
-			this.setState({
-				data: nextProps.data,
-				meta: nextProps.meta,
-				functions: nextProps.functions,
-				filters: nextProps.filters
-			});
-		}
-		if (
-			nextProps.updatedRows &&
-			nextProps.updatedRows !== this.props.updatedRows
-		) {
-			this.setState({
-				updatedRows: nextProps.updatedRows
-			});
-		}
-		if (nextProps.sizes.zoom !== this.props.sizes.zoom) {
-			this.zoomValue = nextProps.sizes.zoom || 1;
-		}
-		if (nextProps.sizes !== this.props.sizes) {
-			this.sizes = {
-				...nextProps.sizes,
-				height:
-					nextProps.sizes.height - 30 * (nextProps.sizes.zoom || 1),
-				zoom: this.zoomValue
-			};
-		}
-		if (nextProps.tabs) {
-			nextProps.tabs.forEach((tab, index) => {
-				if (
-					!this.props.tabs ||
-					!this.props.tabs[index] ||
-					this.props.tabs[index].id !== tab.id ||
-					tab.data !== this.props.tabs[index].data
-				) {
-					this.setState({
-						[tab.id]: tab.data,
-						[`${tab.id}Meta`]: metaDescriptions(
-							tab.id,
-							this.props.callbacks,
-							this.state.functions,
-							this.state.meta.properties
-						)
-					});
-					computeMetaFromData(
-						this.state[tab.id],
-						this.state[`${tab.id}Meta`],
-						this.zoomValue,
-						this.state.functions
-					);
-				}
-			});
-		}
 		if (nextProps.keyEvent !== this.props.keyEvent) {
 			this.handleKeyDown(nextProps.keyEvent);
+		} else {
+			if (
+				nextProps.data !== this.props.data ||
+				nextProps.meta !== this.props.meta ||
+				nextProps.filters !== this.props.filters ||
+				nextProps.functions !== this.props.functions
+			) {
+				this.setState({
+					data: nextProps.data,
+					meta: nextProps.meta,
+					functions: nextProps.functions,
+					filters: nextProps.filters
+				});
+			}
+			if (
+				nextProps.updatedRows &&
+				nextProps.updatedRows !== this.props.updatedRows
+			) {
+				this.setState({ updatedRows: nextProps.updatedRows });
+			}
+			// if (nextProps.sizes.zoom !== this.props.sizes.zoom) {
+			// 	this.zoomValue = nextProps.sizes.zoom || 1;
+			// }
+			if (nextProps.sizes !== this.props.sizes) {
+				this.setState({ sizes: nextProps.sizes });
+				// this.sizes = {
+				// 	...nextProps.sizes,
+				// 	height:
+				// 		nextProps.sizes.height - 30 * (nextProps.sizes.zoom || 1),
+				// 	zoom: this.zoomValue
+				// };
+			}
+			if (nextProps.tabs) {
+				nextProps.tabs.forEach((tab, index) => {
+					if (
+						!this.props.tabs ||
+						!this.props.tabs[index] ||
+						this.props.tabs[index].id !== tab.id ||
+						tab.data !== this.props.tabs[index].data
+					) {
+						this.setState({
+							[tab.id]: tab.data,
+							[`${tab.id}Meta`]: metaDescriptions(
+								tab.id,
+								this.props.callbacks,
+								this.state.functions,
+								this.state.meta.properties,
+								this.state.data
+							)
+						});
+						computeMetaFromData(
+							this.state[tab.id],
+							this.state[`${tab.id}Meta`],
+							this.zoomValue,
+							this.state.functions
+						);
+					}
+				});
+			}
 		}
 	}
 	shouldComponentUpdate(nextProps, nextState) {
 		return nextProps.keyEvent === this.props.keyEvent;
 	}
 	handleKeyDown = e => {
-		const zoom = utils.isZoom(e);
-		if (zoom) {
-			e.preventDefault();
-			this.zoomValue *= zoom === 1 ? 1.1 : 1 / 1.1;
-			this.setState({ ...this.props.sizes, zoom: this.zoomValue });
-			return;
-		}
-		if (utils.isNavigationKey(e)) {
+		if (utils.isNavigationKey(e) || utils.isZoom(e)) {
 			const tab = this.tabs[this.state.selectedTab].id;
-			if (this[tab] && this[tab].handleKeyDown) {
-				return this[tab].handleKeyDown(e);
+			if (this[tab] && this[tab].handleKeyEvent) {
+				return this[tab].handleKeyEvent(e);
 			}
 		}
+	};
+	onGetData = ({ data, meta }) => {
+		if (data && meta.table.object === "dataset") {
+			let { propertiesMeta } = this.state;
+			propertiesMeta.properties = metaDescriptions(
+				"properties",
+				this.props.callbacks,
+				this.state.functions,
+				this.state.meta.properties,
+				data
+			).properties;
+			// this.setState({ status: this.state.status });
+		}
+		return true;
 	};
 	initTabs = props => {
 		const tabs = [
@@ -176,11 +186,12 @@ export class ZebulonTableAndConfiguration extends Component {
 						key="dataset"
 						id="dataset"
 						visible={this.state.selectedTab === 0}
+						isActive={this.state.selectedTab === 0}
 						data={this.state.data}
 						meta={this.state.meta}
 						filters={this.state.filters}
 						updatedRows={this.state.updatedRows}
-						sizes={this.sizes}
+						sizes={this.state.sizes}
 						functions={this.state.functions}
 						params={props.params}
 						keyEvent={null}
@@ -188,6 +199,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						ref={ref => (this.dataset = ref)}
 						errorHandler={this.errorHandler}
 						navigationKeyHandler={this.props.navigationKeyHandler}
+						onGetData={this.onGetData}
 					/>
 				)
 			},
@@ -199,10 +211,11 @@ export class ZebulonTableAndConfiguration extends Component {
 						key="properties"
 						id="properties"
 						visible={this.state.selectedTab === 1}
+						isActive={this.state.selectedTab === 1}
 						data={this.state.meta.properties}
 						meta={this.state.propertiesMeta}
 						updatedRows={this.state.propertiesUpdatedRows}
-						sizes={this.sizes}
+						sizes={this.state.sizes}
 						onChange={this.onChangeProperties}
 						onRowNew={this.onRowNew}
 						onTableEnter={this.onTableEnter}
@@ -222,10 +235,11 @@ export class ZebulonTableAndConfiguration extends Component {
 						key="functions"
 						id="functions"
 						visible={this.state.selectedTab === 2}
+						isActive={this.state.selectedTab === 2}
 						data={this.state.functions}
 						meta={this.state.functionsMeta}
 						updatedRows={this.state.functionUpdatedRows}
-						sizes={this.sizes}
+						sizes={this.state.sizes}
 						functions={this.state.functions}
 						params={props.params}
 						onTableEnter={this.onTableEnter}
@@ -263,25 +277,17 @@ export class ZebulonTableAndConfiguration extends Component {
 		return tabs;
 	};
 
-	// componentDidMount() {
-	// 	this.props.getRef(this);
-	// }
-	// onChangeProperties = ({ column }) => {
-	// 	if (
-	// 		column.id === "width" ||
-	// 		column.id === "format" ||
-	// 		column.id === "select"
-	// 	) {
-	// 		computeMeta(this.state.meta, this.state.functions);
-	// 	}
-	// };
 	onTableEnter = ({ meta }) => {
 		computeMeta(meta, this.zoomValue, this.state.functions);
 	};
 	onSelectTab = index => {
-		if (this[this.tabs[this.state.selectedTab].id].table.canQuit()) {
-			this.setState({ selectedTab: index });
-		}
+		const { selectedTab } = this.state;
+		this[this.tabs[selectedTab].id].table.canQuit("quit", ok => {
+			if (ok) {
+				// console.log("selectedTab", index);
+				this.setState({ selectedTab: index });
+			}
+		});
 	};
 	// onRowNew = ({ row }) => {
 	// 	computeMeta(this.state.meta, this.state.functions);

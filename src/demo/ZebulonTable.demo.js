@@ -11,6 +11,8 @@ import { getFilters } from "../table/utils/filters.sorts";
 // import { Layout, components, layout } from "./Layout";
 // import { MyLayout } from "./layout.example";
 import { MyDataset } from "./dataset.example";
+import { MyDatasetConfiguration } from "./dataset.configuration";
+
 import { ResizableBox } from "react-resizable";
 import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
@@ -61,7 +63,7 @@ class ZebulonTableDemo extends Component {
     document.addEventListener("keydown", this.handleKeyEvent);
     window.addEventListener("beforeunload", this.handleKeyEvent);
   }
-  componentDidUnMount() {
+  componentWillUnmount() {
     document.removeEventListener("copy", this.handleKeyEvent);
     document.removeEventListener("paste", this.handleKeyEvent);
     document.removeEventListener("keydown", this.handleKeyEvent);
@@ -92,13 +94,12 @@ class ZebulonTableDemo extends Component {
     {
       id: "dataset",
       caption: "Dataset and server"
+    },
+    {
+      id: "selfConfig",
+      caption: "Manage configuration",
+      disabled: true
     }
-    // ,
-    // {
-    //   id: "selfConfig",
-    //   caption: "Self configuration",
-    //   disabled: true
-    // },
     // {
     //   id: "layout",
     //   caption: "Multi instance and styles",
@@ -122,7 +123,6 @@ class ZebulonTableDemo extends Component {
     let header = null,
       footer = null;
     const sizes = { ...this.state.sizes };
-
     if (tabIndex === 0) {
       return (
         <MyDataset
@@ -133,30 +133,19 @@ class ZebulonTableDemo extends Component {
           sizes={sizes}
         />
       );
+    } else if (tabIndex === 1) {
+      sizes.height = sizes.height - 52;
+      return (
+        <MyDatasetConfiguration
+          key="dataset"
+          id="dataset"
+          functions={functions}
+          keyEvent={keyEvent}
+          sizes={sizes}
+        />
+      );
     }
-    // else if (tabIndex === 1) {
-    //   return (
-    //     <div style={{ fontFamily: "sans-serif" }} id="zebulon">
-    //       {header}
-    //       <ZebulonTableAndConfiguration
-    //         functions={functions}
-    //         params={params}
-    //         visible={this.state.selectedTab === 1}
-    //         isActive={this.state.selectedTab === 1}
-    //         data={data}
-    //         meta={meta}
-    //         filters={filters}
-    //         sorts={sorts}
-    //         updatedRows={updatedRows}
-    //         status={status}
-    //         sizes={sizes}
-    //         keyEvent={keyEvent}
-    //         errorHandler={this.errorHandler}
-    //       />
-    //       {footer}
-    //     </div>
-    //   );
-    // } else if (tabIndex === 2) {
+    // else if (tabIndex === 2) {
     //   return (
     //     <MyLayout
     //       // layout={layout}

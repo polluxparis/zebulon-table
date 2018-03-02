@@ -26,6 +26,7 @@ export const countries = [
 	{ id: 11, code: "JP", label: "Japan", currency_id: 5 },
 	{ id: 11, code: "CH", label: "Switzerland", currency_id: 6 }
 ].reduce((acc, country) => {
+	country.pk_ = country.id;
 	acc[country.id] = country;
 	return acc;
 }, {});
@@ -39,6 +40,7 @@ export const currencies = [
 	{ id: 5, code: "JPY", label: "Yen", symbol: "jp¥", rate: 136 },
 	{ id: 6, code: "CHF", label: "Swiss franc", symbol: "Fr.", rate: 1.15 }
 ].reduce((acc, currency) => {
+	currency.pk_ = currency.id;
 	acc[currency.id] = currency;
 	return acc;
 }, {});
@@ -75,6 +77,7 @@ export const colors = [
 export const products = {};
 for (let i = 0; i < 200; i++) {
 	products[i] = {
+		pk_: i,
 		id: i,
 		label: `Product ${i}`,
 		shape: shapes[Math.ceil(Math.random() * (shapes.length - 1.001))],
@@ -109,6 +112,7 @@ export const getMockDataset = nRow => {
 		);
 		d.push(row);
 	}
+	data = d;
 	return {
 		data: d,
 		currencies,

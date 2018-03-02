@@ -177,75 +177,8 @@ The data set (data property) can be:
   ]
 ```
 * a promise (from the server) that will be resolved as an array of objects.
-* an observable (from the server) that will push by page arrays of objects (the full dataset will be loaded in background).
+* an observable (from the server) that will push, by page, arrays of objects (the full dataset will be loaded in background).
 * a pagination manager as a function to retrieve the appropriate pages from the server. In this case, the full dataset is not loaded locally, but only the diplayed page.
-### Object properties and foreign keys
-A row entry can be an object, a pointer to an object or a foreign key referencing an object. Foreign keys can be used to retrieve an object using the accessor of and "object property".
-Accessors are executed only when the component renders, except for "object properties": the referenced object is stored initialy in the dataset and then, it's properties can be referenced by the other columns.
-The foreign object can be manage as
-* a select input (meta.properties[x].select) as an array of objects or an object of objects,
-N.B.
-```js
-    {
-      id: "currency_id",
-      width: 0,
-      dataType: "number",
-      hidden: true
-    },
-    {
-      id: "currency",
-      caption: "Currency",
-      width: 0,
-      dataType: "object",
-      mandatory: true,
-      hidden: true,
-      accessor: "currency",
-      primaryKeyAccessor: "currency.id",
-      setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
-    },
-    {
-      id: "currency_cd",
-      caption: "Currency",
-      width: 100,
-      dataType: "string",
-      accessor: "currency.code",
-      filterType: "values",
-      editable: true,
-      select: currencies
-    }
-```
-* a zebulon table class (meta.properties[x].foreignObject)
-On cellQuit of the column with a foreign object, if no row match the filter (starts with the value entered in the column not case sensitive), the quit action will be canceled, if only 1 row match, the row will be set as the object else the referenced class will be displayed filtered as a modal dialog to select the appropriate row.
-```js
-    {
-      id: "thirdparty",
-      caption: "Thirdparty",
-      width: 0,
-      dataType: "object",
-      mandatory: true,
-      hidden: true,
-      primaryKeyAccessor: "thirdparty.id"
-    },
-    {
-      id: "thirdparty_cd",
-      caption: "Thirdparty",
-      width: 80,
-      dataType: "string",
-      accessor: "thirdparty.cd",
-      filterType: "values",
-      editable: true,
-      foreignObject: MyThirdparties
-    },
-```
-N.B.
-You may want to use a select input for limited items lists (eg currencies), in this case, it may be loaded on the client as an object of object 
-{
-  [primary key 1]:{id:[primary key 1],code:...},
-  [primary key 2]:{id:[primary key 2],code:...}},
-  ...
-} and referenced in the object accessor. Only the primary is needed in the original dataset.
-For more important foreign object (eg thirdparties), it is not loaded on the client but required from the server when needed. The referenced object should be loaded in the original dataset.
-
 ## Available functions and callbacks
 In the manipulation of the dataset, you may need to call functions for data calculation, formating, validation...
 Those functions are passed (functions property) to the component as 
@@ -324,7 +257,7 @@ An accessor is a descriptor(string) used to retrieve a function that returns dat
 #### data accessors (on properties)
 * The default accessor function is ({row})=>row[property.id].
 * You can refer to an other property value :"row.<referenced property id>", eg row.quantity. N.B. "row." is mandatory in this case to make the distinction with function accessors. Accessor function is ({row})=>row[referenced property.id] 
-* You can refer to a key of an object stored in a property :<referenced property id>.<key>, eg product.price. Accessor function is ({row})=>row[referenced property.id].[key]
+* You can refer to a key of an object stored in a property :row.<referenced property id>.<key>, eg row.product.price. Accessor function is ({row})=>row[referenced property.id].[key]
 * You can refer to a function accessor.
 #### function accessors
 Functions can be defined directly in the meta description or referenced by accessors: f =typeof meta...x===function?meta...x:functions[object][function type][meta...x]
@@ -423,6 +356,84 @@ List of possible values. It can be an array of values, an object {id:caption,...
 * onChange : Function triggered on cell changes. Parameters :({value,previousValue, row, status,column,data,params}).
 * onEnter : Function triggered when a cell is entered. Parameters :({value,previousValue, row, status,column,data,params}).
 * onQuit : Function triggered before change of focused cell.Parameters :({value,previousValue, row, status,column,data,params}).
+### Object properties and foreign keys
+A row entry can be an object (dataType="object"). 
+properties of the object can be referenced in accessors as row.[object property id].[key] (e.g row.currency.symbol). 
+It can be retrieved, on the client side when the dataset is loaded, from a joined object (dataType="joined object", select = [object accessor], accessor = [foreign key]).
+The foreign key is used to retrieve the object instance in the "select" object.
+If a property referencing the object is defined as editable, it will be displayed as a select input using the "select" object as the item list.  
+Usually accessors are evaluated only when the component renders, except for "joined object": the referenced object is stored initialy in the dataset and then, it's properties can be referenced by the other columns.
+N.B. The primary key in the "select" object must be used for object keys and referenced in the sub-object with key "pk_".
+Demo:
+products, currencies and countries are joined objects
+```js
+currencies={
+  1:{pk_:1,cd:"EUR", label:"Euro"},
+  2:{pk_:2,cd:"USD", label:"US dollar"},
+  ...
+};
+...
+    { // foreign key
+      id: "currency_id",
+      width: 0,
+      dataType: "number",
+      hidden: true
+    },
+    { // object
+      id: "currency",
+      caption: "Currency",
+      width: 0,
+      dataType: "joined object",
+      mandatory: true,
+      hidden: true,
+      accessor: "row.currency_id",
+      select: "currencies"
+    },
+    {
+      id: "currency_cd",
+      caption: "Currency",
+      width: 100,
+      dataType: "string",
+      accessor: "row.currency.cd",
+      filterType: "values",
+      editable: true, // if editable, the column will be displayed as a select input
+      select: currencies
+    }
+```
+A zebulon table class can be used to manage foreign objects.
+On cellQuit of the column referncing a foreign object, the component will be loaded. 
+If no row match the filter (starts with the value entered in the column not case sensitive), the quit action will be canceled, if only 1 row match, the row will be set in the object referenced in the accessor of th column, and the action will be resumed, else the component will be displayed filtered as a modal dialog to select the appropriate row.
+Demo:
+MyThirdparties class is used to manage thirdparties
+```js
+    {
+      id: "thirdparty",
+      caption: "Thirdparty",
+      width: 0,
+      dataType: "object",
+      mandatory: true,
+      hidden: true
+    },
+    {
+      id: "thirdparty_cd",
+      caption: "Thirdparty",
+      width: 80,
+      dataType: "string",
+      accessor: "row.thirdparty.cd",
+      filterType: "values",
+      editable: true,
+      foreignObject: MyThirdparties
+    },
+```
+N.B.
+You may want to use a "joined object" for limited items lists (eg currencies), in this case, it may be loaded on the client as an object of object 
+{
+  [primary key 1]:{pk_:[primary key 1],code:...},
+  [primary key 2]:{pk_:[primary key 2],code:...}},
+  ...
+} and referenced in the select accessor. Only the primary is needed in the original dataset and must be referenced in the object accessor.
+For more important foreign object (eg thirdparties), it is not loaded on the client but required from the server when needed. The referenced object should be loaded in the original dataset.
+
 ## Updated rows
 The updatedRows prop is an object with an entry for each updated rows in the table. The value of the key is the absolute index (or the primary key) of the row (index can be found in row.index_).
 ```js

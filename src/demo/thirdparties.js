@@ -571,9 +571,9 @@ export class MyThirdparties extends Component {
 		};
 		this.state = { functions: functionsTable(functionsObject), status: {} };
 	}
-	componentWillReceiveProps(nextProps) {
-		console.log(nextProps);
-	}
+	// componentWillReceiveProps(nextProps) {
+	// 	console.log(nextProps);
+	// }
 	// componentWillUnMount() {
 	// 	console.log("unmount");
 	// }
@@ -583,9 +583,9 @@ export class MyThirdparties extends Component {
 	// componentDidUnmount() {
 	// 	console.log("unmount2");
 	// }
-	componentWillUnmount() {
-		console.log("unmount3");
-	}
+	// componentWillUnmount() {
+	// 	console.log("unmount3");
+	// }
 
 	render() {
 		return React.cloneElement(

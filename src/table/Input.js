@@ -32,6 +32,20 @@ export class Input extends Component {
       loaded: true
     };
     this.focused = props.focused;
+    if (props.select && props.editable && props.focused) {
+      let options = props.select;
+      if (typeof options === "function") {
+        options = options(props.row);
+      }
+      if (utils.isPromise(options)) {
+        this.state.options = [];
+        options.then(options => {
+          this.setState({ options });
+        });
+      } else {
+        this.state.options = options;
+      }
+    }
   }
   componentWillReceiveProps(nextProps) {
     this.focused = nextProps.focused;
@@ -44,6 +58,17 @@ export class Input extends Component {
         value: nextProps.value,
         formatedValue
       });
+    }
+    const options = nextProps.select;
+    if (options) {
+      if (utils.isPromise(options)) {
+        this.state.options = [];
+        options.then(options => {
+          this.setState({ options });
+        });
+      } else {
+        this.setState({ options });
+      }
     }
   }
   validateInput = value => {
@@ -101,10 +126,13 @@ export class Input extends Component {
           column.reference &&
           column.select
         ) {
+          // const v = column.primaryKeyAccessorFunction({
+          //   row: { [column.reference]: validatedValue }
+          // });
+          // const fk = column.foreignKeyAccessor.slice(4);
+          // row[fk] = Number(v);
           column.setForeignKeyAccessorFunction({
-            value: column.primaryKeyAccessorFunction({
-              row: { [column.reference]: validatedValue }
-            }),
+            value: validatedValue.pk_,
             row
           });
         }
@@ -192,24 +220,26 @@ export class Input extends Component {
       // label;
       let disabled = !editable || undefined;
       if (select) {
-        let options = select;
+        let options = this.state.options;
 
-        if (typeof options === "function") {
-          options = options(row);
-        } else if (typeof options === "object") {
+        // if (typeof options === "function") {
+        //   options = options(row);
+        // }
+        if (typeof options === "object") {
           // const indexDot = column.accessor.indexOf(".");
           if (column.reference) {
             value = column.primaryKeyAccessorFunction({ row });
-            options = [{ id: undefined, label: "" }].concat(
-              Object.keys(select).map(key => ({
-                id: key,
-                caption: column.accessorFunction({
-                  row: { [column.reference]: select[key] }
-                })
-              }))
-            );
+            options = Object.keys(options).map(key => ({
+              id: key,
+              caption: column.accessorFunction({
+                row: { [column.reference]: options[key] }
+              })
+            }));
           } else {
             options = Object.values(options);
+          }
+          if (!column.mandatory) {
+            options = [{ id: undefined, label: "" }].concat(options);
           }
         }
         input = (
@@ -225,6 +255,7 @@ export class Input extends Component {
                 <option
                   key={index}
                   value={typeof item === "object" ? item.id : item}
+                  style={typeof item === "object" ? item.style || {} : {}}
                 >
                   {typeof item === "object" ? item.caption : item}
                 </option>

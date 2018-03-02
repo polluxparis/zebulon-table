@@ -1,4 +1,4 @@
-// import React from "react";
+import React from "react";
 import { utils } from "zebulon-controls";
 import {
 	getRowStatus,
@@ -7,15 +7,16 @@ import {
 	// aggregations
 } from "./utils/utils";
 import { Property } from "./Property";
+import { MyThirdparties } from "../demo/thirdparties";
 
 // const set = () => {};
-const functionToString = row => {
+const functionToString = ({ row }) => {
 	if (typeof row.functionJS === "function") {
 		return String(row.functionJS);
 	}
 	return row.functionJS;
 };
-const stringToFunction = (row, status) => {
+const stringToFunction = ({ row, status }) => {
 	let f;
 	try {
 		eval("f = " + row.functionJS);
@@ -39,7 +40,7 @@ const stringToFunction = (row, status) => {
 	}
 };
 export const onNext = (data, message) => {
-	console.log("onNext", data);
+	// console.log("onNext", data);
 	data.forEach(row => {
 		if (message.indexPk) {
 			const index = message.indexPk[row[message.meta.table.primaryKey]];
@@ -74,9 +75,48 @@ export const onError = (e, message) => {};
 
 export const functions = {
 	properties: {
-		accessors: {},
+		accessors: {
+			propertyType: ({ row }) => {
+				if (row.tp) {
+					return row.tp;
+				} else if (row.foreignObject) {
+					return typeof row.foreignObject === "string"
+						? row.foreignObject
+						: row.foreignObject.name;
+				} else if (
+					row.primaryKeyAccessor &&
+					row.setForeignKeyAccessor
+				) {
+					if (!row.reference) {
+						return "Joined object";
+					} else {
+						return `${row.reference} key`;
+					}
+				} else if (row.aggregation) {
+					return "Analytic";
+				} else if (row.accessor) {
+					return "Computed";
+				}
+			}
+		},
 		sorts: {},
-		formats: {},
+		formats: {
+			isArrayOrFunction: ({ value }) => {
+				if (typeof value === "function" || Array.isArray(value)) {
+					return (
+						<div
+							style={{
+								backgroundColor: "#f5f7da",
+								fontStyle: "italic"
+							}}
+						>
+							{Array.isArray(value) ? "array[]" : "fct()"}
+						</div>
+					);
+				}
+				return value;
+			}
+		},
 		aggregations: {},
 		selects: {},
 		validators: {
@@ -167,7 +207,7 @@ export const functions = {
 					: utils.formatValue(value, "dd/mm/yyyy hh:mi:ss")
 		},
 		accessors: {
-			mth: ({ row }) => {
+			mth_a: ({ row }) => {
 				if (utils.isNullOrUndefined(row.d)) {
 					return null;
 				}
@@ -180,6 +220,9 @@ export const functions = {
 			onNext,
 			onCompleted,
 			onError
+		},
+		foreignObjects: {
+			thirdparties: MyThirdparties
 		}
 	}
 };
@@ -188,9 +231,11 @@ export const metaDescriptions = (
 	object,
 	callbacks = {},
 	functions,
-	properties
+	properties,
+	data_
 ) => {
 	const f = functions;
+	const dataAccessors = {};
 	const getFunctions = (type, obj = object) => {
 		return f
 			.filter(
@@ -198,25 +243,53 @@ export const metaDescriptions = (
 					f.tp === type &&
 					(f.visibility === "global" || f.visibility === obj)
 			)
-			.reduce(
-				(acc, f) => {
-					acc[f.id] = { id: f.id, caption: f.caption || f.id };
-					return acc;
-				},
-				{ undefined: "" }
-			);
+			.reduce((acc, f) => {
+				acc[f.id] = {
+					id: f.id,
+					caption: f.caption || f.id,
+					type: "function",
+					style: { color: "blue" }
+				};
+				return acc;
+			}, {});
 	};
 	const getAccessors = obj => () => getFunctions("accessor", obj);
 	const getAccessorsAndProperties = obj => () => {
-		const accessors = getFunctions("accessor", obj);
-		properties.forEach(
-			property =>
-				(accessors[property.id] = {
-					id: property.id,
-					caption: property.caption
-				})
-		);
-		return accessors;
+		const dataAccessors = {};
+		properties.forEach(property => {
+			dataAccessors[property.id] = {
+				id: `row.${property.id}`,
+				caption: `row.${property.id}`,
+				type: "property"
+			};
+			if (data_) {
+				const row0 = data_[0];
+				if (row0[property.id] !== undefined && !property.accessor) {
+					property.tp = "Dataset";
+				}
+				if (
+					property.dataType === "object" ||
+					property.dataType === "joined object"
+				) {
+					data_.forEach(row => {
+						if (!utils.isNullValue(row[property.id])) {
+							Object.keys(row[property.id]).forEach(key => {
+								dataAccessors[property.id + "." + key] = {
+									id: `row.${property.id}.${key}`,
+									caption: `row.${property.id}.${key}`,
+									type: "object property"
+								};
+							});
+						}
+					});
+				}
+			}
+		});
+		return {
+			// console.log("getAccessorsAndProperties", obj, d);
+			...dataAccessors,
+			...getFunctions("accessor", obj)
+		};
 	};
 	const getAggregations = obj => () => getFunctions("aggregation", obj);
 	const getFormats = obj => () => getFunctions("format", obj);
@@ -226,6 +299,7 @@ export const metaDescriptions = (
 	const getValidators = obj => () => getFunctions("validator", obj);
 	const getEditables = obj => () => getFunctions("editable", obj);
 	const getDefaults = obj => () => getFunctions("default", obj);
+	const getForeignObjects = obj => () => getFunctions("foreignObject", obj);
 	if (object === "properties") {
 		return {
 			table: {
@@ -244,19 +318,21 @@ export const metaDescriptions = (
 						type: "duplicate",
 						caption: "Duplicate",
 						enable: "is_selected"
-					},
-					{
-						type: "detail",
-						caption: "Analytic",
-						enable: "isAnalytic",
-						content: Property
-					},
-					{
-						type: "action",
-						caption: "Apply",
-						action: callbacks.applyMeta,
-						enable: true
 					}
+					// ,
+					// {
+					// 	type: "detail",
+					// 	caption: "Analytic",
+					// 	enable: "isAnalytic",
+					// 	content: Property
+					// }
+					// ,
+					// {
+					// 	type: "action",
+					// 	caption: "Apply",
+					// 	action: callbacks.applyMeta,
+					// 	enable: true
+					// }
 					// ,
 					// {
 					// 	type: "action",
@@ -282,12 +358,13 @@ export const metaDescriptions = (
 				{
 					id: "tp",
 					caption: "Type",
-					width: 100,
+					width: 150,
 					dataType: "string",
-					editable: "isNotInitial",
-					select: ["", "Computed", "Analytic"],
+					editable: false,
 					default: "Computed",
-					mandatory: true
+					// mandatory: true,
+					accessor: "propertyType",
+					filterType: "values"
 				},
 				{
 					id: "dataType",
@@ -296,7 +373,15 @@ export const metaDescriptions = (
 					dataType: "isNotInitial",
 					editable: true,
 					filterType: "values",
-					select: ["", "number", "string", "text", "date", "boolean"]
+					select: [
+						"number",
+						"string",
+						"text",
+						"date",
+						"boolean",
+						"object",
+						"joined object"
+					]
 				},
 				{
 					id: "caption",
@@ -310,7 +395,7 @@ export const metaDescriptions = (
 					caption: "Editable",
 					width: 80,
 					dataType: "boolean",
-					editable: "isInitial",
+					editable: true,
 					default: false
 				},
 				{
@@ -327,14 +412,15 @@ export const metaDescriptions = (
 					width: 80,
 					dataType: "boolean",
 					editable: true,
-					default: true
+					default: false
 				},
 				{
 					id: "width",
 					caption: "Width",
 					width: 60,
 					dataType: "number",
-					editable: true
+					editable: true,
+					default: 100
 				},
 				{
 					id: "format",
@@ -351,19 +437,20 @@ export const metaDescriptions = (
 					width: 100,
 					dataType: "string",
 					editable: true,
-					select: ["", "starts", "=", ">=", "<=", "between", "values"]
+					select: ["starts", "=", ">=", "<=", "between", "values"]
 				},
 
 				// only for new properties
 				{
 					id: "accessor",
 					caption: "Accessor",
-					width: 100,
+					width: 150,
 					dataType: "string",
 					editable: "isNotInitial",
 					hidden: false,
 					filterType: "values",
-					select: getAccessors("dataset")
+					select: getAccessorsAndProperties("dataset", data_),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "select",
@@ -372,7 +459,8 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getSelects("dataset")
+					select: getSelects("dataset"),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "default",
@@ -380,9 +468,20 @@ export const metaDescriptions = (
 					width: 100,
 					dataType: "string",
 					editable: true,
-					hidden: true,
+					// hidden: true,
 					filterType: "values",
 					select: getDefaults("dataset")
+				},
+				{
+					id: "foreignObject",
+					caption: "Foreign object",
+					width: 150,
+					dataType: "string",
+					editable: true,
+					// hidden: true,
+					// filterType: "values",
+					select: getForeignObjects("dataset"),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "onChange",
@@ -391,7 +490,18 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getValidators("dataset")
+					select: getValidators("dataset"),
+					format: "isArrayOrFunction"
+				},
+				{
+					id: "onCellQuit",
+					caption: "On cell quit",
+					width: 100,
+					dataType: "string",
+					editable: true,
+					filterType: "values",
+					select: getValidators("dataset"),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "groupByAccessor",
@@ -401,7 +511,8 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "sortAccessor",
@@ -411,7 +522,8 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "aggregation",
@@ -421,7 +533,8 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAggregations("dataset")
+					select: getAggregations("dataset"),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "comparisonAccessor",
@@ -431,7 +544,8 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "startFunction",
@@ -441,7 +555,8 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getWindowFunctions("dataset")
+					select: getWindowFunctions("dataset"),
+					format: "isArrayOrFunction"
 				},
 				{
 					id: "endFunction",
@@ -451,7 +566,8 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getWindowFunctions("dataset")
+					select: getWindowFunctions("dataset"),
+					format: "isArrayOrFunction"
 				}
 			]
 		};
@@ -473,12 +589,13 @@ export const metaDescriptions = (
 						type: "duplicate",
 						caption: "Duplicate",
 						enable: "is_selected"
-					},
-					{
-						type: "action",
-						caption: "Export functions",
-						action: "exportFunctions"
 					}
+					// ,
+					// {
+					// 	type: "action",
+					// 	caption: "Export functions",
+					// 	action: "exportFunctions"
+					// }
 				]
 			},
 			row: { descriptor: "functionDescriptor" },
@@ -600,7 +717,7 @@ export const metaDescriptions = (
 					editable: true,
 					mandatory: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_)
 				},
 				{
 					id: "format",
@@ -674,7 +791,7 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_)
 				},
 				{
 					id: "labelAccessor",
@@ -682,7 +799,7 @@ export const metaDescriptions = (
 					width: 150,
 					dataType: "string",
 					editable: true,
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_)
 				},
 				{
 					id: "sort",
@@ -701,7 +818,7 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset")
+					select: getAccessorsAndProperties("dataset", data_)
 				},
 				{
 					id: "sortFunction",

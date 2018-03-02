@@ -118,19 +118,22 @@ export const meta = {
       mandatory: true,
       editable: "is_new",
       filterType: "between"
+      // accessor: ({ row }) => row.id
     },
     {
       id: "product",
       caption: "Product",
       width: 100,
-      dataType: "object",
+      dataType: "joined object",
       mandatory: true,
       hidden: true,
-      accessor: "product",
-      setForeignKeyAccessor: ({ value, row }) => {
-        row.product_id = value;
-      },
-      primaryKeyAccessor: "product.id"
+      // accessor: "product_a",
+      // setForeignKeyAccessor: ({ value, row }) => {
+      //   row.product_id = value;
+      // },
+      select: "products",
+      accessor: "row.product_id"
+      // primaryKeyAccessor: "product.id"
     },
     {
       id: "product_id",
@@ -146,11 +149,8 @@ export const meta = {
       dataType: "string",
       editable: true,
       filterType: "values",
-      select: ({ column }) =>
-        new Promise(resolve => setTimeout(resolve, 20)).then(
-          () => (column.selectItems = products)
-        ),
-      accessor: "product.label",
+      // select: "products",
+      accessor: "row.product.label",
       sortAccessor: "product.id",
       locked: true
     },
@@ -160,7 +160,7 @@ export const meta = {
       width: 100,
       dataType: "string",
       editable: false,
-      accessor: "product.shape",
+      accessor: "row.product.shape",
       filterType: "values"
     },
     {
@@ -169,7 +169,7 @@ export const meta = {
       width: 100,
       dataType: "string",
       editable: false,
-      accessor: "product.size",
+      accessor: "row.product.size",
       filterType: "values"
     },
     {
@@ -178,7 +178,8 @@ export const meta = {
       width: 100,
       dataType: "string",
       editable: true,
-      select: [""].concat(colors),
+      select: "colors",
+      mandatory: true,
       filterType: "values"
     },
 
@@ -188,7 +189,7 @@ export const meta = {
       width: 90,
       dataType: "number",
       editable: false,
-      accessor: "product.price",
+      accessor: "row.product.price",
       format: "price",
       filterType: "between"
     },
@@ -203,11 +204,12 @@ export const meta = {
       caption: "Country",
       mandatory: true,
       width: 100,
-      dataType: "object",
+      dataType: "joined object",
       hidden: true,
-      accessor: "country",
-      primaryKeyAccessor: "country.id",
-      setForeignKeyAccessor: ({ value, row }) => (row.country_id = value)
+      select: "countries",
+      accessor: "row.country_id"
+      // primaryKeyAccessor: "country.id"
+      // setForeignKeyAccessor: ({ value, row }) => (row.country_id = value)
     },
     {
       id: "country_cd",
@@ -216,8 +218,7 @@ export const meta = {
       dataType: "string",
       editable: true,
       filterType: "values",
-      accessor: "country.code",
-      select: countries
+      accessor: "row.country.code"
     },
     {
       id: "flag",
@@ -235,22 +236,23 @@ export const meta = {
       id: "currency",
       caption: "Currency",
       width: 0,
-      dataType: "object",
+      dataType: "joined object",
       mandatory: true,
       hidden: true,
-      accessor: "currency",
-      primaryKeyAccessor: "currency.id",
-      setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
+      select: "currencies",
+      accessor: "row.currency_id"
+      // primaryKeyAccessor: "currency.id"
+      // setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
     },
     {
       id: "currency_cd",
       caption: "Currency",
       width: 100,
       dataType: "string",
-      accessor: "currency.code",
+      accessor: "row.currency.code",
       filterType: "values",
-      editable: true,
-      select: currencies
+      editable: true
+      // select: "get_currencies"
     },
     {
       id: "thirdparty",
@@ -258,18 +260,18 @@ export const meta = {
       width: 0,
       dataType: "object",
       mandatory: true,
-      hidden: true,
-      primaryKeyAccessor: "thirdparty.id"
+      hidden: true //,
+      // primaryKeyAccessor: "thirdparty.id"
     },
     {
       id: "thirdparty_cd",
       caption: "Thirdparty",
       width: 80,
       dataType: "string",
-      accessor: "thirdparty.cd",
+      accessor: "row.thirdparty.cd",
       filterType: "values",
       editable: true,
-      foreignObject: MyThirdparties,
+      foreignObject: "thirdparties",
       noRefresh: false
     },
     {
@@ -280,6 +282,7 @@ export const meta = {
       dataType: "number",
       editable: true,
       filterType: "between"
+      // select: [1, 2, 3, 4, 5, 6, 7, 8, 9]
     },
     {
       id: "amt_eur",

@@ -4,6 +4,7 @@ import { computeData, aggregations } from "../table/utils/compute.data";
 import { getThirdparty } from "./thirdparties";
 import { data } from "./datasources";
 import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
+import { countries, currencies, colors, products } from "./datasources";
 import {
 	get_array,
 	get_promise,
@@ -112,13 +113,13 @@ export const errorHandler = {
 };
 export const datasetFunctions = {
 	selects: {
-		titi_lb: ({ row, params, status, data }) => [
-			"",
-			"titi_a",
-			"titi_b",
-			"titi_c",
-			"titi_d"
-		]
+		products,
+		countries,
+		currencies,
+		colors: ({ column }) =>
+			new Promise(resolve => setTimeout(resolve, 20)).then(
+				() => (column.selectItems = colors)
+			)
 	},
 	formats: {
 		"mm/yyyy": ({ value }) =>
@@ -206,7 +207,7 @@ export const datasetFunctions = {
 		}
 	},
 	accessors: {
-		qty3: ({ row }) => row.qty / 3,
+		qty: ({ row }) => row.qty / 3,
 
 		"amt_€": ({ row }) => row.qty * (row.product || {}).price,
 		amt_cur: ({ row }) =>

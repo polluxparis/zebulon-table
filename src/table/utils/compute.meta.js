@@ -68,6 +68,9 @@ export const computeMetaPositions = (meta, zoom) => {
   meta.properties.forEach((column, index) => {
     column.index_ = index;
     column.position = position;
+    if (column.dataType === "object" || column.dataType === "joined object") {
+      column.hidden = true;
+    }
     if (zoom !== undefined) {
       column.computedWidth = zoom * (column.hidden ? 0 : column.width || 0);
     }
@@ -194,10 +197,14 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
     }
+    if (column.dataType === "object" || column.dataType === "joined object") {
+      column.hidden = true;
+    }
     const width = zoom * (column.hidden ? 0 : column.width || 0);
     column.computedWidth = width;
     column.position = position;
     column.index_ = index;
+
     position += width;
     if (column.locked) {
       meta.lockedIndex = column.index_;
@@ -224,61 +231,97 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       "format",
       column.format
     );
-    const selectFunction = getFunction(
+    column.selectFunction = getFunction(
       functions,
       meta.table.object,
       "select",
       column.select
     );
+    column.foreignObjectFunction = getFunction(
+      functions,
+      meta.table.object,
+      "foreignObject",
+      column.foreignObject
+    );
     // select items can be defined as
     // - an array
     // - an object {id:caption...}
     // - an object {items:[select items],filter:[function to filter items with parameters as row,data...
-    let select = column.select;
-    if (selectFunction) {
-      select = selectFunction({ column }); //a voir
-      if (!Array.isArray(select) && typeof select === "object") {
-        if (typeof select.filter === "function") {
-          column.selectFilter = select.filter;
-          column.selectItems = select.items || [""];
-        } else {
-          column.selectItems = select || [""];
-        }
-      } else {
-        column.selectItems = select || [""];
-      }
+    if (Array.isArray(column.select)) {
+      column.selectItems = column.select;
     }
-    // reference to an object
-    if (
-      column.accessor &&
-      typeof column.accessor === "string" &&
-      column.accessor.indexOf(".") !== -1
-    ) {
-      column.reference = column.accessor.slice(0, column.accessor.indexOf("."));
-      const referencedColumn = meta.properties.find(
-        col => col.id === column.reference
-      );
-      column.primaryKeyAccessor = referencedColumn.primaryKeyAccessor;
-      column.setForeignKeyAccessor = referencedColumn.setForeignKeyAccessor;
-    }
+    // column.selectItems = select || [""];
+
     column.accessorFunction = getFunction(
       functions,
       meta.table.object,
       "accessor",
       column.accessor
     );
-    column.primaryKeyAccessorFunction = getFunction(
-      functions,
-      meta.table.object,
-      "accessor",
-      column.primaryKeyAccessor
-    );
-    column.setForeignKeyAccessorFunction = getFunction(
-      functions,
-      meta.table.object,
-      "accessor",
-      column.setForeignKeyAccessor
-    );
+    // column.primaryKeyAccessorFunction = getFunction(
+    //   functions,
+    //   meta.table.object,
+    //   "accessor",
+    //   column.primaryKeyAccessor
+    // );
+    if (column.dataType === "joined object" && column.select) {
+      column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
+      // column.primaryKeyAccessorFunction=({row})=>
+      if (
+        column.selectFunction &&
+        typeof column.selectFunction === "function"
+      ) {
+        column.selectItems = column.selectFunction();
+      } else if (column.selectFunction) {
+        column.selectItems = column.selectFunction;
+      } else {
+        column.selectItems = column.select;
+      }
+      const f = column.accessorFunction;
+      column.setForeignKeyAccessorFunction = message => {
+        const { value, row } = message;
+        row[column.accessor.replace("row.", "")] = value;
+      };
+      column.accessorFunction = ({ row }) => {
+        const v = f({ row });
+        return column.selectItems[v];
+      };
+    }
+    // reference to an object
+    if (column.accessor && typeof column.accessor === "string") {
+      let accessor = column.accessor;
+      let index = column.accessor.indexOf(".");
+      if (index !== -1 && accessor.slice(0, index) === "row") {
+        accessor = accessor.slice(index + 1);
+        index = accessor.indexOf(".");
+      }
+      if (index !== -1) {
+        column.reference = accessor.slice(0, accessor.indexOf("."));
+        const referencedColumn = meta.properties.find(
+          col => col.id === column.reference
+        );
+        if (referencedColumn) {
+          column.primaryKeyAccessorFunction = getFunction(
+            functions,
+            meta.table.object,
+            "accessor",
+            referencedColumn.accessor
+          );
+          // referencedColumn.accessorFunction;
+          column.setForeignKeyAccessorFunction = ({ value, row }) => {
+            row[referencedColumn.accessor.slice(4)] = value;
+          };
+          if (
+            referencedColumn.dataType === "joined object" &&
+            column.editable
+          ) {
+            column.select = " ";
+            column.selectItems = referencedColumn.selectItems;
+            column.mandatory = column.mandatory || referencedColumn.mandatory;
+          }
+        }
+      }
+    }
     column.sortAccessorFunction = getFunction(
       functions,
       meta.table.object,
@@ -369,7 +412,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
 // };
 export const computeMetaFromData = (data, meta, zoom, functions) => {
   let position = 0;
-  if (!meta.properties.length && data.length) {
+  if (!meta.properties.length && data && data.length) {
     const row = data[0];
     Object.keys(row).forEach((key, index) => {
       let dataType = typeof row[key],
@@ -404,7 +447,10 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
         width,
         dataType,
         alignement,
-        hidden: dataType === "object" || key === "index_",
+        hidden:
+          dataType === "object" ||
+          dataType === "joined object" ||
+          key === "index_",
         position,
         editable: !!meta.table.editable,
         index_: index,

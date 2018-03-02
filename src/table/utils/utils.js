@@ -13,7 +13,9 @@ export const rollback = status => {
       key => (status.rowUpdated[key] = status.row[key])
     );
   }
+  status.deleted_ = false;
   status.updated_ = false;
+  status.new_ = false;
   status.errors = {};
 };
 export const rollbackAll = (updatedRows, data) => {
@@ -21,6 +23,7 @@ export const rollbackAll = (updatedRows, data) => {
     const status = updatedRows[index];
     if (status.new_) {
       data.splice(status.rowUpdated.index_, 1);
+      delete updatedRows[index];
     } else if (status.updated_) {
       rollback(status);
     }

@@ -193,8 +193,8 @@ export class TableEvent extends TableMenu {
     if (status.deleted_) {
       status.deleted_ = false;
     } else {
-      setStatus(status, "deleted_");
       rollback(status);
+      setStatus(status, "deleted_");
     }
     this.setState({ status: this.state.status });
   };
@@ -513,7 +513,7 @@ export class TableEvent extends TableMenu {
     const foreignObjectQuit = ok_ => {
       const { column, row } = message;
       const value = row[column.id];
-      if (!(column.reference && column.foreignObject)) {
+      if (!(column.reference && column.foreignObjectFunction)) {
         return cellQuit(ok_);
       }
       if (utils.isNullValue(value)) {
@@ -522,7 +522,8 @@ export class TableEvent extends TableMenu {
       }
 
       const element = document.activeElement;
-      const col = column.accessor.replace(column.reference + ".", "");
+      let col = column.accessor.replace("row.", "");
+      col = col.replace(column.reference + ".", "");
       const filters = {
         [col]: { id: col, filterType: "startsNoCase", v: value }
       };
@@ -531,19 +532,20 @@ export class TableEvent extends TableMenu {
           this.noUpdate = true;
           element.focus();
         } else {
-          if (column.setForeignKeyAccessorFunction) {
-            column.setForeignKeyAccessorFunction({
-              value: column.primaryKeyAccessorFunction({
-                row: data
-              }),
-              row
-            });
-          }
+          // if (column.setForeignKeyAccessorFunction) {
+          //   // row[
+          //   //   column.foreignKeyAccessor.replace("row.", "")
+          //   // ] = column.primaryKeyAccessorFunction({ row: data });
+          //   column.setForeignKeyAccessorFunction({
+          //     value: column.primaryKeyAccessorFunction({ row: data }),
+          //     row
+          //   });
+          // }
           row[column.reference] = data;
         }
         return cellQuit(ok);
       };
-      this.props.onForeignKey(column.foreignObject, filters, callback);
+      this.props.onForeignKey(column.foreignObjectFunction, filters, callback);
       return;
     };
     if (!message.row || !message.updated) {
@@ -580,8 +582,11 @@ export class TableEvent extends TableMenu {
             message.row.index_,
             property.id,
             "mandatory",
-            utils.isNullValue(message.row[property.id]) &&
-            !message.status.deleted_
+            utils.isNullValue(
+              property.accessorFunction
+                ? property.accessorFunction({ row: message.row })
+                : message.row[property.id]
+            ) && !message.status.deleted_
               ? (property.caption || property.id) + ": mandatory data."
               : null
           );

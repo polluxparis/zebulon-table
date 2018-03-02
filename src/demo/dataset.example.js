@@ -168,29 +168,6 @@ export class MyDataset extends Component {
         }
       }
     });
-    // e => {
-    //               this.text =
-    //                 "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
-    //               this.setState({
-    //                 radioDataset: "get_promise",
-    //                 status: { loading: true }
-    //               });
-    //             }
-    //          onChange={e => {
-    //               this.text =
-    //               this.setState({
-    //                 radioDataset: "get_observable",
-    //                 status: { loading: true }
-    //               });
-    //             }}
-    //             e => {
-    //               this.text =
-
-    //               this.setState({
-    //                 radioDataset: "get_pagination_manager",
-    //                 status: { loading: true }
-    //               });
-    //             }
   };
   render() {
     const { keyEvent, functions } = this.props;

@@ -1,4 +1,4 @@
-// import { utils } from "zebulon-controls";
+import { utils } from "zebulon-controls";
 // ----------------------------------
 // common data access (row or fiels)
 // ----------------------------------
@@ -24,36 +24,28 @@ export const cellData = (row, column, status, data, params, focused) => {
   if (column.dataType === "date" && typeof value === "string") {
     value = new Date(value);
   }
-  // if (column.formatFunction && !(editable && focused)) {
-  //   value = column.formatFunction(value, row, params, status, data);
-  // }
 
-  let select = column.select ? column.selectItems || column.select : undefined;
-  if (
-    editable &&
-    focused &&
-    column.selectFilter &&
-    typeof column.selectFilter === "function"
-  ) {
-    select = column.selectFilter({
-      row,
-      status,
-      data,
-      params
-    });
-  }
+  let select =
+    column.select && editable && focused
+      ? column.selectItems || column.select
+      : undefined;
   //  map the data
-  if (
-    select &&
-    !Array.isArray(select) &&
-    typeof select === "object" &&
-    !column.accessorFunction
-  ) {
-    if (!(editable && focused)) {
-      // if (column.reference){value=
-      value = (select[value] || {}).caption;
-      select = null;
-    } else select = Object.values(select);
+  if (select) {
+    if (column.selectFunction && editable && focused && !column.selectItems) {
+      select = column.selectFunction({ column, row, data });
+    }
+    if (
+      !utils.isPromise(select) &&
+      !Array.isArray(select) &&
+      typeof select === "object" &&
+      !column.accessorFunction
+    ) {
+      select = Object.values(select);
+      // if (!(editable && focused)) {
+      //   value = (select[value] || {}).caption;
+      //   select = null;
+      // } else select = Object.values(select);
+    }
   }
   return { editable, select, value };
 };
@@ -64,8 +56,7 @@ export const computeData = (data, meta, startIndex) => {
   if (calcObjects) {
     foreignObjects = meta.properties.filter(
       column =>
-        column.primaryKeyAccessor !== undefined &&
-        column.accessorFunction !== undefined
+        column.dataType === "joined object" && column.accessor !== undefined
     );
   }
   const pk = meta.table.primaryKey;

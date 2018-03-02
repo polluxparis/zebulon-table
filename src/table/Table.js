@@ -102,6 +102,11 @@ export class Table extends TableFilterSort {
         filteredData = this.filters(nextProps.data, this.state.filters);
         this.sorts(filteredData, nextProps.meta.properties);
       }
+      if (nextProps.updatedRows !== this.props.updatedRows) {
+        this.updated = false;
+        this.rowUpdated = false;
+        this.tableUpdated = false;
+      }
       this.setState({
         data: nextProps.data || [],
         filteredData,
@@ -140,9 +145,9 @@ export class Table extends TableFilterSort {
     }
     this.rowHeight = nextProps.rowHeight;
     if (nextProps.visible && !this.props.visible) this.onTableEnter();
-    else if (!nextProps.visible && this.props.visible) {
-      this.onTableQuit();
-    }
+    // else if (!nextProps.visible && this.props.visible) {
+    //   this.onTableQuit();
+    // }
   }
   shouldComponentUpdate(nextProps, nextState) {
     return !nextProps.modal;
@@ -530,9 +535,9 @@ export class Table extends TableFilterSort {
         onActivation={this.props.onActivation}
       />
     );
-    let lockedLockedHeader = null;
+    let lockedHeaders = null;
     if (!utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth) {
-      lockedLockedHeader = (
+      lockedHeaders = (
         <Headers
           onSort={this.onSort}
           meta={meta}
@@ -633,7 +638,7 @@ export class Table extends TableFilterSort {
         {title}
         <div style={{ display: "-webkit-box" }}>
           {statusBarHeader}
-          {lockedLockedHeader}
+          {lockedHeaders}
           {headers}
         </div>
         <div
