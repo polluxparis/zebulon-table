@@ -7,7 +7,7 @@ import {
 	// aggregations
 } from "./utils/utils";
 import { Property } from "./Property";
-import { MyThirdparties } from "../demo/thirdparties";
+// import { MyThirdparties } from "../demo/thirdparties";
 
 // const set = () => {};
 const functionToString = ({ row }) => {
@@ -220,9 +220,6 @@ export const functions = {
 			onNext,
 			onCompleted,
 			onError
-		},
-		foreignObjects: {
-			thirdparties: MyThirdparties
 		}
 	}
 };
