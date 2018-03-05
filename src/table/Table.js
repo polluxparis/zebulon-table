@@ -177,7 +177,10 @@ export class Table extends TableFilterSort {
       auditedRow,
       audits
     } = this.state;
-    let actions = auditedRow || isModal ? [] : meta.table.actions || [];
+    let actions =
+      auditedRow || isModal
+        ? []
+        : meta.table.actions.filter(action => !action.hidden) || [];
     if (!visible) {
       return null;
     } else if (status.loading || status.loadingConfig) {
@@ -246,7 +249,7 @@ export class Table extends TableFilterSort {
             position: "absolute",
             border: "solid 0.1em rgba(0, 0, 0, 0.5)",
             backgroundColor: "white",
-            top: top + (headersLength - 1) * this.rowHeight,
+            top: top + (headersLength - 2) * this.rowHeight,
             left,
             zIndex: 3,
             opacity: 1
@@ -412,7 +415,7 @@ export class Table extends TableFilterSort {
             lastColumn.computedWidth +
             this.rowHeight * (statusBar !== null),
           width - 4 * actions.length
-        ) / actions.length;
+        ) / actions.length || 0;
       const style = {
         width: actionsWidth,
         margin: 2,

@@ -5,16 +5,17 @@ import { computeData, aggregations } from "../table/utils/compute.data";
 import { MyThirdparties } from "./thirdparties";
 import { data } from "./datasources";
 import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
-import { countries, currencies, colors, products } from "./datasources";
+// import { countries, currencies, colors, products } from "./datasources";
 import {
 	get_array,
 	get_promise,
 	get_observable,
 	get_subscription,
 	get_pagination_manager,
-	getCountry,
-	getCurrency,
-	getProduct
+	getCountries,
+	getCurrencies,
+	getProducts,
+	getColors
 	// getAudits
 } from "./datasources";
 // asynchronous function (check on the server simulation)
@@ -114,13 +115,10 @@ export const errorHandler = {
 };
 export const datasetFunctions = {
 	selects: {
-		products,
-		countries,
-		currencies,
-		colors: ({ column }) =>
-			new Promise(resolve => setTimeout(resolve, 20)).then(
-				() => (column.selectItems = colors)
-			)
+		getProducts,
+		getCountries,
+		getCurrencies,
+		getColors
 	},
 	formats: {
 		"mm/yyyy": ({ value }) =>
@@ -211,8 +209,11 @@ export const datasetFunctions = {
 		qty: ({ row }) => row.qty / 3,
 
 		"amt_€": ({ row }) => row.qty * (row.product || {}).price,
-		amt_cur: ({ row }) =>
-			row.qty * (row.product || {}).price * (row.currency || {}).rate,
+		amt_cur: ({ row }) => {
+			return (
+				row.qty * (row.product || {}).price * (row.currency || {}).rate
+			);
+		},
 		mth: ({ row }) => {
 			if (utils.isNullOrUndefined(row.d)) {
 				return null;
@@ -221,9 +222,9 @@ export const datasetFunctions = {
 			d.setDate(1);
 			return d;
 		},
-		country: ({ row }) => getCountry(row.country_id),
-		currency: ({ row }) => getCurrency(row.currency_id),
-		product: ({ row }) => getProduct(row.product_id),
+		// country: ({ row }) => getCountry(row.country_id),
+		// currency: ({ row }) => getCurrency(row.currency_id),
+		// product: ({ row }) => getProduct(row.product_id),
 		// thirdparty: ({ row }) => getThirdparty(row.thirdparty_id),
 		flag: ({ row }) => {
 			if (

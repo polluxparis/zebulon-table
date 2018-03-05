@@ -12,25 +12,31 @@ import { thirdparties } from "./thirdparties";
 // array
 // -------------------------------------------
 export const countries = [
-	{ id: 0, code: "FR", label: "France", currency_id: 0 },
-	{ id: 1, code: "GB", label: "United kingdom", currency_id: 1 },
-	{ id: 2, code: "US", label: "United states of America", currency_id: 2 },
-	{ id: 3, code: "CA", label: "Canada", currency_id: 3 },
-	{ id: 4, code: "CN", label: "China", currency_id: 4 },
-	{ id: 5, code: "IT", label: "Italy", currency_id: 0 },
-	{ id: 6, code: "DE", label: "Germany", currency_id: 0 },
-	{ id: 7, code: "BE", label: "Belgium", currency_id: 0 },
-	{ id: 8, code: "IE", label: "Ireland", currency_id: 0 },
-	{ id: 9, code: "ES", label: "Spain", currency_id: 0 },
-	{ id: 10, code: "NL", label: "Netherland", currency_id: 0 },
-	{ id: 11, code: "JP", label: "Japan", currency_id: 5 },
-	{ id: 11, code: "CH", label: "Switzerland", currency_id: 6 }
+	{ id: 0, code: "FR", label: "France", currency_id: 0, vat: 0.2 },
+	{ id: 1, code: "GB", label: "United kingdom", currency_id: 1, vat: 0.15 },
+	{
+		id: 2,
+		code: "US",
+		label: "United states of America",
+		currency_id: 2,
+		vat: 0.05
+	},
+	{ id: 3, code: "CA", label: "Canada", currency_id: 3, vat: 0.12 },
+	{ id: 4, code: "CN", label: "China", currency_id: 4, vat: 0.3 },
+	{ id: 5, code: "IT", label: "Italy", currency_id: 0, vat: 0.15 },
+	{ id: 6, code: "DE", label: "Germany", currency_id: 0, vat: 0.17 },
+	{ id: 7, code: "BE", label: "Belgium", currency_id: 0, vat: 0.2 },
+	{ id: 8, code: "IE", label: "Ireland", currency_id: 0, vat: 0.15 },
+	{ id: 9, code: "ES", label: "Spain", currency_id: 0, vat: 0.15 },
+	{ id: 10, code: "NL", label: "Netherland", currency_id: 0, vat: 0.18 },
+	{ id: 11, code: "JP", label: "Japan", currency_id: 5, vat: 0.25 },
+	{ id: 11, code: "CH", label: "Switzerland", currency_id: 6, vat: 0.1 }
 ].reduce((acc, country) => {
 	country.pk_ = country.id;
 	acc[country.id] = country;
 	return acc;
 }, {});
-export const getCountry = id => countries[id];
+export const getCountries = () => countries;
 export const currencies = [
 	{ id: 0, code: "EUR", label: "Euro", symbol: "€", rate: 1 },
 	{ id: 1, code: "GBP", label: "British pound", symbol: "£", rate: 0.88 },
@@ -44,7 +50,7 @@ export const currencies = [
 	acc[currency.id] = currency;
 	return acc;
 }, {});
-export const getCurrency = id => currencies[id];
+export const getCurrencies = () => currencies;
 
 export const shapes = [
 	"square",
@@ -73,6 +79,7 @@ export const colors = [
 	"grey",
 	"black"
 ];
+export const getColors = () => colors;
 
 export const products = {};
 for (let i = 0; i < 200; i++) {
@@ -87,7 +94,7 @@ for (let i = 0; i < 200; i++) {
 		currency_sym: "€"
 	};
 }
-export const getProduct = id => products[id];
+export const getProducts = () => products;
 
 export const getMockDataset = nRow => {
 	const d = [];
@@ -115,12 +122,12 @@ export const getMockDataset = nRow => {
 	data = d;
 	return {
 		data: d,
-		currencies,
-		countries,
-		products,
+		currencies: getCurrencies(),
+		countries: getCountries(),
+		products: getProducts(),
 		shapes,
 		sizes,
-		colors
+		colors: getColors()
 	};
 };
 // export const getAudits = id => {
@@ -138,9 +145,9 @@ export const get_array = ({ params, meta, filters }) => {
 		// this is necessary only because for demo, we are using the same filters and sorts functions as the client
 		// to simulate server actions
 		data.forEach(row => {
-			row.product = getProduct(row.product_id);
-			row.country = getCountry(row.country_id);
-			row.currency = getCurrency(row.currency_id);
+			row.product = products[row.product_id];
+			row.country = countries[row.country_id];
+			row.currency = currencies[row.currency_id];
 		});
 	}
 	return data;

@@ -496,6 +496,7 @@ export class TableEvent extends TableMenu {
         return false;
       }
     }
+    message.row[message.column.id] = message.value;
     return true;
   };
   onCellQuit = message => this.onCellQuit_(message, message.callback);

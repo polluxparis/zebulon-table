@@ -7,47 +7,6 @@ export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
-  // getRatios = props => {
-  //   const {
-  //     height,
-  //     width,
-  //     rowHeight,
-  //     scroll,
-  //     data,
-  //     dataLength,
-  //     meta,
-  //     noVerticalScrollbar
-  //   } = props;
-  //   this.getRowWidth(props.meta);
-  //   const horizontalDisplay =
-  //     (width -
-  //       ((dataLength || data.length) * rowHeight > height
-  //         ? constants.ScrollbarSize
-  //         : 0)) /
-  //     this.rowWidth;
-  //   const verticalDisplay =
-  //     (height - (this.rowWidth > width ? constants.ScrollbarSize : 0)) /
-  //     ((dataLength || data.length) * rowHeight);
-  //   return {
-  //     vertical: {
-  //       display: verticalDisplay,
-  //       position: Math.min(
-  //         scroll.rows.startIndex / (dataLength || data.length),
-  //         1 - verticalDisplay
-  //       )
-  //     },
-  //     horizontal: {
-  //       display: horizontalDisplay,
-  //       position: Math.max(
-  //         Math.min(
-  //           scroll.columns.position / this.rowWidth,
-  //           1 - horizontalDisplay
-  //         ),
-  //         0
-  //       )
-  //     }
-  //   };
-  // };
 
   cell = (
     row,
@@ -212,6 +171,9 @@ export class Rows extends ScrollableGrid {
       hasFocus,
       dataLength
     } = this.props;
+    // if (data.length === 0) {
+    //   return null;
+    // }
     let i = 0,
       index = this.props.scroll.rows.startIndex,
       indexPage = 0,

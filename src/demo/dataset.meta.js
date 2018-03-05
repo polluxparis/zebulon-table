@@ -88,6 +88,7 @@ export const meta = {
         type: "action",
         caption: "Test",
         enable: true,
+        hidden: true,
         onTableChange: "test",
         action: ({ row, column }) =>
           alert(
@@ -131,7 +132,7 @@ export const meta = {
       // setForeignKeyAccessor: ({ value, row }) => {
       //   row.product_id = value;
       // },
-      select: "products",
+      select: "getProducts",
       accessor: "row.product_id"
       // primaryKeyAccessor: "product.id"
     },
@@ -178,7 +179,7 @@ export const meta = {
       width: 100,
       dataType: "string",
       editable: true,
-      select: "colors",
+      select: "getColors",
       mandatory: true,
       filterType: "values"
     },
@@ -206,7 +207,7 @@ export const meta = {
       width: 100,
       dataType: "joined object",
       hidden: true,
-      select: "countries",
+      select: "getCountries",
       accessor: "row.country_id"
       // primaryKeyAccessor: "country.id"
       // setForeignKeyAccessor: ({ value, row }) => (row.country_id = value)
@@ -239,7 +240,7 @@ export const meta = {
       dataType: "joined object",
       mandatory: true,
       hidden: true,
-      select: "currencies",
+      select: "getCurrencies",
       accessor: "row.currency_id"
       // primaryKeyAccessor: "currency.id"
       // setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)

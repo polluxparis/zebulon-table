@@ -89,6 +89,7 @@ export const computeMetaPositions = (meta, zoom) => {
 export const computeMeta = (meta, zoom = 1, functions) => {
   let position = 0;
   // table
+  meta.functions = functions;
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
   meta.zoom = zoom;
@@ -405,6 +406,9 @@ export const computeMeta = (meta, zoom = 1, functions) => {
         "window",
         column.windowEnd
       );
+    }
+    if (column.accessor && !column.reference && !column.onQuit) {
+      column.editable = false;
     }
   });
 };

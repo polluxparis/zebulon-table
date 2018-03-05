@@ -162,7 +162,7 @@ export class ZebulonTableAndConfiguration extends Component {
 			}
 		}
 	};
-	onGetData = ({ data, meta }) => {
+	onGetData = ({ data, meta, status }) => {
 		if (data && meta.table.object === "dataset") {
 			let { propertiesMeta } = this.state;
 			propertiesMeta.properties = metaDescriptions(
@@ -172,7 +172,7 @@ export class ZebulonTableAndConfiguration extends Component {
 				this.state.meta.properties,
 				data
 			).properties;
-			// this.setState({ status: this.state.status });
+			this.setState({ status });
 		}
 		return true;
 	};
@@ -220,6 +220,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						onRowNew={this.onRowNew}
 						onTableEnter={this.onTableEnter}
 						functions={this.state.functions}
+						status={this.state.status}
 						params={props.params}
 						keyEvent={null}
 						ref={ref => (this.properties = ref)}
@@ -262,7 +263,7 @@ export class ZebulonTableAndConfiguration extends Component {
 							data={this.state[tab.id]}
 							meta={this.state[`${tab.id}Meta`]}
 							updatedRows={this.state[`${tab.id}UpdatedRows`]}
-							sizes={this.sizes}
+							sizes={this.state.sizes}
 							functions={this.state.functions}
 							params={props.params}
 							onTableEnter={this.onTableEnter}
@@ -277,14 +278,19 @@ export class ZebulonTableAndConfiguration extends Component {
 		return tabs;
 	};
 
-	onTableEnter = ({ meta }) => {
-		computeMeta(meta, this.zoomValue, this.state.functions);
-	};
+	// onTableEnter = ({ meta }) => {
+	// 	computeMeta(meta, this.zoomValue, this.state.functions);
+	// };
 	onSelectTab = index => {
 		const { selectedTab } = this.state;
 		this[this.tabs[selectedTab].id].table.canQuit("quit", ok => {
 			if (ok) {
 				// console.log("selectedTab", index);
+				computeMeta(
+					this.state.meta,
+					this.zoomValue,
+					this.state.functions
+				);
 				this.setState({ selectedTab: index });
 			}
 		});

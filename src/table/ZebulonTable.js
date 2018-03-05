@@ -98,6 +98,7 @@ export class ZebulonTable extends Component {
       data = data(message);
     }
     if (Array.isArray(data)) {
+      status = { loaded: true, loading: false };
       this.initData(
         data,
         meta,
@@ -105,9 +106,9 @@ export class ZebulonTable extends Component {
         this.state.functions,
         0,
         filters,
-        sorts
+        sorts,
+        status
       );
-      status = { loaded: true, loading: false };
       this.subscribe(message, this.state.meta.table.subscription);
     } else if (utils.isPromise(data)) {
       this.resolvePromise(data, message);
@@ -120,12 +121,12 @@ export class ZebulonTable extends Component {
     // }
     return { data, meta, status, filters, sorts };
   };
-  initData = (data, meta, zoom, functions, startIndex, filters) => {
+  initData = (data, meta, zoom, functions, startIndex, filters, status) => {
     if (data && data.length) {
       computeMetaFromData(data, meta, zoom, functions);
       computeData(data, meta, startIndex);
       if (this.props.onGetData) {
-        this.props.onGetData({ data, meta });
+        this.props.onGetData({ data, meta, status });
       }
     }
     this.initSizes(meta, data);
@@ -141,6 +142,7 @@ export class ZebulonTable extends Component {
   resolvePromise = (data, message) => {
     data
       .then(data => {
+        const status = { loaded: true, loading: false };
         if (!this.state.meta.serverPagination) {
           this.initData(
             data,
@@ -148,7 +150,8 @@ export class ZebulonTable extends Component {
             this.zoomValue,
             this.state.functions,
             0,
-            this.state.filters
+            this.state.filters,
+            status
           );
         } else if (this.state.meta.properties.length === 0) {
           data({ startIndex: 0 }).then(page => {
@@ -158,13 +161,14 @@ export class ZebulonTable extends Component {
               this.zoomValue,
               this.state.functions,
               0,
-              this.state.filters
+              this.state.filters,
+              status
             );
           });
-          this.setState({ data, status: { loaded: true, loading: false } });
+          this.setState({ data, status });
           return data;
         }
-        this.setState({ data, status: { loaded: true, loading: false } });
+        this.setState({ data, status });
         this.subscribe(message, this.state.meta.table.subscription);
         return data;
       })
@@ -179,18 +183,20 @@ export class ZebulonTable extends Component {
     this.observable = observable;
     this.observable.subscribe(
       x => {
+        const status = { loaded: true, loading: false };
         this.initData(
           x,
           this.state.meta,
           this.zoomValue,
           this.state.functions,
           this.state.data.length,
-          this.state.filters
+          this.state.filters,
+          status
         );
         if (this.observable) {
           this.setState({
             data: this.state.data.concat(x),
-            status: { loaded: true, loading: false }
+            status
           });
         }
       },

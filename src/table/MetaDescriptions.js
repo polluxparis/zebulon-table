@@ -7,6 +7,7 @@ import {
 	// aggregations
 } from "./utils/utils";
 import { Property } from "./Property";
+import { getFunction } from "./utils/compute.meta";
 // import { MyThirdparties } from "../demo/thirdparties";
 
 // const set = () => {};
@@ -16,28 +17,34 @@ const functionToString = ({ row }) => {
 	}
 	return row.functionJS;
 };
-const stringToFunction = ({ row, status }) => {
+const stringToFunction = ({ row, status, meta }) => {
 	let f;
+	const accessor = (accessor, visibility) => {
+		return getFunction(
+			meta.functions,
+			visibility || row.visibility || "dataset",
+			"accessor",
+			accessor
+		);
+	};
 	try {
 		eval("f = " + row.functionJS);
 	} catch (e) {
 		const error = status.errors.functionJS || {};
 		error.JS = e.message;
 		status.errors.functionJS = error;
-		return;
 	}
 	if (typeof f === "function") {
 		row.functionJS = f;
 		if (status.errors.functionJS) {
 			delete status.errors.functionJS.JS;
 		}
-		return;
 	} else {
 		const error = status.errors.functionJS || {};
 		error.JS = "function not evaluated";
 		status.errors.functionJS = error;
-		return;
 	}
+	return true;
 };
 export const onNext = (data, message) => {
 	// console.log("onNext", data);
@@ -160,7 +167,7 @@ export const functions = {
 			}
 		},
 		validators: {
-			stringToFunction: ({ row, status }) => stringToFunction(row, status)
+			stringToFunction
 		},
 		actions: {
 			exportFunctions: ({ data }) =>
@@ -193,6 +200,12 @@ export const functions = {
 		formats: {
 			decimals: ({ value, column }) =>
 				utils.formatValue(value, null, column.decimals || 2),
+			percentage: ({ value, column }) =>
+				`${utils.formatValue(
+					value * 100,
+					null,
+					column.decimals || 2
+				)}%`,
 			"mm/yyyy": ({ value }) =>
 				utils.isNullOrUndefined(value)
 					? ""
@@ -207,7 +220,7 @@ export const functions = {
 					: utils.formatValue(value, "dd/mm/yyyy hh:mi:ss")
 		},
 		accessors: {
-			mth_a: ({ row }) => {
+			mth: ({ row }) => {
 				if (utils.isNullOrUndefined(row.d)) {
 					return null;
 				}
@@ -297,7 +310,41 @@ export const metaDescriptions = (
 	const getEditables = obj => () => getFunctions("editable", obj);
 	const getDefaults = obj => () => getFunctions("default", obj);
 	const getForeignObjects = obj => () => getFunctions("foreignObject", obj);
-	if (object === "properties") {
+	if (object === "dataset") {
+		return {
+			table: {
+				object: "dataset",
+				editable: true,
+				noFilter: false,
+				caption: "Dataset",
+				actions: [
+					{ type: "insert", caption: "New", enable: true },
+					{
+						type: "delete",
+						caption: "Delete",
+						enable: "is_selected"
+					},
+					{
+						type: "duplicate",
+						caption: "Duplicate",
+						enable: "is_selected"
+					},
+					{
+						type: "save",
+						caption: "Save",
+						enable: true
+					},
+					{
+						type: "refresh",
+						caption: "Refresh",
+						enable: true
+					}
+				]
+			},
+			row: {},
+			properties: []
+		};
+	} else if (object === "properties") {
 		return {
 			table: {
 				object,
@@ -576,7 +623,7 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New" },
+					{ type: "insert", caption: "New", enable: true },
 					{
 						type: "delete",
 						caption: "Delete",
@@ -586,13 +633,13 @@ export const metaDescriptions = (
 						type: "duplicate",
 						caption: "Duplicate",
 						enable: "is_selected"
+					},
+					{
+						type: "action",
+						caption: "Export functions",
+						action: "exportFunctions",
+						hidden: true
 					}
-					// ,
-					// {
-					// 	type: "action",
-					// 	caption: "Export functions",
-					// 	action: "exportFunctions"
-					// }
 				]
 			},
 			row: { descriptor: "functionDescriptor" },
@@ -610,7 +657,8 @@ export const metaDescriptions = (
 					caption: "Caption",
 					width: 150,
 					dataType: "string",
-					editable: true
+					editable: true,
+					filterType: "between"
 				},
 				{
 					id: "visibility",
