@@ -103,6 +103,8 @@ export const functions = {
 					return "Analytic";
 				} else if (row.accessor) {
 					return "Computed";
+				} else {
+					return "Dataset";
 				}
 			}
 		},
@@ -130,8 +132,8 @@ export const functions = {
 			row: ({ row, status, data, params }) => {}
 		},
 		editables: {
-			isInitial: ({ row }) => row.tp === "Initial",
-			isNotInitial: ({ row }) => row.tp !== "Initial",
+			isDataset: ({ row }) => row.tp === "Dataset",
+			isNotDataset: ({ row }) => row.tp !== "Dataset",
 			isAnalytic: ({ row }) => row.tp === "Analytic"
 		},
 		row: () => {},
@@ -237,12 +239,43 @@ export const functions = {
 	}
 };
 
+export const setPropertyAccessors = (properties, data) => {
+	const accessors = {};
+	properties.forEach(property => {
+		accessors[property.id] = {
+			id: `row.${property.id}`,
+			caption: `row.${property.id}`,
+			type: "property"
+		};
+		if (
+			data &&
+			(property.dataType === "object" ||
+				property.dataType === "joined object")
+		) {
+			data.forEach(row => {
+				if (!utils.isNullValue(row[property.id])) {
+					Object.keys(row[property.id]).forEach(key => {
+						accessors[property.id + "." + key] = {
+							id: `row.${property.id}.${key}`,
+							caption: `row.${property.id}.${key}`,
+							type: "object property"
+						};
+					});
+				}
+			});
+		}
+	});
+	propertyAccessors = accessors;
+};
+let propertyAccessors = {};
+
 export const metaDescriptions = (
 	object,
 	callbacks = {},
-	functions,
-	properties,
-	data_
+	functions
+	// ,
+	// properties,
+	// data_
 ) => {
 	const f = functions;
 	const dataAccessors = {};
@@ -265,36 +298,36 @@ export const metaDescriptions = (
 	};
 	const getAccessors = obj => () => getFunctions("accessor", obj);
 	const getAccessorsAndProperties = obj => () => {
-		const dataAccessors = {};
-		properties.forEach(property => {
-			dataAccessors[property.id] = {
-				id: `row.${property.id}`,
-				caption: `row.${property.id}`,
-				type: "property"
-			};
-			if (data_) {
-				const row0 = data_[0];
-				if (row0[property.id] !== undefined && !property.accessor) {
-					property.tp = "Dataset";
-				}
-				if (
-					property.dataType === "object" ||
-					property.dataType === "joined object"
-				) {
-					data_.forEach(row => {
-						if (!utils.isNullValue(row[property.id])) {
-							Object.keys(row[property.id]).forEach(key => {
-								dataAccessors[property.id + "." + key] = {
-									id: `row.${property.id}.${key}`,
-									caption: `row.${property.id}.${key}`,
-									type: "object property"
-								};
-							});
-						}
-					});
-				}
-			}
-		});
+		const dataAccessors = propertyAccessors;
+		// properties.forEach(property => {
+		// 	dataAccessors[property.id] = {
+		// 		id: `row.${property.id}`,
+		// 		caption: `row.${property.id}`,
+		// 		type: "property"
+		// 	};
+		// 	if (data_) {
+		// 		const row0 = data_[0];
+		// 		if (row0[property.id] !== undefined && !property.accessor) {
+		// 			property.tp = "Dataset";
+		// 		}
+		// 		if (
+		// 			property.dataType === "object" ||
+		// 			property.dataType === "joined object"
+		// 		) {
+		// 			data_.forEach(row => {
+		// 				if (!utils.isNullValue(row[property.id])) {
+		// 					Object.keys(row[property.id]).forEach(key => {
+		// 						dataAccessors[property.id + "." + key] = {
+		// 							id: `row.${property.id}.${key}`,
+		// 							caption: `row.${property.id}.${key}`,
+		// 							type: "object property"
+		// 						};
+		// 					});
+		// 				}
+		// 			});
+		// 		}
+		// 	}
+		// });
 		return {
 			// console.log("getAccessorsAndProperties", obj, d);
 			...dataAccessors,
@@ -356,7 +389,7 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "isNotInitial"
+						enable: "isNotDataset"
 					},
 					{
 						type: "duplicate",
@@ -370,7 +403,6 @@ export const metaDescriptions = (
 					// 	enable: "isAnalytic",
 					// 	content: Property
 					// }
-					// ,
 					// {
 					// 	type: "action",
 					// 	caption: "Apply",
@@ -396,7 +428,7 @@ export const metaDescriptions = (
 					caption: "Column",
 					width: 100,
 					dataType: "string",
-					editable: "isNotInitial",
+					editable: "isNotDataset",
 					mandatory: true
 				},
 				{
@@ -414,7 +446,7 @@ export const metaDescriptions = (
 					id: "dataType",
 					caption: "Data type",
 					width: 100,
-					dataType: "isNotInitial",
+					dataType: "isNotDataset",
 					editable: true,
 					filterType: "values",
 					select: [
@@ -490,10 +522,10 @@ export const metaDescriptions = (
 					caption: "Accessor",
 					width: 150,
 					dataType: "string",
-					editable: "isNotInitial",
+					editable: "isNotDataset",
 					hidden: false,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_),
+					select: getAccessorsAndProperties("dataset"),
 					format: "isArrayOrFunction"
 				},
 				{
@@ -555,7 +587,7 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_),
+					select: getAccessorsAndProperties("dataset"),
 					format: "isArrayOrFunction"
 				},
 				{
@@ -566,7 +598,7 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_),
+					select: getAccessorsAndProperties("dataset"),
 					format: "isArrayOrFunction"
 				},
 				{
@@ -588,7 +620,7 @@ export const metaDescriptions = (
 					editable: true,
 					hidden: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_),
+					select: getAccessorsAndProperties("dataset"),
 					format: "isArrayOrFunction"
 				},
 				{
@@ -762,7 +794,7 @@ export const metaDescriptions = (
 					editable: true,
 					mandatory: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_)
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "format",
@@ -836,7 +868,7 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_)
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "labelAccessor",
@@ -844,7 +876,7 @@ export const metaDescriptions = (
 					width: 150,
 					dataType: "string",
 					editable: true,
-					select: getAccessorsAndProperties("dataset", data_)
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "sort",
@@ -863,7 +895,7 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getAccessorsAndProperties("dataset", data_)
+					select: getAccessorsAndProperties("dataset")
 				},
 				{
 					id: "sortFunction",

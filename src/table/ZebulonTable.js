@@ -13,7 +13,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { rollbackAll, getErrors } from "./utils/utils";
+import { rollbackAll, getErrors, errorHandler } from "./utils/utils";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -74,6 +74,10 @@ export class ZebulonTable extends Component {
   getData = (props, sorts) => {
     this.observable = null;
     let { data, meta, params, filters } = props,
+      // data =
+      //   meta.table.noDataMutation && Array.isArray(data)
+      //     ? [...props.data]
+      //     : data,
       status = { loaded: false, loading: true };
     const message = {
       dataObject: meta.table.object,
@@ -99,6 +103,9 @@ export class ZebulonTable extends Component {
     }
     if (Array.isArray(data)) {
       status = { loaded: true, loading: false };
+      if (meta.table.noDataMutation) {
+        data = [...data];
+      }
       this.initData(
         data,
         meta,
@@ -142,26 +149,27 @@ export class ZebulonTable extends Component {
   resolvePromise = (data, message) => {
     data
       .then(data => {
+        const { meta, serverPagination, functions, filters } = this.state;
         const status = { loaded: true, loading: false };
-        if (!this.state.meta.serverPagination) {
+        if (!meta.serverPagination) {
           this.initData(
             data,
-            this.state.meta,
+            meta,
             this.zoomValue,
-            this.state.functions,
+            functions,
             0,
-            this.state.filters,
+            filters,
             status
           );
-        } else if (this.state.meta.properties.length === 0) {
+        } else if (meta.properties.length === 0) {
           data({ startIndex: 0 }).then(page => {
             this.initData(
               page.page,
-              this.state.meta,
+              meta,
               this.zoomValue,
-              this.state.functions,
+              functions,
               0,
-              this.state.filters,
+              filters,
               status
             );
           });
@@ -169,7 +177,7 @@ export class ZebulonTable extends Component {
           return data;
         }
         this.setState({ data, status });
-        this.subscribe(message, this.state.meta.table.subscription);
+        this.subscribe(message, meta.table.subscription);
         return data;
       })
       .catch(error =>
@@ -184,6 +192,7 @@ export class ZebulonTable extends Component {
     this.observable.subscribe(
       x => {
         const status = { loaded: true, loading: false };
+
         this.initData(
           x,
           this.state.meta,
@@ -196,6 +205,7 @@ export class ZebulonTable extends Component {
         if (this.observable) {
           this.setState({
             data: this.state.data.concat(x),
+            meta: this.state.meta,
             status
           });
         }
@@ -400,29 +410,9 @@ export class ZebulonTable extends Component {
   // ----------------------------------------
   // comunication with server
   // ----------------------------------------
-  errorHandler_ = {
-    onTableChange: message => {
-      if (message.type !== "sort") {
-        message.modalBody = `Do you want to save before ${message.type}?`;
-      }
-      return true;
-    },
-    onSaveBefore: message => {
-      const errors = getErrors(message.updatedRows).map(
-        error =>
-          `\nOrder# ${message.updatedRows[error.rowIndex].rowUpdated
-            .id} : ${error.error}`
-      );
-      if (errors.length > 1) {
-        message.modalBody = ["Can't save with errors: "].concat(errors);
-      } else {
-        message.modalBody = null;
-      }
-      return true;
-    }
-  };
+
   errorHandler = (message, action, callback) => {
-    let handler = (this.props.errorHandler || this.errorHandler_)[action];
+    let handler = (this.props.errorHandler || errorHandler)[action];
     if (
       (action === "onTableQuit" || action === "onSave") &&
       !(message.updatedRows || {}).nErrors
@@ -439,13 +429,12 @@ export class ZebulonTable extends Component {
       message.conflicts = null;
       if (ok === false) {
         if (body) {
-          // this.confirmationModal = true;
           this.setState({
             confirmationModal: true,
             modal: { body, type: "Ok" }
           });
-          return false;
         }
+        return false;
       } else if (body) {
         // this.confirmationModal = true;
         const type = action === "onTableChange" ? "YesNoCancel" : "YesNo";
@@ -534,9 +523,27 @@ export class ZebulonTable extends Component {
     // local checks and process
     const end = ok_ => {
       if (ok_) {
-        Object.values(message.updatedRows)
-          .filter(status => status.deleted_)
-          .forEach(status => message.data.splice(status.row.index_, 1));
+        const { data, meta, serverData } = message;
+        if (serverData) {
+          const deleted = [];
+          serverData.forEach(row => {
+            if (row.status_ === "deleted") {
+              deleted.push(row.index_);
+            } else {
+              delete row.status_;
+              data[row.index_] = row;
+            }
+          });
+          deleted.sort((x, y) => x > y - y > x);
+          deleted.forEach((index_, index) => data.splice(index_ - index, 1));
+        } else {
+          Object.values(message.updatedRows)
+            .filter(status => status.deleted_)
+            .forEach(status =>
+              message.data.splice(status.rowUpdated.index_, 1)
+            );
+        }
+        computeData(data, meta, 0); // a voir startIndex en mode pagination
         this.setState({ updatedRows: {} });
       }
       if (callback) {
@@ -582,6 +589,17 @@ export class ZebulonTable extends Component {
       }
     };
     const saveBefore = ok_ => {
+      const updatedRows = message.updatedRows;
+      if (
+        Object.keys(updatedRows).filter(
+          key =>
+            key !== "nErrors" &&
+            ((updatedRows[key].new_ || 0) - (updatedRows[key].deleted_ || 0) ||
+              updatedRows[key].updated_)
+        ).length === 0
+      ) {
+        return end(true);
+      }
       const onSaveBefore =
         this.props.onSaveBefore ||
         this.state.meta.table.onSaveBeforeFunction ||

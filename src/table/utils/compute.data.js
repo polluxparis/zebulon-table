@@ -41,43 +41,38 @@ export const cellData = (row, column, status, data, params, focused) => {
       !column.accessorFunction
     ) {
       select = Object.values(select);
-      // if (!(editable && focused)) {
-      //   value = (select[value] || {}).caption;
-      //   select = null;
-      // } else select = Object.values(select);
     }
   }
   return { editable, select, value };
 };
-export const computeData = (data, meta, startIndex) => {
+export const computeRows = (data, meta, startIndex) => {
   let foreignObjects = [];
-  const calcIndex = data[0] && data[0].index_ === undefined;
-  const calcObjects = calcIndex || meta.serverPagination || true;
-  if (calcObjects) {
-    foreignObjects = meta.properties.filter(
-      column =>
-        column.dataType === "joined object" && column.accessor !== undefined
-    );
-  }
-  const pk = meta.table.primaryKey;
-  if (calcIndex || calcObjects) {
-    if (pk && !meta.indexPk) {
-      meta.indexPk = {};
+  foreignObjects = meta.properties.filter(
+    column =>
+      column.dataType === "joined object" && column.accessor !== undefined
+  );
+  const pk = meta.table.pk && !meta.table.pk.hidden;
+  const lk = meta.table.lk && !meta.table.lk.hidden;
+
+  data.forEach((row, index) => {
+    // if (calcIndex) {
+    row.index_ = index + (startIndex || 0);
+    // }
+    if (pk) {
+      meta.indexPk[row[pk.id]] = row.index_;
     }
-    data.forEach((row, index) => {
-      if (calcIndex) {
-        row.index_ = index + (startIndex || 0);
-      }
-      if (pk) {
-        meta.indexPk[row[pk]] = row.index_;
-      }
-      if (calcObjects) {
-        foreignObjects.forEach(
-          column => (row[column.id] = column.accessorFunction({ row }))
-        );
-      }
-    });
-  }
+    if (lk) {
+      meta.indexLk[row[lk.id]] = row.index_;
+    }
+    foreignObjects.forEach(
+      column => (row[column.id] = column.accessorFunction({ row }))
+    );
+    if (meta.table.noDataMutation) {
+      data[index] = { ...row };
+    }
+  });
+};
+export const computeAnalytics = (data, meta) => {
   const columns = meta.properties.filter(
     column =>
       column.aggregation &&
@@ -87,6 +82,10 @@ export const computeData = (data, meta, startIndex) => {
   columns.forEach(column => {
     computeAnalytic(data, column);
   });
+};
+export const computeData = (data, meta, startIndex) => {
+  computeRows(data, meta, startIndex);
+  computeAnalytics(data, meta);
 };
 // ----------------------------
 //  aggregations

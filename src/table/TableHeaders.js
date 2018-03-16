@@ -59,7 +59,7 @@ export const editCell = (
         // onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
-        onDoubleClick={onDoubleClick ? () => onDoubleClick(row) : () => {}}
+        onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
       >
         {glyph}
       </div>

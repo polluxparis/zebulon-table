@@ -176,6 +176,7 @@ The data set (data property) can be:
     ...
   ]
 ```
+N.B. By default, if you pass an array as the data prop (from a store by example), changes made in the component will be applied directly on the data array. If you want to avoid mutations, you can change this behavior by setting [meta.table.noDataMutation](#table) : true. In this case you may need an onSaveAfter function that will apply the changes,after saving, to the store.
 * a promise (from the server) that will be resolved as an array of objects.
 * an observable (from the server) that will push, by page, arrays of objects (the full dataset will be loaded in background).
 * a pagination manager as a function to retrieve the appropriate pages from the server. In this case, the full dataset is not loaded locally, but only the diplayed page.
@@ -282,6 +283,7 @@ N.B. if the table section is the only one defined, properties section will be in
     onSave: "onSave",
     onSaveBefore: undefined,
     onSaveAfter: undefined,
+    noDataMutation:false, // avoid the mutation of the dataset array prop. default false
     noFilter: false, // Indicator if the filter bar is diplayed. default : false
     noStatus: false, //  Indicator if the status bar is diplayed. default : false
     actions: []
@@ -293,7 +295,25 @@ N.B. if the table section is the only one defined, properties section will be in
 * onSaveBefore
 * onSaveAfter
 ##### Actions  
-Not documented yet
+It's possible to define action buttons, displayed after the grid in the action property.
+```js
+ [{
+          type: "select",
+          id: "submit",
+          caption: "Submit",
+          enable: "is_selected",
+          action: "myAction",
+          onTableChange: "submit", // save requirement before action
+          doubleClick: true
+        },
+        ...]
+```   
+types:
+* insert: insert a new row
+* duplicate: create a new row as selected one
+* delete: delete selected row
+* save: save changes
+* action: execute the action (defined in the action property)     
 ### row
 ```js
 {

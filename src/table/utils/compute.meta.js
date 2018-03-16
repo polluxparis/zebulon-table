@@ -123,6 +123,12 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     "dml",
     meta.table.onSaveAfter
   );
+  if (!meta.indexPk && !utils.isNullValue(meta.table.primaryKey)) {
+    meta.indexPk = {};
+  }
+  if (!meta.indexLk && !utils.isNullValue(meta.table.logicalKey)) {
+    meta.indexLk = {};
+  }
   meta.row.descriptorFunction = getFunction(
     functions,
     meta.table.object,
@@ -197,6 +203,12 @@ export const computeMeta = (meta, zoom = 1, functions) => {
   meta.properties.forEach((column, index) => {
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
+    }
+    if (column.id === meta.table.primaryKey) {
+      meta.table.pk = column;
+    }
+    if (column.id === meta.table.logicalKey) {
+      meta.table.lk = column;
     }
     if (column.dataType === "object" || column.dataType === "joined object") {
       column.hidden = true;
@@ -447,7 +459,7 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
       meta.properties.push({
         id: key,
         caption: key,
-        tp: "Initial",
+        tp: "Dataset",
         width,
         dataType,
         alignement,

@@ -58,7 +58,7 @@ export class Rows extends ScrollableGrid {
         onMouseOver={onMouseOver}
         onFocus={onFocus}
         onDoubleClick={
-          onDoubleClick ? () => onDoubleClick(row, column) : () => {}
+          onDoubleClick ? e => onDoubleClick(e, row, column) : () => {}
         }
       />
     );

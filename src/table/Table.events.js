@@ -122,19 +122,19 @@ export class TableEvent extends TableMenu {
       />
     );
   };
-  onDoubleClick = (row, column) => {
+  onDoubleClick = (e, row, column) => {
     if (this.props.onDoubleClick) {
       this.props.onDoubleClick(row, column);
     } else if (this.doubleClickAction) {
-      this.handleClickButton(this.doubleClickAction, row, column);
+      this.handleClickButton(this.doubleClickAction, e, row, column);
     }
   };
-  handleClickButton = (index, row, column) => {
+  handleClickButton = (index, e, row, column) => {
     this.closeOpenedWindows();
     const button = this.state.meta.table.actions[index];
     const rowIndex = this.state.selectedRange.end.rows;
     // let row = {};
-    if (rowIndex !== undefined) {
+    if (!row && rowIndex !== undefined) {
       row = this.getRow(rowIndex);
     }
     if (
@@ -155,26 +155,29 @@ export class TableEvent extends TableMenu {
         if (button.type === "detail" && button.content) {
           this.setState({ detail: button });
         } else {
-          return this.handleAction(button, row, column);
+          return this.handleAction(button, e, row, column);
         }
       }
     }
   };
-  handleAction = (button, row, column) => {
+  handleAction = (button, e, row, column) => {
     if (button.action) {
       const { selectedRange, updatedRows, data, meta } = this.state;
       const f = () =>
-        button.actionFunction({
-          row: row || this.row,
-          column,
-          selectedRange,
-          updatedRows,
-          data,
-          meta,
-          params: this.props.params,
-          action: button
-          // ...(e || {})
-        });
+        button.actionFunction(
+          {
+            row: row || this.row,
+            column,
+            selectedRange,
+            updatedRows,
+            data,
+            meta,
+            params: this.props.params,
+            action: button
+          },
+          e
+        );
+      // if changes save is required
       if (button.onTableChange) {
         this.props.onTableChange(button.onTableChange, ok => {
           if (ok) {
@@ -571,46 +574,53 @@ export class TableEvent extends TableMenu {
   //  row events
   //  -------------------------------
   onRowQuit = message => this.onRowQuit_(message, message.callback);
+  checkUnicity = (type, key, message) => {
+    const keyIndex = message.meta[type][message.row[key.id]];
+    const error = keyIndex !== message.row.index_ && keyIndex !== undefined;
+    manageRowError(
+      message.updatedRows,
+      message.row.index_,
+      key,
+      "duplicate key",
+      error ? `${key.caption}: duplicate key.` : null
+    );
+    if (!error) {
+      delete message.meta[type][message.previousRow[key.id]];
+      message.meta[type][message.row[key.id]] = message.row.index_;
+    }
+  };
   onRowQuit_ = (message, callback) => {
-    if (message.rowUpdated) {
-      message.status = this.state.updatedRows[message.row.index_];
+    const { meta, updatedRows, row, rowUpdated } = message;
+    if (rowUpdated) {
+      message.status = updatedRows[row.index_];
       // mandatory data
-      this.state.meta.properties
+      meta.properties
         .filter(property => property.mandatory)
         .forEach(property => {
           manageRowError(
-            message.updatedRows,
-            message.row.index_,
-            property.id,
+            updatedRows,
+            row.index_,
+            property,
             "mandatory",
             utils.isNullValue(
               property.accessorFunction
                 ? property.accessorFunction({ row: message.row })
-                : message.row[property.id]
+                : row[property.id]
             ) && !message.status.deleted_
               ? (property.caption || property.id) + ": mandatory data."
               : null
           );
         });
       // duplicate key
-      const pk = this.state.meta.table.primaryKey;
-      if (pk) {
-        const keyIndex = this.state.meta.indexPk[message.row[pk]];
-        const error = keyIndex !== message.row.index_ && keyIndex !== undefined;
-        manageRowError(
-          message.updatedRows,
-          message.row.index_,
-          pk,
-          "duplicate key",
-          error ? "duplicate key." : null
-        );
-        if (!error) {
-          delete this.state.meta.indexPk[message.previousRow[pk]];
-          this.state.meta.indexPk[message.row[pk]] = message.row.index_;
-        }
+      const pk = meta.table.pk;
+      const lk = meta.table.lk;
+      if (pk && !pk.hidden) {
+        this.checkUnicity("indexPk", pk, message);
       }
-      const onRowQuit =
-        this.props.onRowQuit || this.state.meta.row.onQuitFunction;
+      if (lk && !lk.hidden) {
+        this.checkUnicity("indexLk", lk, message);
+      }
+      const onRowQuit = this.props.onRowQuit || meta.row.onQuitFunction;
       let ok = onRowQuit ? onRowQuit(message) : true;
       ok = ok && this.props.errorHandler(message, "onRowQuit", callback);
 

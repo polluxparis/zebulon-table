@@ -151,11 +151,15 @@ export const buildPasteArray = (
         row[column.reference] = item;
         if (column.setForeignKeyAccessorFunction) {
           column.setForeignKeyAccessorFunction({
-            value: column.primaryKeyAccessorFunction({
-              row: { [column.reference]: item }
-            }),
+            value: item.pk_,
             row
           });
+          // column.setForeignKeyAccessorFunction({
+          //   value: column.primaryKeyAccessorFunction({
+          //     row: { [column.reference]: item }
+          //   }),
+          //   row
+          // });
         }
       }
       // can quit cell

@@ -238,9 +238,9 @@ export class Input extends Component {
           } else {
             options = Object.values(options);
           }
-          if (!column.mandatory) {
-            options = [{ id: undefined, label: "" }].concat(options);
-          }
+          // if (!column.mandatory) {
+          options = [{ id: undefined, label: "" }].concat(options);
+          // }
         }
         input = (
           <select

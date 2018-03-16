@@ -440,7 +440,9 @@ export class Table extends TableFilterSort {
           disabled={!enable}
           className={className}
           style={style}
-          onClick={e => this.handleClickButton(index, e)}
+          onClick={e => {
+            return this.handleClickButton(index, e);
+          }}
         >
           {action.caption}
         </button>

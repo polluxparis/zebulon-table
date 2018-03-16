@@ -15,8 +15,10 @@ export const rollback = status => {
   }
   status.deleted_ = false;
   status.updated_ = false;
-  status.new_ = false;
-  status.errors = {};
+  // status.new_ = false;
+  if (!status.new_) {
+    status.errors = {};
+  }
 };
 export const rollbackAll = (updatedRows, data) => {
   Object.keys(updatedRows).forEach(index => {
@@ -48,19 +50,19 @@ export const setStatus = (status, type) => {
   status.timeStamp = new Date().getTime();
 };
 //------------------------------------------------------------
-export const manageRowError = (updatedRows, index, object, type, error) => {
+export const manageRowError = (updatedRows, index, column, type, error) => {
   const status = updatedRows[index];
   const existsErrors = !utils.isNullOrUndefined(status.errors);
   const errors = status.errors || {};
-  const existsObject = !utils.isNullOrUndefined(errors[object]);
-  const objectErrors = errors[object] || {};
+  const existsObject = !utils.isNullOrUndefined(errors[column.id]);
+  const objectErrors = errors[column.id] || {};
   const existsType = !utils.isNullOrUndefined(objectErrors[type]);
   if (error) {
     objectErrors[type] = error;
     if (!existsType) {
       objectErrors.n_ = (objectErrors.n_ || 0) + 1;
       if (!existsObject) {
-        errors[object] = objectErrors;
+        errors[column.id] = objectErrors;
       }
       errors.n_ = (errors.n_ || 0) + 1;
       if (!existsErrors) {
@@ -73,7 +75,7 @@ export const manageRowError = (updatedRows, index, object, type, error) => {
       delete objectErrors[type];
       objectErrors.n_--;
       if (objectErrors.n_ === 0) {
-        delete errors[object];
+        delete errors[column.id];
       }
       errors.n_--;
     }
@@ -100,13 +102,43 @@ export const getRowErrors = (status, rowIndex) => {
   return errors;
 };
 export const getErrors = updatedRows => {
-  const errors = [];
+  let errors = [];
   Object.values(updatedRows).forEach(status => {
     if ((status.errors || {}).n_) {
-      errors.push(...getRowErrors(status, status.rowUpdated.index_));
+      errors = errors.concat(getRowErrors(status, status.rowUpdated.index_));
     }
   });
   return errors;
+};
+export const errorHandler = {
+  onTableChange: message => {
+    if (message.type !== "sort") {
+      message.modalBody = `Do you want to save before ${message.type}?`;
+    }
+    return true;
+  },
+  onSaveBefore: message => {
+    const { meta, updatedRows } = message;
+    const key = meta.table.lk || meta.table.pk;
+    const errors = getErrors(updatedRows).map(error => {
+      const rowUpdated = updatedRows[error.rowIndex].rowUpdated;
+      return `\n${key.caption} ${rowUpdated[key.id]} : ${error.error}`;
+    });
+    if (errors.length > 1) {
+      message.modalBody = ["Can't save with errors: "].concat(errors);
+      return false;
+    } else {
+      message.modalBody = null;
+    }
+    return true;
+  },
+  onSave: message => {
+    if (message.serverError) {
+      message.modalBody = message.serverError;
+      return false;
+    }
+    return true;
+  }
 };
 // -----------------------------------------------------------
 // Export configuration
