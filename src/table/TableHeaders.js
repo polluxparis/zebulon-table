@@ -1,71 +1,11 @@
 import React, { Component } from "react";
-import { utils, ContextualMenuClient } from "zebulon-controls";
-import { Input } from "./Input";
+import { utils, ContextualMenuClient, Input } from "zebulon-controls";
+// import { Input } from "./Input";
 import { computeMetaPositions } from "./utils/compute.meta";
 import { cellData } from "./utils/compute.data";
 import { getRowErrors } from "./utils/utils";
 import classnames from "classnames";
-export const editCell = (
-  style,
-  className,
-  index,
-  row,
-  status,
-  onClick,
-  onDoubleClick,
-  handleErrors,
-  componentId,
-  checkable,
-  onChange
-) => {
-  let glyph;
-  if (status.deleted_) {
-    glyph = "X";
-  } else if (status.new_) {
-    glyph = "+";
-  } else if (status.updated_) {
-    glyph = "√";
-  } else {
-    glyph = null;
-  }
-  const errors = getRowErrors(status, status.index_);
-  if (errors.length && !status.deleted_) {
-    style.color = "red";
-  }
-  if (checkable) {
-    glyph = (
-      <input
-        type="checkbox"
-        checked={status.checked_ || false}
-        onChange={() => onChange(row.index_)}
-        // style={{ height: 20 }}
-      />
-    );
-  }
-  return (
-    <ContextualMenuClient
-      id={"row-status: " + index}
-      key={index}
-      status={status}
-      row={row}
-      menuId="row-header-menu"
-      componentId={componentId}
-    >
-      <div
-        key={index}
-        className={className}
-        style={style}
-        onClick={() => onClick(index)}
-        // onDoubleClick={e => onDoubleClick(e, status)}
-        onMouseOver={e => handleErrors(e, errors)}
-        onMouseOut={e => handleErrors(e, [])}
-        onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
-      >
-        {glyph}
-      </div>
-    </ContextualMenuClient>
-  );
-};
+
 const filter = (
   column,
   position,
@@ -76,7 +16,8 @@ const filter = (
   openFilter,
   // handleDragOver,
   // handleDrop,
-  focusedId
+  focusedId,
+  componentId
 ) => {
   const className = classnames({
     "zebulon-table-cell": true,
@@ -103,11 +44,12 @@ const filter = (
   const focused =
     (focusedId || document.activeElement.id) ===
     String(column.index_ + 1000 * filterTo);
-
+  const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
   return (
     <Input
       column={column}
-      key={`${column.id}-filter${filterTo ? "-to" : ""}`}
+      id={id}
+      key={id}
       className={className}
       style={{
         // position: "absolute",
@@ -144,18 +86,18 @@ const header = (
   } else if (column.sort === "desc") {
     sort = "↓";
   }
-
+  const id = `header: ${componentId}--${column.index_}`;
   return (
     <ContextualMenuClient
-      id={"column-header: " + column.index_}
-      key={"column-header: " + column.index_}
+      id={id}
+      key={id}
       column={column}
       menuId="column-header-menu"
       componentId={componentId}
     >
       <div
-        key={`${column.id}-header`}
-        id={column.index_}
+        key={id}
+        id={id}
         draggable={true}
         className="zebulon-table-cell zebulon-table-header"
         onClick={() => handleClick(column, false)}
@@ -170,13 +112,13 @@ const header = (
           display: "flex"
         }}
       >
-        <div id={column.index_} style={{ width: width - 12 }}>
+        <div id={id} style={{ width: width - 12 }}>
           {column.caption || column.id}
         </div>
         <div style={{ display: "flex" }}>
           <div>{sort}</div>
           <div
-            id={column.index_}
+            id={id}
             draggable={true}
             style={{
               width: 3,
@@ -190,7 +132,7 @@ const header = (
     </ContextualMenuClient>
   );
 };
-const auditCell = (row, column, status, data, params, style) => {
+const auditCell = (row, column, status, data, params, style, componentId) => {
   const { value } = cellData(row, column, status, data, params, false);
   let textAlign = column.alignement || "left";
   if (!column.alignement) {
@@ -210,6 +152,7 @@ const auditCell = (row, column, status, data, params, style) => {
     // "zebulon-table-cell-editable": editable && focused
   });
   // if (column.dataType === "boolean") value = value || false;
+  const id = `audit-cell: ${componentId}-${row.index_}-${column.index_}`;
   return (
     <Input
       row={row}
@@ -217,7 +160,8 @@ const auditCell = (row, column, status, data, params, style) => {
       style={style}
       className={className}
       value={value}
-      key={`audit-cell-${row.index_}-${column.id}`}
+      key={id}
+      id={id}
     />
   );
 };
@@ -370,7 +314,15 @@ export class Headers extends Component {
               height: height / 2
             };
             div.push(
-              auditCell(auditedRow, column, auditStatus, data, params, style)
+              auditCell(
+                auditedRow,
+                column,
+                auditStatus,
+                data,
+                params,
+                style,
+                componentId
+              )
             );
           } else {
             div = [div];
@@ -387,7 +339,8 @@ export class Headers extends Component {
                   // this.handleDragStart,
                   // this.handleDragOver,
                   // this.handleDrop,
-                  focusedId
+                  focusedId,
+                  componentId
                 )
               );
             } else {
@@ -416,7 +369,8 @@ export class Headers extends Component {
                     openFilter,
                     // this.handleDragOver,
                     // this.handleDrop,
-                    focusedId
+                    focusedId,
+                    componentId
                   )
                 );
               } else {
@@ -466,6 +420,75 @@ export class Headers extends Component {
     }
   }
 }
+export const statusCell = (
+  style,
+  className,
+  index,
+  row,
+  status,
+  onClick,
+  onDoubleClick,
+  handleErrors,
+  componentId,
+  checkable,
+  onChange,
+  draggable,
+  handleDragStart
+) => {
+  let glyph;
+  if (status.deleted_) {
+    glyph = "X";
+  } else if (status.new_) {
+    glyph = "+";
+  } else if (status.updated_) {
+    glyph = "√";
+  } else {
+    glyph = null;
+  }
+  const errors = getRowErrors(status, status.index_);
+  if (errors.length && !status.deleted_) {
+    style.color = "red";
+  }
+  if (checkable) {
+    glyph = (
+      <input
+        type="checkbox"
+        checked={status.checked_ || false}
+        onChange={() => onChange(row.index_)}
+        // style={{ height: 20 }}
+      />
+    );
+  }
+  const id = `status: ${componentId}-${row.index_}-`;
+  return (
+    <ContextualMenuClient
+      // id={"row-status: " + index}
+      // key={index}
+      id={id}
+      key={id}
+      status={status}
+      row={row}
+      menuId="row-header-menu"
+      componentId={componentId}
+    >
+      <div
+        id={id}
+        key={id}
+        className={className}
+        style={style}
+        onClick={() => onClick(index)}
+        // onDoubleClick={e => onDoubleClick(e, status)}
+        onMouseOver={e => handleErrors(e, errors)}
+        onMouseOut={e => handleErrors(e, [])}
+        onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
+        draggable={draggable}
+        onDragStart={handleDragStart}
+      >
+        {glyph}
+      </div>
+    </ContextualMenuClient>
+  );
+};
 export class Status extends Component {
   constructor(props) {
     super(props);
@@ -499,6 +522,9 @@ export class Status extends Component {
       this.setState({ updatedRows });
     }
   };
+  handleDragStart = e => {
+    e.dataTransfer.setData("text", `status: ${e.target.id}`);
+  };
   render() {
     const {
       height,
@@ -510,7 +536,9 @@ export class Status extends Component {
       dataLength,
       componentId,
       checkable,
-      onDoubleClick
+      onDoubleClick,
+      draggable,
+      handleDragStart
     } = this.props;
     const updatedRows = this.state.updatedRows;
     let index = 0,
@@ -540,7 +568,7 @@ export class Status extends Component {
         });
         const ix = index;
         cells.push(
-          editCell(
+          statusCell(
             style,
             className,
             index + scroll.startIndex,
@@ -551,7 +579,8 @@ export class Status extends Component {
             (e, errors) => handleErrors(e, ix, errors),
             componentId,
             checkable,
-            this.onChange
+            this.onChange,
+            draggable
           )
         );
       }
@@ -559,7 +588,7 @@ export class Status extends Component {
     }
     return (
       <div
-        key={-1}
+        key={"status: " + componentId}
         style={{
           width: rowHeight,
           height,
@@ -573,15 +602,3 @@ export class Status extends Component {
     );
   }
 }
-// <div
-//   id="resize-bar"
-//   style={{
-//     position: "relative",
-//     top: 0,
-//     height: "inherit",
-//     width: 2,
-//     backgroundColor: "grey",
-//     overflow: "hidden"
-//     // ...this.getItemPosition()
-//   }}
-// />

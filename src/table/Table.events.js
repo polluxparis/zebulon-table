@@ -86,7 +86,13 @@ export class TableEvent extends TableMenu {
       e.clipboardData.getData("text"),
       this.state.meta.properties,
       this.state.selectedRange.end,
-      cell => this.selectRange_({ start: cell, end: cell }, undefined, "enter"),
+      cell =>
+        this.selectRange_(
+          { start: cell, end: cell },
+          x => x,
+          undefined,
+          "enter"
+        ),
       this.onChange,
       this.canQuit,
       this.state.filteredData,
@@ -196,14 +202,26 @@ export class TableEvent extends TableMenu {
     if (status.deleted_) {
       status.deleted_ = false;
     } else {
-      rollback(status);
+      if (!status.new_) {
+        rollback(status);
+      }
       setStatus(status, "deleted_");
     }
     this.setState({ status: this.state.status });
+    if (this.props.onRowDelete) {
+      const message = {
+        row,
+        status,
+        meta: this.state.meta,
+        data: this.state.data,
+        params: this.props.params
+      };
+      this.props.onRowDelete(message);
+    }
   };
   newRow = (row, index) => {
     const { selectedRange, updatedRows, filteredData, meta, data } = this.state;
-    if (this.selectRange(selectedRange, this.row, "quit") === false)
+    if (this.selectRange(selectedRange, undefined, this.row, "quit") === false)
       return false;
 
     const status = {
@@ -244,6 +262,7 @@ export class TableEvent extends TableMenu {
             columns: meta.properties.length - 1
           }
         },
+        undefined,
         row,
         "enter"
       );
@@ -373,11 +392,11 @@ export class TableEvent extends TableMenu {
       if (!extension) {
         range.start = cell;
       }
-      this.selectRange_(range);
+      this.selectRange_(range, x => x);
     }
     this.setState({ scroll });
   };
-  selectRange = (range, row, type, noFocus) => {
+  selectRange = (range, callback, row, type, noFocus) => {
     if (!this.state.status.loadingPage) {
       const startIndex = range.end.rows,
         stopIndex = range.end.rows;
@@ -385,14 +404,28 @@ export class TableEvent extends TableMenu {
         this.pagination({
           startIndex,
           stopIndex,
-          callbackAfter: () => this.selectRange_(range, row, type, noFocus)
+          callbackAfter: () =>
+            this.selectRange_(range, callback || (x => x), row, type, noFocus)
         });
       } else {
-        this.selectRange_(range, row, type, noFocus);
+        const ok = this.selectRange_(
+          range,
+          callback || (x => x),
+          row,
+          type,
+          noFocus
+        );
+        if (ok !== undefined) {
+          if (callback) {
+            return callback(ok);
+          } else {
+            return ok;
+          }
+        }
       }
     }
   };
-  selectRange_ = (range, row, type, noFocus, callback) => {
+  selectRange_ = (range, callback, row, type, noFocus) => {
     if (!this.props.isActive && this.props.onActivation) {
       this.props.onActivation();
     }
@@ -411,6 +444,7 @@ export class TableEvent extends TableMenu {
       prevEnd.rows !== range.end.rows || prevEnd.columns !== range.end.columns;
     const enter = ok => {
       if (!ok) {
+        callback(false);
         return false;
       }
       if (endChanged || type) {
@@ -448,6 +482,7 @@ export class TableEvent extends TableMenu {
         this.setState({ selectedRange: range });
         this.range = range;
       }
+      callback(true);
       return true;
     };
     const quit = () => {
@@ -494,12 +529,12 @@ export class TableEvent extends TableMenu {
     ) {
       return false;
     }
+    message.row[message.column.id] = message.value;
     if (this.props.onChange) {
       if (this.props.onChange(message) === false) {
         return false;
       }
     }
-    message.row[message.column.id] = message.value;
     return true;
   };
   onCellQuit = message => this.onCellQuit_(message, message.callback);
@@ -529,7 +564,7 @@ export class TableEvent extends TableMenu {
       let col = column.accessor.replace("row.", "");
       col = col.replace(column.reference + ".", "");
       const filters = {
-        [col]: { id: col, filterType: "startsNoCase", v: value }
+        [col]: { id: col, filterType: "starts", v: value }
       };
       const callback = (ok, data) => {
         if (!ok) {
@@ -712,7 +747,6 @@ export class TableEvent extends TableMenu {
       }
     }
   };
-
   // ---------------------------------------------------------
   // successive checks and validations
   // with callbacks to manage users interraction
@@ -756,7 +790,7 @@ export class TableEvent extends TableMenu {
         if (ok) {
           this.updated = false;
         }
-        (action === "cellQuit" ? message.callback : rowQuit)(ok);
+        return (action === "cellQuit" ? message.callback : rowQuit)(ok);
       };
       // if (!utils.isNullValue(this.range.end.rows)) {
       ok = ok_ && this.onCellQuit_(message, callback);

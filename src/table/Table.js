@@ -177,8 +177,11 @@ export class Table extends TableFilterSort {
       auditedRow,
       audits
     } = this.state;
+    if (data.length === 0 && meta.properties.length === 0) {
+      return null;
+    }
     let actions =
-      auditedRow || isModal
+      auditedRow || isModal || meta.properties.length === 0
         ? []
         : meta.table.actions.filter(action => !action.hidden) || [];
     if (!visible) {
@@ -204,7 +207,7 @@ export class Table extends TableFilterSort {
       !meta.table.noFilter *
         (1 +
           (meta.properties.findIndex(
-            column => column.filterType === "between"
+            column => column.filterType === "between" && !column.hidden
           ) !==
             -1));
 
@@ -387,6 +390,7 @@ export class Table extends TableFilterSort {
           componentId={this.props.id}
           checkable={meta.table.checkable}
           onDoubleClick={this.onDoubleClick}
+          draggable={meta.table.statusDraggable}
         />
       );
     }
@@ -459,6 +463,7 @@ export class Table extends TableFilterSort {
     }
     const rows = (
       <Rows
+        key="rows"
         meta={meta}
         data={filteredData}
         status={status}
@@ -484,12 +489,14 @@ export class Table extends TableFilterSort {
         noUpdate={noUpdate}
         style={style}
         onDoubleClick={this.onDoubleClick}
+        componentId={this.props.id}
       />
     );
     let lockedColumns = null;
     if (locked) {
       lockedColumns = (
         <Rows
+          key="lockedColumns"
           meta={meta}
           data={filteredData}
           status={status}
@@ -512,6 +519,7 @@ export class Table extends TableFilterSort {
           noVerticalScrollbar={true}
           onDoubleClick={this.onDoubleClick}
           locked={locked}
+          componentId={this.props.id}
         />
       );
     }

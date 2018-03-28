@@ -54,10 +54,10 @@ export const filterFunction = (column, params, data, updatedRows) => {
     };
   } else if (column.filterType === "<=") {
     column.f = row => facc(row) <= column.v;
-  } else if (column.filterType === "starts") {
+  } else if (column.filterType === "starts (case sensitive)") {
     column.f = row =>
       String(facc(row) || "").startsWith(String(column.v || ""));
-  } else if (column.filterType === "startsNoCase") {
+  } else if (column.filterType === "starts") {
     const v = column.v.toUpperCase();
     column.f = row =>
       String(facc(row) || "")

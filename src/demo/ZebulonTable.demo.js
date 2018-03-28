@@ -4,7 +4,7 @@ import { ZebulonTable } from "../table/ZebulonTable";
 // import ZebulonTable from "../table/ZebulonTable";
 import "zebulon-controls/lib/index.css";
 import "../table/index.css";
-import { Input, constants, utils } from "zebulon-controls";
+import { constants, utils } from "zebulon-controls";
 import { metaDescriptions, functions } from "../table/MetaDescriptions";
 import { functionsTable } from "../table/utils/compute.meta";
 import { getFilters } from "../table/utils/filters.sorts";
@@ -16,14 +16,6 @@ import { MyDatasetConfiguration } from "./dataset.configuration";
 import { ResizableBox } from "react-resizable";
 import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
-// import {
-//   countries,
-//   metaCountries,
-//   currencies,
-//   metaCurrencies,
-//   thirdparties,
-//   metaThirdparties
-// } from "./meta.thirdparties";
 import { datasetFunctions } from "./dataset.functions";
 class ZebulonTableDemo extends Component {
   constructor(props) {
@@ -100,11 +92,6 @@ class ZebulonTableDemo extends Component {
       caption: "Manage configuration",
       disabled: true
     }
-    // {
-    //   id: "layout",
-    //   caption: "Multi instance and styles",
-    //   disabled: true
-    // }
   ];
 
   getTabContent = tabIndex => {
@@ -126,7 +113,6 @@ class ZebulonTableDemo extends Component {
     if (tabIndex === 0) {
       return (
         <MyDataset
-          key="dataset"
           id="dataset"
           functions={functions}
           keyEvent={keyEvent}
@@ -137,7 +123,6 @@ class ZebulonTableDemo extends Component {
       sizes.height = sizes.height - 52;
       return (
         <MyDatasetConfiguration
-          key="dataset"
           id="dataset"
           functions={functions}
           keyEvent={keyEvent}
@@ -145,20 +130,6 @@ class ZebulonTableDemo extends Component {
         />
       );
     }
-    // else if (tabIndex === 2) {
-    //   return (
-    //     <MyLayout
-    //       // layout={layout}
-    //       // components={components}
-    //       visible={selectedTab === 2}
-    //       isActive={selectedTab === 2}
-    //       keyEvent={keyEvent}
-    //       // data={data}
-    //       // meta={buildMeta()}
-    //       functions={functions}
-    //     />
-    //   );
-    // }
   };
 
   render() {

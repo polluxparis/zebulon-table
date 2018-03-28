@@ -51,10 +51,14 @@ export const meta = {
     onSaveBefore: "onSaveBefore",
     onTableChange: "onTableChange",
     noFilter: false,
-    caption: "Dataset",
+    // caption: "Dataset",
+    statusDraggable: true,
     // subscription: {
     //   observable: "get_subscription"
     // },
+    noFilter: false,
+    noStatus: false,
+    noOrder: false,
     actions: [
       { type: "insert", caption: "New", enable: true },
       {
@@ -67,13 +71,6 @@ export const meta = {
         caption: "Duplicate",
         enable: "is_selected"
       },
-      // {
-      //   type: "action",
-      //   caption: "Load",
-      //   enable: "is_selected",
-      //   action: loadFileAction,
-      //   jsxFunction: loadFileButton
-      // },
       {
         type: "save",
         caption: "Save",
@@ -119,7 +116,6 @@ export const meta = {
       mandatory: true,
       editable: "is_new",
       filterType: "between"
-      // accessor: ({ row }) => row.id
     },
     {
       id: "product",
@@ -128,13 +124,8 @@ export const meta = {
       dataType: "joined object",
       mandatory: true,
       hidden: true,
-      // accessor: "product_a",
-      // setForeignKeyAccessor: ({ value, row }) => {
-      //   row.product_id = value;
-      // },
       select: "getProducts",
       accessor: "row.product_id"
-      // primaryKeyAccessor: "product.id"
     },
     {
       id: "product_id",
@@ -150,10 +141,9 @@ export const meta = {
       dataType: "string",
       editable: true,
       filterType: "values",
-      // select: "products",
       accessor: "row.product.label",
       sortAccessor: "product.id",
-      locked: true
+      locked: false
     },
     {
       id: "shape",
@@ -209,8 +199,6 @@ export const meta = {
       hidden: true,
       select: "getCountries",
       accessor: "row.country_id"
-      // primaryKeyAccessor: "country.id"
-      // setForeignKeyAccessor: ({ value, row }) => (row.country_id = value)
     },
     {
       id: "country_cd",
@@ -242,8 +230,6 @@ export const meta = {
       hidden: true,
       select: "getCurrencies",
       accessor: "row.currency_id"
-      // primaryKeyAccessor: "currency.id"
-      // setForeignKeyAccessor: ({ value, row }) => (row.currency_id = value)
     },
     {
       id: "currency_cd",
@@ -253,7 +239,6 @@ export const meta = {
       accessor: "row.currency.code",
       filterType: "values",
       editable: true
-      // select: "get_currencies"
     },
     {
       id: "thirdparty",
@@ -261,8 +246,7 @@ export const meta = {
       width: 0,
       dataType: "object",
       mandatory: true,
-      hidden: true //,
-      // primaryKeyAccessor: "thirdparty.id"
+      hidden: true
     },
     {
       id: "thirdparty_cd",
@@ -283,7 +267,6 @@ export const meta = {
       dataType: "number",
       editable: true,
       filterType: "between"
-      // select: [1, 2, 3, 4, 5, 6, 7, 8, 9]
     },
     {
       id: "amt_eur",

@@ -37,7 +37,13 @@ export class TableFilterSort extends TableEvent {
         return this.pagination({
           filters,
           callbackAfter: page => {
-            this.selectRange_(this.range, undefined, "enter", noFocus);
+            this.selectRange_(
+              this.range,
+              undefined,
+              undefined,
+              "enter",
+              noFocus
+            );
             this.adjustScrollRows(page.filteredDataLength);
           }
         });
@@ -120,7 +126,14 @@ export class TableFilterSort extends TableEvent {
     if (column.filterType !== "values") {
       return this.closeOpenedWindows();
     }
-    if (this.selectRange(this.state.selectedRange, this.row, "quit") === false)
+    if (
+      this.selectRange(
+        this.state.selectedRange,
+        undefined,
+        this.row,
+        "quit"
+      ) === false
+    )
       return false;
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
@@ -144,7 +157,7 @@ export class TableFilterSort extends TableEvent {
   };
   onChangeFilter_ = (e, row, column, filterTo) => {
     const { selectedRange, filters, meta, data, updatedRows } = this.state;
-    if (this.selectRange(selectedRange, this.row, "quit") === false)
+    if (this.selectRange(selectedRange, undefined, this.row, "quit") === false)
       return false;
     this.closeOpenedWindows();
     const v = e;
@@ -162,7 +175,7 @@ export class TableFilterSort extends TableEvent {
       if (!meta.serverPagination) {
         this.sorts(filteredData, meta.properties);
         this.setState({ filteredData });
-        this.selectRange(selectedRange, undefined, "enter", true);
+        this.selectRange(selectedRange, undefined, undefined, "enter", true);
       }
     }
   };
@@ -187,7 +200,7 @@ export class TableFilterSort extends TableEvent {
     if (!meta.serverPagination) {
       this.sorts(filteredData, meta.properties);
       this.setState({ filteredData });
-      this.selectRange(this.range, undefined, "enter");
+      this.selectRange(this.range, undefined, undefined, "enter");
     }
   };
   // ----------------------------------------
@@ -200,7 +213,7 @@ export class TableFilterSort extends TableEvent {
         return this.pagination({
           sorts,
           callbackAfter: () => {
-            this.selectRange_(this.range, undefined, "enter");
+            this.selectRange_(this.range, undefined, undefined, "enter");
           }
         });
       }
@@ -219,19 +232,21 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onSort = (column, doubleClick) => {
-    const ok = this.props.onTableChange("sort", ok => {
+    if (!this.state.meta.table.noOrder) {
+      const ok = this.props.onTableChange("sort", ok => {
+        if (ok) {
+          this.onSort_(column, doubleClick);
+        }
+      });
       if (ok) {
         this.onSort_(column, doubleClick);
       }
-    });
-    if (ok) {
-      this.onSort_(column, doubleClick);
     }
   };
   onSort_ = (column, doubleClick) => {
     const { filteredData, meta } = this.state;
     this.closeOpenedWindows();
-    if (this.selectRange(this.range, this.row, "quit") === false) {
+    if (this.selectRange(this.range, undefined, this.row, "quit") === false) {
       return false;
     }
     const columns = meta.properties;
@@ -264,7 +279,7 @@ export class TableFilterSort extends TableEvent {
     sorts.forEach((col, index) => (columns[col.index].sortOrder = index));
     this.sorts(filteredData, columns);
     if (!meta.serverPagination) {
-      this.selectRange(this.range, undefined, "enter");
+      this.selectRange(this.range, undefined, undefined, "enter");
       this.setState({ filteredData: filteredData });
     }
   };

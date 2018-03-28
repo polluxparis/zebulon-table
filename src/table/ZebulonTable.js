@@ -321,25 +321,28 @@ export class ZebulonTable extends Component {
     }
     if (this.props.keyEvent !== keyEvent) {
       this.handleKeyEvent(keyEvent);
-    } else if (updatedRows && this.props.updatedRows !== updatedRows) {
-      this.setState({ updatedRows });
-    } else if (
-      this.props.data !== data ||
-      // this.props.meta !== meta ||
-      this.props.status !== status ||
-      this.props.filters !== filters ||
-      this.props.refresh !== refresh
-    ) {
-      let ok = true;
-      if (!saveConfirmationRequired && !this.props.saveConfirmationRequired) {
-        ok = this.onTableChange("refresh", ok => {
-          if (ok) {
-            this.setState(this.getData(nextProps));
-          }
-        });
+    } else {
+      if (updatedRows && this.props.updatedRows !== updatedRows) {
+        this.setState({ updatedRows });
       }
-      if (ok) {
-        this.setState(this.getData(nextProps));
+      if (
+        this.props.data !== data ||
+        // this.props.meta !== meta ||
+        this.props.status !== status ||
+        this.props.filters !== filters ||
+        this.props.refresh !== refresh
+      ) {
+        let ok = true;
+        if (!saveConfirmationRequired && !this.props.saveConfirmationRequired) {
+          ok = this.onTableChange("refresh", ok => {
+            if (ok) {
+              this.setState(this.getData(nextProps));
+            }
+          });
+        }
+        if (ok) {
+          this.setState(this.getData(nextProps));
+        }
       }
     }
     if (saveConfirmationRequired && !this.props.saveConfirmationRequired) {
@@ -726,6 +729,7 @@ export class ZebulonTable extends Component {
           onCellEnter={this.props.onCellEnter}
           onCellQuit={this.props.onCellQuit}
           onRowNew={this.props.onRowNew}
+          onRowDelete={this.props.onRowDelete}
           onRowEnter={this.props.onRowEnter}
           onRowQuit={this.props.onRowQuit}
           onTableEnter={this.props.onTableEnter}

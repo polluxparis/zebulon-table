@@ -299,39 +299,11 @@ export const metaDescriptions = (
 	const getAccessors = obj => () => getFunctions("accessor", obj);
 	const getAccessorsAndProperties = obj => () => {
 		const dataAccessors = propertyAccessors;
-		// properties.forEach(property => {
-		// 	dataAccessors[property.id] = {
-		// 		id: `row.${property.id}`,
-		// 		caption: `row.${property.id}`,
-		// 		type: "property"
-		// 	};
-		// 	if (data_) {
-		// 		const row0 = data_[0];
-		// 		if (row0[property.id] !== undefined && !property.accessor) {
-		// 			property.tp = "Dataset";
-		// 		}
-		// 		if (
-		// 			property.dataType === "object" ||
-		// 			property.dataType === "joined object"
-		// 		) {
-		// 			data_.forEach(row => {
-		// 				if (!utils.isNullValue(row[property.id])) {
-		// 					Object.keys(row[property.id]).forEach(key => {
-		// 						dataAccessors[property.id + "." + key] = {
-		// 							id: `row.${property.id}.${key}`,
-		// 							caption: `row.${property.id}.${key}`,
-		// 							type: "object property"
-		// 						};
-		// 					});
-		// 				}
-		// 			});
-		// 		}
-		// 	}
-		// });
+		const accessors = getFunctions("accessor", obj);
+		console.log("getAccessorsAndProperties", accessors, dataAccessors);
 		return {
-			// console.log("getAccessorsAndProperties", obj, d);
 			...dataAccessors,
-			...getFunctions("accessor", obj)
+			...accessors
 		};
 	};
 	const getAggregations = obj => () => getFunctions("aggregation", obj);
@@ -349,7 +321,7 @@ export const metaDescriptions = (
 				object: "dataset",
 				editable: true,
 				noFilter: false,
-				caption: "Dataset",
+				// caption: "Dataset",
 				actions: [
 					{ type: "insert", caption: "New", enable: true },
 					{
@@ -513,7 +485,15 @@ export const metaDescriptions = (
 					width: 100,
 					dataType: "string",
 					editable: true,
-					select: ["starts", "=", ">=", "<=", "between", "values"]
+					select: [
+						"starts",
+						"starts (case sensitive)",
+						"=",
+						">=",
+						"<=",
+						"between",
+						"values"
+					]
 				},
 
 				// only for new properties

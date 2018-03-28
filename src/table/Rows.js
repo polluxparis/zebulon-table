@@ -1,7 +1,7 @@
 import React from "react";
 import classnames from "classnames";
-import { ScrollableGrid, utils, constants } from "zebulon-controls";
-import { Input } from "./Input";
+import { ScrollableGrid, utils, constants, Input } from "zebulon-controls";
+// import { Input } from "./Input";
 import { cellData } from "./utils/compute.data";
 export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
@@ -23,7 +23,8 @@ export class Rows extends ScrollableGrid {
     onChange,
     onFocus,
     rowIndex,
-    onDoubleClick
+    onDoubleClick,
+    componentId
   ) => {
     const { editable, value, select } = cellData(
       row,
@@ -41,6 +42,7 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-editable": editable && focused
     });
     // if (column.dataType === "boolean") value = value || false;
+    const id = `cell: ${componentId}-${row.index_}-${column.index_}`;
     return (
       <Input
         row={row}
@@ -52,7 +54,8 @@ export class Rows extends ScrollableGrid {
         focused={focused}
         hasFocus={hasFocus}
         select={select}
-        key={`cell-${row.index_}-${column.id}`}
+        id={id}
+        key={id}
         onChange={onChange}
         onClick={onClick}
         onMouseOver={onMouseOver}
@@ -72,7 +75,8 @@ export class Rows extends ScrollableGrid {
     visibleWidth,
     rowHeight,
     rowIndex,
-    hasFocus
+    hasFocus,
+    componentId
     // selectedCell,
     // selectCell
   ) => {
@@ -130,7 +134,11 @@ export class Rows extends ScrollableGrid {
             {
               position: "absolute",
               left,
-              width: column.computedWidth,
+              width: Math.min(
+                false ? column.computedWidth + shift : column.computedWidth,
+                visibleWidth - left
+              ),
+              // column.computedWidth,
               height: rowHeight,
               textAlign
             },
@@ -143,7 +151,8 @@ export class Rows extends ScrollableGrid {
             // () => {}, //onDoubleClick,
             onFocus,
             rowIndex,
-            this.props.onDoubleClick
+            this.props.onDoubleClick,
+            componentId
           )
         );
         left += column.computedWidth;
@@ -151,7 +160,16 @@ export class Rows extends ScrollableGrid {
       index += 1;
     }
     return (
-      <div key={rowIndex} style={{ display: "flex", height: rowHeight }}>
+      <div
+        key={rowIndex}
+        id={rowIndex}
+        style={{
+          display: "flex",
+          height: rowHeight
+          // position: "inherit",
+          // left: 0
+        }}
+      >
         {cells}
       </div>
     );
@@ -169,7 +187,8 @@ export class Rows extends ScrollableGrid {
       selectCell,
       updatedRows,
       hasFocus,
-      dataLength
+      dataLength,
+      componentId
     } = this.props;
     // if (data.length === 0) {
     //   return null;
@@ -212,6 +231,7 @@ export class Rows extends ScrollableGrid {
           rowHeight,
           index,
           hasFocus,
+          componentId,
           selectedCell,
           selectCell
         )
@@ -220,14 +240,16 @@ export class Rows extends ScrollableGrid {
       i++;
     }
     const style = {
-      position: "absolute",
-      top: this.props.scroll.rows.shift || 0
+      // position: "absolute",
+      top: this.props.scroll.rows.shift || 0,
+      width: visibleWidth,
+      position: "inherit"
     };
     // if (this.props.noVerticalScrollbar) {
     //   style.borderRight = "solid 0.03em rgba(0, 0, 0, 0.5)";
     // }
     return (
-      <div style={style} onWheel={this.onWheel}>
+      <div id="totot" style={style} onWheel={this.onWheel}>
         {items}
       </div>
     );

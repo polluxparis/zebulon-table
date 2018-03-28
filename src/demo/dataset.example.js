@@ -331,7 +331,6 @@ export class MyDataset extends Component {
           style={{
             fontFamily: "sans-serif",
             border: "unset"
-            // fontSize: "medium"
           }}
         />
       </div>
@@ -342,7 +341,6 @@ export class MyDataset extends Component {
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}
         <ZebulonTable
-          key="dataset"
           id="dataset"
           meta={meta}
           filters={filters}

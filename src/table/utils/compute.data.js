@@ -51,8 +51,8 @@ export const computeRows = (data, meta, startIndex) => {
     column =>
       column.dataType === "joined object" && column.accessor !== undefined
   );
-  const pk = meta.table.pk && !meta.table.pk.hidden;
-  const lk = meta.table.lk && !meta.table.lk.hidden;
+  const pk = meta.table.pk;
+  const lk = meta.table.lk;
 
   data.forEach((row, index) => {
     // if (calcIndex) {

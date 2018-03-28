@@ -426,25 +426,29 @@ export const computeMeta = (meta, zoom = 1, functions) => {
 };
 // return meta;
 // };
+export const getDataType = value => {
+  let dataType = typeof value;
+  if (dataType === "object") {
+    if (utils.isDate(value)) {
+      dataType = "date";
+    } else if (Array.isArray(value)) {
+      dataType = "array";
+    } else {
+      dataType = "object";
+    }
+  } else if (dataType === "string" && value === new Date(value).toJSON()) {
+    dataType = "date";
+  }
+  return dataType;
+};
 export const computeMetaFromData = (data, meta, zoom, functions) => {
   let position = 0;
   if (!meta.properties.length && data && data.length) {
     const row = data[0];
     Object.keys(row).forEach((key, index) => {
-      let dataType = typeof row[key],
+      let dataType = getDataType(row[key]),
         filterType = "";
-      if (dataType === "object") {
-        if (utils.isDate(row[key])) {
-          dataType = "date";
-        } else {
-          dataType = "object";
-        }
-      } else if (
-        dataType === "string" &&
-        row[key] === new Date(row[key]).toJSON()
-      ) {
-        dataType = "date";
-      }
+
       let alignement = "unset";
       if (dataType === "string") {
         alignement = "left";
@@ -466,6 +470,7 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
         hidden:
           dataType === "object" ||
           dataType === "joined object" ||
+          dataType === "array" ||
           key === "index_",
         position,
         editable: !!meta.table.editable,
@@ -480,14 +485,6 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
     });
   }
   computeMeta(meta, zoom, functions);
-  // computeData({ data, meta });
-  // const columns = meta.properties.filter(
-  //   column =>
-  //     column.aggregation && typeof column.accessorFunction === "function"
-  // );
-  // columns.forEach(column => {
-  //   computeAnalytic(data, column);
-  // });
 };
 
 // -----------------------------------------------------------

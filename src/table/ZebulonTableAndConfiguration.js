@@ -100,7 +100,7 @@ export class ZebulonTableAndConfiguration extends Component {
 	};
 	componentWillReceiveProps(nextProps) {
 		if (nextProps.keyEvent !== this.props.keyEvent) {
-			this.handleKeyDown(nextProps.keyEvent);
+			this.handleKeyEvent(nextProps.keyEvent);
 		} else {
 			if (
 				nextProps.data !== this.props.data ||
@@ -147,13 +147,15 @@ export class ZebulonTableAndConfiguration extends Component {
 						this.props.tabs[index].id !== tab.id ||
 						tab.data !== this.props.tabs[index].data
 					) {
-						this.setState({
-							[tab.id]: tab.data,
-							[`${tab.id}Meta`]: metaDescriptions(
+						const meta =
+							metaDescriptions(
 								tab.id,
 								this.props.callbacks,
 								this.state.functions
-							)
+							) || tab.meta;
+						this.setState({
+							[tab.id]: tab.data,
+							[`${tab.id}Meta`]: meta
 						});
 						computeMetaFromData(
 							this.state[tab.id],
@@ -169,13 +171,13 @@ export class ZebulonTableAndConfiguration extends Component {
 	shouldComponentUpdate(nextProps, nextState) {
 		return nextProps.keyEvent === this.props.keyEvent;
 	}
-	handleKeyDown = e => {
-		if (utils.isNavigationKey(e) || utils.isZoom(e)) {
-			const tab = this.tabs[this.state.selectedTab].id;
-			if (this[tab] && this[tab].handleKeyEvent) {
-				return this[tab].handleKeyEvent(e);
-			}
+	handleKeyEvent = e => {
+		// if (utils.isNavigationKey(e) || utils.isZoom(e)) {
+		const tab = this.tabs[this.state.selectedTab].id;
+		if (this[tab] && this[tab].handleKeyEvent) {
+			return this[tab].handleKeyEvent(e);
 		}
+		// }
 	};
 	// onGetData = ({ data, meta, status }) => {
 	// 	if (data && meta.table.object === "dataset") {
@@ -196,8 +198,8 @@ export class ZebulonTableAndConfiguration extends Component {
 				caption: "Dataset",
 				content: (
 					<ZebulonTable
-						key="dataset"
-						id="dataset"
+						key={0}
+						id={`${props.id}-dataset`}
 						visible={this.state.selectedTab === 0}
 						isActive={this.state.selectedTab === 0}
 						data={this.state.data}
@@ -221,8 +223,8 @@ export class ZebulonTableAndConfiguration extends Component {
 				caption: "Properties",
 				content: (
 					<ZebulonTable
-						key="properties"
-						id="properties"
+						key={1}
+						id={`${props.id}-properties`}
 						visible={this.state.selectedTab === 1}
 						isActive={this.state.selectedTab === 1}
 						data={this.state.meta.properties}
@@ -247,8 +249,8 @@ export class ZebulonTableAndConfiguration extends Component {
 				caption: "Functions",
 				content: (
 					<ZebulonTable
-						key="functions"
-						id="functions"
+						key={2}
+						id={`${props.id}-functions`}
 						visible={this.state.selectedTab === 2}
 						isActive={this.state.selectedTab === 2}
 						data={this.state.functions}
@@ -273,8 +275,8 @@ export class ZebulonTableAndConfiguration extends Component {
 					caption: tab.caption,
 					content: (
 						<Content
-							key={tab.id}
-							id={tab.id}
+							key={3 + index}
+							id={`${props.id}-${tab.id}`}
 							visible={this.state.selectedTab === tabs.length}
 							data={this.state[tab.id]}
 							meta={this.state[`${tab.id}Meta`]}
@@ -327,11 +329,11 @@ export class ZebulonTableAndConfiguration extends Component {
 			return <div>Loading data...</div>;
 		} else if (this.props.status.error) {
 			if (this.props.status.error.message === "No rows retrieved") {
-				return (
-					<div style={{ width: "max-content" }}>
-						No rows retrieved
-					</div>
-				);
+				// return (
+				// 	<div style={{ width: "max-content" }}>
+				// 		No rows retrieved
+				// 	</div>
+				// );
 			} else {
 				return (
 					<div style={{ color: "red", width: "max-content" }}>
@@ -344,7 +346,7 @@ export class ZebulonTableAndConfiguration extends Component {
 		this.tabs = this.initTabs(this.props);
 		const zoomValue = this.zoomValue;
 		return (
-			<div style={{ fontSize: `${zoomValue * 100}%` }}>
+			<div>
 				<div
 					style={{
 						display: "flex",
