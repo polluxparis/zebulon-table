@@ -13,7 +13,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { rollbackAll, getErrors, errorHandler } from "./utils/utils";
+import { rollbackAll, errorHandler } from "./utils/utils";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -149,7 +149,7 @@ export class ZebulonTable extends Component {
   resolvePromise = (data, message) => {
     data
       .then(data => {
-        const { meta, serverPagination, functions, filters } = this.state;
+        const { meta, functions, filters } = this.state;
         const status = { loaded: true, loading: false };
         if (!meta.serverPagination) {
           this.initData(

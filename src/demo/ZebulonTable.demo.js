@@ -1,20 +1,12 @@
 import React, { Component } from "react";
-import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
-import { ZebulonTable } from "../table/ZebulonTable";
-// import ZebulonTable from "../table/ZebulonTable";
 import "zebulon-controls/lib/index.css";
 import "../table/index.css";
-import { constants, utils } from "zebulon-controls";
-import { metaDescriptions, functions } from "../table/MetaDescriptions";
+import { functions } from "../table/MetaDescriptions";
 import { functionsTable } from "../table/utils/compute.meta";
-import { getFilters } from "../table/utils/filters.sorts";
-// import { Layout, components, layout } from "./Layout";
-// import { MyLayout } from "./layout.example";
 import { MyDataset } from "./dataset.example";
 import { MyDatasetConfiguration } from "./dataset.configuration";
-
 import { ResizableBox } from "react-resizable";
-import { navigationKeyHandler } from "./navigation.handler";
+// import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
 import { datasetFunctions } from "./dataset.functions";
 class ZebulonTableDemo extends Component {
@@ -95,20 +87,7 @@ class ZebulonTableDemo extends Component {
   ];
 
   getTabContent = tabIndex => {
-    const {
-      data,
-      meta,
-      filters,
-      sorts,
-      updatedRows,
-      keyEvent,
-      functions,
-      params,
-      status,
-      selectedTab
-    } = this.state;
-    let header = null,
-      footer = null;
+    const { keyEvent, functions } = this.state;
     const sizes = { ...this.state.sizes };
     if (tabIndex === 0) {
       return (

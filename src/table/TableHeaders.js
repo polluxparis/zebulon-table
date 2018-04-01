@@ -14,8 +14,6 @@ const filter = (
   filterTo,
   onChange,
   openFilter,
-  // handleDragOver,
-  // handleDrop,
   focusedId,
   componentId
 ) => {
@@ -199,7 +197,10 @@ export class Headers extends Component {
       onSort(column, true);
     }
   };
-
+  getColumnIndex = id => {
+    const ids = id.split("-");
+    return ids[ids.length - 1];
+  };
   handleDragStart = (e, type) => {
     this.dragId = e.target.id;
     this.dragType = type;
@@ -211,7 +212,8 @@ export class Headers extends Component {
     if (
       this.dragType === "move" ||
       (this.dragType === "resize" &&
-        this.props.meta.properties[this.dragId].computedWidth +
+        this.props.meta.properties[this.getColumnIndex(this.dragId)]
+          .computedWidth +
           e.pageX -
           this.dragX >
           20)
@@ -229,7 +231,8 @@ export class Headers extends Component {
         !utils.isNullOrUndefined(this.dragId) &&
         this.dragId !== e.target.id
       ) {
-        meta[this.dragId].index_ = meta[e.target.id].index_ + 0.1;
+        meta[this.getColumnIndex(this.dragId)].index_ =
+          meta[this.getColumnIndex(e.target.id)].index_ + 0.1;
         meta.sort((a, b) => a.index_ - b.index_);
         computeMetaPositions(this.props.meta);
         this.props.onMetaChange();
@@ -238,7 +241,7 @@ export class Headers extends Component {
         !utils.isNullOrUndefined(this.dragX) &&
         !utils.isNullOrUndefined(e.pageX)
       ) {
-        const column = meta[this.dragId];
+        const column = meta[this.getColumnIndex(this.dragId)];
         const zoom = column.computedWidth / column.width;
         column.computedWidth += e.pageX - this.dragX;
         column.width = column.computedWidth / zoom;
@@ -326,7 +329,11 @@ export class Headers extends Component {
             );
           } else {
             div = [div];
-            if (utils.nullValue(column.dataType, "object") !== "object") {
+            if (
+              !["object", "array", "function", "text"].includes(
+                utils.nullValue(column.dataType, "object")
+              )
+            ) {
               div.push(
                 filter(
                   column,
@@ -336,9 +343,6 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  // this.handleDragStart,
-                  // this.handleDragOver,
-                  // this.handleDrop,
                   focusedId,
                   componentId
                 )
@@ -356,7 +360,9 @@ export class Headers extends Component {
             if (headersLength === 3) {
               if (
                 column.filterType === "between" &&
-                utils.nullValue(column.dataType, "object") !== "object"
+                !["object", "array", "function", "text"].includes(
+                  utils.nullValue(column.dataType, "object")
+                )
               ) {
                 div.push(
                   filter(
@@ -367,8 +373,6 @@ export class Headers extends Component {
                     column.filterType === "between",
                     onChange,
                     openFilter,
-                    // this.handleDragOver,
-                    // this.handleDrop,
                     focusedId,
                     componentId
                   )
@@ -537,8 +541,7 @@ export class Status extends Component {
       componentId,
       checkable,
       onDoubleClick,
-      draggable,
-      handleDragStart
+      draggable
     } = this.props;
     const updatedRows = this.state.updatedRows;
     let index = 0,

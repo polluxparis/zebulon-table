@@ -1,7 +1,6 @@
 import React from "react";
 import classnames from "classnames";
-import { ScrollableGrid, utils, constants, Input } from "zebulon-controls";
-// import { Input } from "./Input";
+import { ScrollableGrid, utils, Input } from "zebulon-controls";
 import { cellData } from "./utils/compute.data";
 export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
@@ -100,10 +99,7 @@ export class Rows extends ScrollableGrid {
         const columnIndex = index;
         const selectedRange = this.selectedRange();
         const selected = utils.isInRange(
-            {
-              columns: index,
-              rows: rowIndex
-            },
+            { columns: index, rows: rowIndex },
             selectedRange.start,
             selectedRange.end
           ),

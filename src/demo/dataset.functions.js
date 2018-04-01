@@ -1,11 +1,8 @@
 import React from "react";
 import { utils } from "zebulon-controls";
 import { computeData, aggregations } from "../table/utils/compute.data";
-// import { getThirdparty } from "./thirdparties";
 import { MyThirdparties } from "./thirdparties";
-import { data } from "./datasources";
-import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
-// import { countries, currencies, colors, products } from "./datasources";
+import { getRowErrors, getErrors } from "../table/utils/utils";
 import {
 	get_array,
 	get_promise,

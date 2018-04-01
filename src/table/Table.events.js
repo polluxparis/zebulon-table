@@ -1,8 +1,4 @@
 import React from "react";
-// import ReactDOM from "react-dom";
-
-// import { ZebulonTable } from "../table/ZebulonTable";
-
 import { TableMenu } from "./Table.menu";
 import { utils } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
@@ -429,15 +425,13 @@ export class TableEvent extends TableMenu {
     if (!this.props.isActive && this.props.onActivation) {
       this.props.onActivation();
     }
-    const { updatedRows, selectedRange, meta } = this.state;
-    // avoid focus on cell when changing filters (set to false on changed filter ok)
+    const { selectedRange, meta } = this.state;
     this.hasFocus = !noFocus;
     if (range.end.rows > this.getDataLength() - 1) {
       range.end = {};
       range.start = {};
       this.hasFocus = false;
     }
-    let ok = true;
     const prevEnd = selectedRange.end;
     const prevStart = selectedRange.start;
     const endChanged =

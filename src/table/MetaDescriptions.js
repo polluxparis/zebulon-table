@@ -1,16 +1,11 @@
 import React from "react";
 import { utils } from "zebulon-controls";
 import {
-	getRowStatus,
 	buildObject,
 	exportFunctions
 	// aggregations
 } from "./utils/utils";
-import { Property } from "./Property";
-import { getFunction } from "./utils/compute.meta";
-// import { MyThirdparties } from "../demo/thirdparties";
-
-// const set = () => {};
+// import { Property } from "./Property";
 const functionToString = ({ row }) => {
 	if (typeof row.functionJS === "function") {
 		return String(row.functionJS);
@@ -19,14 +14,6 @@ const functionToString = ({ row }) => {
 };
 const stringToFunction = ({ row, status, meta }) => {
 	let f;
-	const accessor = (accessor, visibility) => {
-		return getFunction(
-			meta.functions,
-			visibility || row.visibility || "dataset",
-			"accessor",
-			accessor
-		);
-	};
 	try {
 		eval("f = " + row.functionJS);
 	} catch (e) {
@@ -278,7 +265,6 @@ export const metaDescriptions = (
 	// data_
 ) => {
 	const f = functions;
-	const dataAccessors = {};
 	const getFunctions = (type, obj = object) => {
 		return f
 			.filter(
@@ -296,7 +282,6 @@ export const metaDescriptions = (
 				return acc;
 			}, {});
 	};
-	const getAccessors = obj => () => getFunctions("accessor", obj);
 	const getAccessorsAndProperties = obj => () => {
 		const dataAccessors = propertyAccessors;
 		const accessors = getFunctions("accessor", obj);
@@ -698,6 +683,7 @@ export const metaDescriptions = (
 					filterType: "values",
 					select: [
 						"",
+						"action",
 						"accessor",
 						"aggregation",
 						"format",

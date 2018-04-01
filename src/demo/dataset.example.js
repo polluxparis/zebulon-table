@@ -2,12 +2,11 @@ import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
 import { get_subscription } from "./datasources";
 import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
-import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
+import { getRowErrors, getErrors } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
-import { customMenuFunctions, errorHandler } from "./dataset.functions";
+import { errorHandler } from "./dataset.functions";
 import { meta, rollingAverage, totalAmount } from "./dataset.meta";
-import { MyThirdparties } from "./thirdparties";
 // customMenuFunctions;
 
 export class MyDataset extends Component {
@@ -26,7 +25,6 @@ export class MyDataset extends Component {
       filteredDataLength: 0,
       loadedDataLength: 0,
       meta,
-      // metaThirdparties,
       updatedRows: {},
       totalAmount: false,
       rollingAverage: false,
@@ -150,7 +148,8 @@ export class MyDataset extends Component {
             this.text =
               "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
           } else if (value === "get_observable") {
-            ("A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.");
+            this.text =
+              "A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
           } else if (value === "get_pagination_manager") {
             this.text =
               "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
@@ -175,7 +174,6 @@ export class MyDataset extends Component {
       filters,
       sorts,
       meta,
-      metaThp,
       dataLength,
       filteredDataLength,
       loadedDataLength,

@@ -1,9 +1,7 @@
 import React, { Component } from "react";
 // import * as aggregations from "../../utils/aggregation";
-import { utils, Input } from "zebulon-controls";
-import { getFunction } from "./utils/compute.meta";
+import { Input } from "zebulon-controls";
 import { computeData, cellData } from "./utils/compute.data";
-// import { Input } from "./Input";
 export class Property extends Component {
 	constructor(props) {
 		super(props);

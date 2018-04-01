@@ -11,9 +11,6 @@ import {
 	computeMetaFromData,
 	functionsTable
 } from "./utils/compute.meta";
-
-import { utils } from "zebulon-controls";
-
 export class ZebulonTableAndConfiguration extends Component {
 	constructor(props) {
 		super(props);
@@ -30,7 +27,7 @@ export class ZebulonTableAndConfiguration extends Component {
 			props.sizes.zoom
 		);
 		computeMetaFromData(props.data, meta, props.sizes.zoom, f);
-		this.state = {
+		const state = {
 			selectedTab: 0,
 			data: props.data,
 			meta,
@@ -43,44 +40,33 @@ export class ZebulonTableAndConfiguration extends Component {
 			status: {}
 		};
 		this.zoomValue = props.sizes.zoom || 1;
-		this.state.propertiesMeta = metaDescriptions(
+		state.propertiesMeta = metaDescriptions(
 			"properties",
 			props.callbacks,
-			this.state.functions
+			state.functions
 		);
-		computeMeta(
-			this.state.propertiesMeta,
-			props.sizes.zoom,
-			this.state.functions
-		);
-		this.state.functionsMeta = metaDescriptions(
+		computeMeta(state.propertiesMeta, props.sizes.zoom, state.functions);
+		state.functionsMeta = metaDescriptions(
 			"functions",
 			props.callbacks,
-			this.state.functions
+			state.functions
 		);
-		computeMeta(
-			this.state.functionsMeta,
-			props.sizes.zoom,
-			this.state.functions
-		);
+		computeMeta(state.functionsMeta, props.sizes.zoom, state.functions);
 		if (this.props.tabs) {
 			this.props.tabs.forEach(tab => {
-				this.state[tab.id] = tab.data;
-				this.state[`${tab.id}Meta`] =
+				state[tab.id] = tab.data;
+				state[`${tab.id}Meta`] =
 					tab.meta ||
-					metaDescriptions(
-						tab.id,
-						props.callbacks,
-						this.state.functions
-					);
+					metaDescriptions(tab.id, props.callbacks, state.functions);
 				computeMetaFromData(
-					this.state[tab.id],
-					this.state[`${tab.id}Meta`],
+					state[tab.id],
+					state[`${tab.id}Meta`],
 					props.sizes.zoom,
-					this.state.functions
+					state.functions
 				);
 			});
 		}
+		this.state = state;
 		this.errorHandler = this.props.errorHandler || {};
 	}
 	initMeta = (meta_, callbacks, data, functions, zoom) => {

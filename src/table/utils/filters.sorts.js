@@ -99,9 +99,9 @@ export const getFilters = (columns, filters) => {
       vTo = column.vTo,
       filterType = column.filterType;
     if (filters[column.id]) {
-      (v = filters[column.id].v),
-        (vTo = filters[column.id].vTo),
-        (filterType = filters[column.id].filterType);
+      v = filters[column.id].v;
+      vTo = filters[column.id].vTo;
+      filterType = filters[column.id].filterType;
     }
     if (
       !utils.isNullOrUndefined(v) ||

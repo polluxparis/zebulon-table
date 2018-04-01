@@ -1,20 +1,12 @@
 import React, { Component } from "react";
 import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
-import { get_subscription } from "./datasources";
-import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
-import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
-import { computeMetaPositions } from "../table/utils/compute.meta";
-import { computeAnalytic } from "../table/utils/compute.data";
-import { customMenuFunctions, errorHandler } from "./dataset.functions";
-import { meta, rollingAverage, totalAmount } from "./dataset.meta";
+import { meta } from "./dataset.meta";
 import { getMockDataset } from "./datasources";
-import { MyThirdparties } from "./thirdparties";
 // customMenuFunctions;
 
 export class MyDatasetConfiguration extends Component {
   constructor(props) {
     super(props);
-    const { sizes, params, keyEvent, functions } = props;
     const metaDataset = { ...meta };
     metaDataset.properties = [];
     metaDataset.lockedIndex = null;

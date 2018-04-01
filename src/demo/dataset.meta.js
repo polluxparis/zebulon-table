@@ -1,14 +1,3 @@
-// import React, { Component } from "react";
-// import { ZebulonTable } from "../table/ZebulonTable";
-import { countries, currencies, colors, products } from "./datasources";
-// import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
-// import { getRowErrors, getErrors, loadFileButton } from "../table/utils/utils";
-// import { computeMetaPositions } from "../table/utils/compute.meta";
-// import { computeAnalytic } from "../table/utils/compute.data";
-// import { customMenuFunctions, errorHandler } from "./dataset.functions";
-import { MyThirdparties } from "./thirdparties";
-// customMenuFunctions;
-
 export const rollingAverage = {
   id: "rolling_avg",
   caption: "Rolling average",
@@ -37,9 +26,6 @@ export const totalAmount = {
   accessor: "amt_€",
   format: "amt_€"
 };
-// const loadFileAction = e => {
-//   console.log("onClickLogFile", e);
-// };
 export const meta = {
   table: {
     object: "dataset",
@@ -50,7 +36,6 @@ export const meta = {
     onSaveAfter: "onSaveAfter",
     onSaveBefore: "onSaveBefore",
     onTableChange: "onTableChange",
-    noFilter: false,
     // caption: "Dataset",
     statusDraggable: true,
     // subscription: {
@@ -143,7 +128,7 @@ export const meta = {
       filterType: "values",
       accessor: "row.product.label",
       sortAccessor: "product.id",
-      locked: false
+      locked: true
     },
     {
       id: "shape",
