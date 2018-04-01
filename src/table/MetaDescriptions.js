@@ -386,7 +386,8 @@ export const metaDescriptions = (
 					width: 100,
 					dataType: "string",
 					editable: "isNotDataset",
-					mandatory: true
+					mandatory: true,
+					locked: true
 				},
 				{
 					id: "tp",
@@ -647,7 +648,8 @@ export const metaDescriptions = (
 					width: 100,
 					dataType: "string",
 					editable: true,
-					mandatory: true
+					mandatory: true,
+					locked: true
 				},
 				{
 					id: "caption",

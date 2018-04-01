@@ -232,14 +232,16 @@ export const computeAnalytic = (data, column) => {
 };
 export const computeAudit = (row, meta, audits) => {
   const rows = [];
+
   if (audits.length) {
+    const audits_ = [...audits].reverse();
     let nextRow = row;
-    audits.forEach(audit => {
+    audits_.forEach(audit => {
       nextRow = { ...nextRow, ...audit };
       rows.push(nextRow);
     });
     const foreignObjects = meta.properties.filter(
-      column => column.primaryKeyAccessor !== undefined
+      column => column.dataType === "joined object"
     );
     if (foreignObjects.length) {
       rows.forEach(row => {

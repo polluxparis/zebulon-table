@@ -49,8 +49,6 @@ export class TableMenu extends Component {
                         audits
                     });
                 }
-            } else if (item.id === 2) {
-                this.setState({ auditedRow: undefined, audits: undefined });
             }
         } else if (data.menuId === "top-left-corner-menu") {
             const { filters, data, updatedRows } = this.state;
@@ -66,8 +64,10 @@ export class TableMenu extends Component {
             }
             if (item.id === 0 || filter.v === 0) {
                 delete filters.status_;
-            } else {
+            } else if (item.id === 1) {
                 filters.status_ = filter;
+            } else if (item.id === 2) {
+                this.setState({ auditedRow: undefined, audits: undefined });
             }
             this.setState({
                 filteredData: this.filters(data, filters, false, updatedRows)

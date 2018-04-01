@@ -47,17 +47,17 @@ const audits = {};
 // synchronous function (keep audits of changes)
 // return true or false
 const onSaveAfter = message => {
-	const { updatedRows, meta } = message;
+	const { updatedRows, meta, params } = message;
 	// audits
 	Object.keys(updatedRows).forEach(key => {
 		if (!audits[key]) {
 			audits[key] = [];
 		}
 		const updatedRow = updatedRows[key];
+		let audit = {};
 		if (updatedRow.new_ && !updatedRow.deleted_) {
-			audits[key] = [updatedRow.rowUpdated].concat(audits[key]);
+			audit = [updatedRow.rowUpdated].concat(audits[key]);
 		} else if (updatedRow.updated_) {
-			const audit = {};
 			meta.properties
 				.filter(column => !column.accessorFunction)
 				.forEach(column => {
@@ -68,8 +68,10 @@ const onSaveAfter = message => {
 						audit[column.id] = updatedRow.row[column.id];
 					}
 				});
-			audits[key].push(audit);
 		}
+		audit.user_ = "userX";
+		audit.time_ = new Date(updatedRow.timeStamp);
+		audits[key].push(audit);
 		// delete updatedRows[key];
 	});
 	return true;

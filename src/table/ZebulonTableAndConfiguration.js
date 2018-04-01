@@ -119,9 +119,6 @@ export class ZebulonTableAndConfiguration extends Component {
 			) {
 				this.setState({ updatedRows: nextProps.updatedRows });
 			}
-			// if (nextProps.sizes.zoom !== this.props.sizes.zoom) {
-			// 	this.zoomValue = nextProps.sizes.zoom || 1;
-			// }
 			if (nextProps.sizes !== this.props.sizes) {
 				this.setState({ sizes: nextProps.sizes });
 			}
@@ -165,18 +162,29 @@ export class ZebulonTableAndConfiguration extends Component {
 		}
 		// }
 	};
-	// onGetData = ({ data, meta, status }) => {
-	// 	if (data && meta.table.object === "dataset") {
-	// 		let { propertiesMeta } = this.state;
-	// 		propertiesMeta.properties = metaDescriptions(
-	// 			"properties",
-	// 			this.props.callbacks,
-	// 			this.state.functions
-	// 		).properties;
-	// 		this.setState({ status });
-	// 	}
-	// 	return true;
-	// };
+	onChangeProperties = ({ value, previousValue, column, row }) => {
+		if (
+			["select", "dataType"].includes(column.id) &&
+			value !== previousValue &&
+			[value, previousValue, row.dataType].includes("joined object")
+		) {
+			this.changedProperties = true;
+		}
+	};
+	onGetData = ({ data, meta, status }) => {
+		if (data && meta.table.object === "dataset" && this.changedProperties) {
+			const { functions, sizes } = this.state;
+			this.changedProperties = false;
+			this.initMeta(
+				meta,
+				this.props.callbacks,
+				data,
+				functions,
+				sizes.zoom
+			);
+		}
+		return true;
+	};
 	initTabs = props => {
 		const tabs = [
 			{
@@ -200,7 +208,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						ref={ref => (this.dataset = ref)}
 						errorHandler={this.errorHandler}
 						navigationKeyHandler={this.props.navigationKeyHandler}
-						// onGetData={this.onGetData}
+						onGetData={this.onGetData}
 					/>
 				)
 			},
@@ -294,7 +302,6 @@ export class ZebulonTableAndConfiguration extends Component {
 		if (canQuit) {
 			canQuit("quit", ok => {
 				if (ok) {
-					// console.log("selectedTab", index);
 					computeMeta(
 						this.state.meta,
 						this.zoomValue,
@@ -307,9 +314,6 @@ export class ZebulonTableAndConfiguration extends Component {
 			this.setState({ selectedTab: index });
 		}
 	};
-	// onRowNew = ({ row }) => {
-	// 	computeMeta(this.state.meta, this.state.functions);
-	// };
 	render() {
 		if (this.props.status.loading || this.props.status.loadingConfig) {
 			return <div>Loading data...</div>;

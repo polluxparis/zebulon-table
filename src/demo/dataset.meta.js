@@ -81,7 +81,7 @@ export const meta = {
     ]
   },
   row: {
-    audit: undefined //"audit"
+    audit: "audit"
   },
   properties: [
     {
@@ -100,7 +100,7 @@ export const meta = {
       dataType: "number",
       mandatory: true,
       editable: "is_new",
-      filterType: "between"
+      filterType: "starts"
     },
     {
       id: "product",

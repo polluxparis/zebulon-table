@@ -217,8 +217,8 @@ export class MyDataset extends Component {
             <div
               style={{
                 display: "flex",
-                width: 670,
-                justifyContent: "space-between"
+                width: 670
+                // justifyContent: "space-between"
               }}
             >
               Dataset is generated as
@@ -239,7 +239,7 @@ export class MyDataset extends Component {
                 checked={radioDataset === "get_promise"}
                 onChange={this.handleRadioDataset}
               />
-              <label htmlFor="radioPromise"> a promise </label>
+              <label htmlFor="radioPromise"> a promise or </label>
               <input
                 type="radio"
                 id="radioObservable"
@@ -248,16 +248,7 @@ export class MyDataset extends Component {
                 checked={radioDataset === "get_observable"}
                 onChange={this.handleRadioDataset}
               />
-              <label htmlFor="radioObservable"> an observable or </label>{" "}
-              <input
-                type="radio"
-                id="radioPagination"
-                name="radioDataset"
-                value="get_pagination_manager"
-                checked={radioDataset === "get_pagination_manager"}
-                onChange={this.handleRadioDataset}
-              />
-              <label htmlFor="radioPagination"> a pagination manager </label>
+              <label htmlFor="radioObservable"> an observable </label>{" "}
             </div>
             <div>
               {`Dataset length : ${dataLength}, filtered : ${filteredDataLength}, loaded :  ${loadedDataLength} ${pageStartIndex !==
@@ -314,7 +305,7 @@ export class MyDataset extends Component {
       </div>
     );
     const text =
-      "Test key, navigation, zoom, scroll, wheel...\n• resize the grid using the handle at right, down corner. \n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters and sorts\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n. Resize and move columns by drag and drop.\n...";
+      "Test key, navigation, zoom, scroll, wheel...\n• resize the grid using the handle at right, down corner. \n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters, sorts...\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n• Test 'between filters' (date, quantity...), 'values filters' (product, thirdparties..., 'starts filters' (order).\n• Test 'status filters' : right click on top left status cells.\n• Resize and move columns by drag and drop.\nTest conflict resolution by updatating rows in the 10 first rows by order#, subscribe to a server event then save.\nTest the 'audit' functionality : right click on status cell on an updated and saved rows (exit of audit by right click on top left status cells).\n...";
     footer = (
       <div style={{ marginTop: 10, marginLeft: 2 }}>
         <button onClick={this.subscribe}>
@@ -323,7 +314,7 @@ export class MyDataset extends Component {
         </button>
         <textarea
           readOnly
-          rows="24"
+          rows="40"
           cols="180"
           value={text}
           style={{
@@ -362,3 +353,14 @@ export class MyDataset extends Component {
     );
   }
 }
+/*
+ <input
+                type="radio"
+                id="radioPagination"
+                name="radioDataset"
+                value="get_pagination_manager"
+                checked={radioDataset === "get_pagination_manager"}
+                onChange={this.handleRadioDataset}
+              />
+              <label htmlFor="radioPagination"> a pagination manager </label>
+ */
