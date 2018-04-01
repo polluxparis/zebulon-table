@@ -51,7 +51,7 @@ export class MyDatasetConfiguration extends Component {
         </div>
         <textarea
           readOnly
-          rows="55"
+          rows="25"
           cols="180"
           value={text}
           style={{

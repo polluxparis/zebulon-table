@@ -58,11 +58,11 @@ export const filterFunction = (column, params, data, updatedRows) => {
     column.f = row =>
       String(facc(row) || "").startsWith(String(column.v || ""));
   } else if (column.filterType === "starts") {
-    const v = column.v.toUpperCase();
+    const v = String(column.v).toUpperCase() || "";
     column.f = row =>
       String(facc(row) || "")
         .toUpperCase()
-        .startsWith(String(v) || "");
+        .startsWith(v);
   }
 };
 // -----------------------------
