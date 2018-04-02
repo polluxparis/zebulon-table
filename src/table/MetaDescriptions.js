@@ -5,7 +5,7 @@ import {
 	exportFunctions
 	// aggregations
 } from "./utils/utils";
-// import { Property } from "./Property";
+import { getFunction } from "./utils/compute.meta";
 // ({row})=>accessor('qty')({row})*3
 const functionToString = ({ row }) => {
 	if (typeof row.functionJS === "function") {
@@ -15,6 +15,16 @@ const functionToString = ({ row }) => {
 };
 const stringToFunction = ({ row, status, meta }) => {
 	let f;
+	const accessor = (accessor, visibility) => {
+		return (
+			getFunction(
+				meta.functions,
+				visibility || "dataset",
+				"accessor",
+				accessor
+			) || (() => {})
+		);
+	};
 	try {
 		eval("f = " + row.functionJS);
 	} catch (e) {
