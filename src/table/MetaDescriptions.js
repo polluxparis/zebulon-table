@@ -6,6 +6,7 @@ import {
 	// aggregations
 } from "./utils/utils";
 // import { Property } from "./Property";
+// ({row})=>accessor('qty')({row})*3
 const functionToString = ({ row }) => {
 	if (typeof row.functionJS === "function") {
 		return String(row.functionJS);
@@ -66,7 +67,9 @@ export const onNext = (data, message) => {
 };
 export const onCompleted = message => {};
 export const onError = (e, message) => {};
-
+export const accessor = accessor => {
+	return () => 4;
+};
 export const functions = {
 	properties: {
 		accessors: {

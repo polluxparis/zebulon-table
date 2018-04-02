@@ -486,12 +486,14 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
   }
   computeMeta(meta, zoom, functions);
 };
-
 // -----------------------------------------------------------
 // build a table of functions from the initial function object
 // -----------------------------------------------------------
 const functionsByObject = (object, functions) => {
   const f = functions[object];
+  const accessor = accessor => {
+    return f.accessors[accessor];
+  };
   const f_ = [];
   Object.keys(f).forEach(type => {
     const tp = type.slice(0, type.length - 1);

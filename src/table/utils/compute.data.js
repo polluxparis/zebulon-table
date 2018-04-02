@@ -3,6 +3,7 @@ import { utils } from "zebulon-controls";
 // common data access (row or fiels)
 // ----------------------------------
 export const cellData = (row, column, status, data, params, focused) => {
+  const accessor = accessor => () => 3;
   const editable =
     // focused &&
     !(status || {}).deleted_ &&
