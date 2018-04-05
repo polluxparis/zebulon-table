@@ -64,9 +64,11 @@ export class TableMenu extends Component {
             }
             if (item.id === 0 || filter.v === 0) {
                 delete filters.status_;
-            } else if (item.id === 1) {
+            } else if (item.id >= 100) {
                 filters.status_ = filter;
             } else if (item.id === 2) {
+                const meta = this.state.meta;
+                computeMetaPositions(meta);
                 this.setState({ auditedRow: undefined, audits: undefined });
             }
             this.setState({
