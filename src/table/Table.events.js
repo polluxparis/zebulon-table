@@ -1,7 +1,7 @@
 import React from "react";
 import { TableMenu } from "./Table.menu";
-import { utils } from "zebulon-controls";
-import { computeData } from "./utils/compute.data";
+import { utils, constants } from "zebulon-controls";
+import { computeData, computeRowSearch, rowSearch } from "./utils/compute.data";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import {
   manageRowError,
@@ -14,7 +14,7 @@ export class TableEvent extends TableMenu {
   // ------------------------------------
   // Navigation
   // ------------------------------------
-  closeOpenedWindows = () => {
+  closeOpenedWindows = keepSearch => {
     if (this.state.openedFilter) {
       this.setState({ openedFilter: undefined });
     }
@@ -26,6 +26,9 @@ export class TableEvent extends TableMenu {
     }
     if (this.state.toolTip !== undefined) {
       this.setState({ toolTip: undefined });
+    }
+    if (!keepSearch && this.state.search !== undefined) {
+      this.setState({ search: undefined });
     }
     this.contextualMenu.close();
   };
@@ -51,7 +54,9 @@ export class TableEvent extends TableMenu {
     if (detail.content && e.key === "Tab") {
       return false;
     }
-    if (
+    if (["F", "f"].includes(e.key) && e.ctrlKey) {
+      this.handleSearch(e);
+    } else if (
       !isFilter &&
       this.rows &&
       this.rows.handleNavigationKeys &&
@@ -96,6 +101,10 @@ export class TableEvent extends TableMenu {
       this.state.data,
       this.props.params
     );
+  };
+  handleSearch = e => {
+    e.preventDefault();
+    this.setState({ search: true });
   };
   //-----------------------------------------
   // buttons and actions management
@@ -366,6 +375,37 @@ export class TableEvent extends TableMenu {
             this.state.filteredData.pageLength)
     );
   };
+  scrollTo = (rowIndex, rowDirection, columnIndex, columnDirection) => {
+    if (rowDirection || columnDirection) {
+      this.rows.scrollOnKey(
+        { rows: rowIndex, columns: columnIndex },
+        null,
+        rowDirection,
+        columnDirection
+      );
+    }
+    // if (columnDirection) {
+    //   this.rows.scrollOnKey(
+    //     { rows: rowIndex, columns: columnIndex },
+    //     constants.AxisType.COLUMNS,
+    //     columnDirection,
+    //     false
+    //   );
+    // }
+    // const scroll = { ...this.state.scroll };
+    // // if (){}
+    // scroll.rows = {
+    //   ...scroll.rows,
+    //   startIndex: rowIndex,
+    //   direction: rowDirection
+    // };
+    // scroll.columns = {
+    //   ...scroll.columns,
+    //   startIndex: columnIndex,
+    //   direction: columnDirection
+    // };
+    // this.setState({ scroll });
+  };
   onScroll = (scroll, cell, extention) => {
     const startIndex = scroll.rows.startIndex;
     const stopIndex =
@@ -381,7 +421,7 @@ export class TableEvent extends TableMenu {
     }
   };
   onScroll_ = (scroll, cell, extension) => {
-    this.closeOpenedWindows();
+    this.closeOpenedWindows(true);
     if (cell) {
       const range = { ...this.state.selectedRange };
       range.end = cell;
@@ -404,6 +444,7 @@ export class TableEvent extends TableMenu {
             this.selectRange_(range, callback || (x => x), row, type, noFocus)
         });
       } else {
+        this.closeOpenedWindows(true);
         const ok = this.selectRange_(
           range,
           callback || (x => x),
@@ -425,8 +466,8 @@ export class TableEvent extends TableMenu {
     if (!this.props.isActive && this.props.onActivation) {
       this.props.onActivation();
     }
-    const { selectedRange, meta } = this.state;
-    this.hasFocus = !noFocus;
+    const { selectedRange, meta, search } = this.state;
+    this.hasFocus = !noFocus && !search;
     if (range.end.rows > this.getDataLength() - 1) {
       range.end = {};
       range.start = {};
@@ -487,7 +528,6 @@ export class TableEvent extends TableMenu {
         return enter(ok);
       }
     };
-    this.closeOpenedWindows();
     if (type === "enter") {
       return enter(true);
     }
@@ -500,7 +540,9 @@ export class TableEvent extends TableMenu {
     this.updated = true;
     this.rowUpdated = true;
     this.tableUpdated = true;
-    const status = getRowStatus(this.state.updatedRows, row);
+    const { updatedRows, data, meta, dataStrings } = this.state;
+    delete dataStrings[row.index_];
+    const status = getRowStatus(updatedRows, row);
     setStatus(status, "updated_");
     const message = {
       value,
@@ -508,8 +550,8 @@ export class TableEvent extends TableMenu {
       row,
       status,
       column,
-      meta: this.state.meta,
-      data: this.state.data,
+      meta: meta,
+      data: data,
       params: this.props.params
     };
     return (
@@ -799,6 +841,7 @@ export class TableEvent extends TableMenu {
     if (errors.length || this.state.toolTip) {
       const toolTip = errors.length
         ? {
+            type: "error",
             top:
               e.target.offsetParent.offsetTop +
               rowIndex * this.rowHeight +

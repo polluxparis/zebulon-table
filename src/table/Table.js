@@ -2,6 +2,8 @@ import React from "react";
 import { Headers, Status } from "./TableHeaders";
 import { TableFilterSort } from "./Table.filters.sorts";
 import { Rows } from "./Rows";
+import { Search } from "./Search";
+
 import {
   utils,
   Filter,
@@ -65,7 +67,9 @@ export class Table extends TableFilterSort {
       selectedRange: { start: {}, end: {} },
       detail: {},
       text: {},
-      checkAll: false
+      checkAll: false,
+      search: false,
+      dataStrings: {}
     };
 
     this.rowHeight = this.props.rowHeight;
@@ -334,6 +338,44 @@ export class Table extends TableFilterSort {
       (meta.table.caption ? 30 : 0) -
       headersLength * this.rowHeight -
       (actions.length ? 30 : 0);
+    // ------------------------
+    // search
+    // ------------------------
+    let search = null;
+
+    if (this.state.search) {
+      const { filteredData, meta, dataStrings, scroll } = this.state;
+      const content = (
+        <Search
+          filteredData={filteredData}
+          meta={meta}
+          dataStrings={dataStrings}
+          scroll={scroll}
+          rowStartIndex={
+            scroll.rows.startIndex + scroll.rows.shift === 0 ? 0 : 1
+          }
+          rowStopIndex={Math.min(
+            scroll.rows.startIndex +
+              Math.floor(this.rowsHeight / this.rowHeight) -
+              (scroll.rows.shift === 0 ? 1 : 0),
+            filteredData.length - 1
+          )}
+          onClose={() => this.setState({ search: false })}
+          // selectRange={this.selectRange_}
+          selectedCell={this.state.selectedRange.end}
+          scrollTo={this.scrollTo}
+        />
+      );
+      search = (
+        <div
+          key={"tool-tip"}
+          className="zebulon-tool-tip"
+          style={{ top: 0, left: 0, position: "absolute" }}
+        >
+          {content}
+        </div>
+      );
+    }
     // -----------------------------
     // simulation of audit
     // -----------------------------
@@ -648,6 +690,7 @@ export class Table extends TableFilterSort {
         {this.filter}
         {this.text}
         {toolTip}
+        {search}
         {title}
         <div style={{ display: "-webkit-box" }}>
           {statusBarHeader}

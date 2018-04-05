@@ -254,3 +254,74 @@ export const computeAudit = (row, meta, audits) => {
   }
   return rows;
 };
+
+export const getRegExp = v =>
+  new RegExp(v.replace(" ", `[${String.fromCharCode(32, 160)}]`), "i");
+const stringValue = (property, row) => {
+  const accessor = property.accessorFunction || (({ row }) => row[property.id]);
+  const v = accessor({ row });
+  if (!utils.isNullOrUndefined(v)) {
+    if (property.dataType === "string") {
+      return v.toUpperCase();
+    } else if (property.dataType === "number") {
+      return utils.numberToString(v);
+    } else if (property.dataType === "date") {
+      return utils.dateToString(v);
+    } else {
+      return null;
+    }
+  }
+};
+export const computeRowSearch = (data, properties, dataStrings) => {
+  const strings = [];
+  data.forEach((row, index) => {
+    if (!dataStrings[row.index_]) {
+      let rowStrings = [];
+      properties.forEach(property => {
+        const v = stringValue(property, row);
+        if (!utils.isNullOrUndefined(v)) {
+          rowStrings.push(v);
+        }
+      });
+      dataStrings[row.index_] = rowStrings.join("~~");
+    }
+    strings.push(dataStrings[row.index_]);
+  });
+  return strings;
+};
+export const rowSearch = (dataStrings, exp) => {
+  // const v_ = v.toUpperCase();
+  const indexes = [];
+  dataStrings.forEach((rowString, index) => {
+    if (exp.test(rowString)) {
+      indexes.push(index);
+    }
+  });
+  return indexes;
+};
+export const cellSearch = (
+  row,
+  properties,
+  exp,
+  propertyStart = 0,
+  direction = 1
+) => {
+  // const v_ = v.toUpperCase();
+  let i = propertyStart;
+  while (
+    properties.length > i &&
+    i >= 0 &&
+    !exp.test(stringValue(properties[i], row) || "")
+  ) {
+    i += direction;
+  }
+  // const
+  // const v_ = v.toUpperCase();
+  // const indexes = [];
+  // Object.values(dataStrings).forEach((rowString, index) => {
+  //   if (rowString.indexOf(v_) !== -1) {
+  //     indexes.push(index);
+  //   }
+  // });
+  return properties.length > i && i >= 0 ? i : null;
+};

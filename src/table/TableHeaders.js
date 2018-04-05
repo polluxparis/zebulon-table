@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { utils, ContextualMenuClient, Input } from "zebulon-controls";
+import { utils, ContextualMenuClient, Input, icons } from "zebulon-controls";
 // import { Input } from "./Input";
 import { computeMetaPositions } from "./utils/compute.meta";
 import { cellData } from "./utils/compute.data";
@@ -31,40 +31,68 @@ const filter = (
     else if (column.dataType === "date" || column.dataType === "boolean")
       textAlign = "center";
   }
-  let value = column.v;
-  if (filterTo) {
-    value = column.vTo;
-  } else if (column.filterType === "values" && column.v) {
-    value = "Y";
-  } else if (column.filterType === "values") {
-    value = "";
-  }
   const focused =
     (focusedId || document.activeElement.id) ===
     String(column.index_ + 1000 * filterTo);
   const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
-  return (
-    <Input
-      column={column}
-      id={id}
-      key={id}
-      className={className}
-      style={{
-        // position: "absolute",
-        height,
-        width,
-        textAlign
-      }}
-      editable={true}
-      focused={focused}
-      inputType="filter"
-      tabIndex={column.index_ * 2 + (filterTo || 0) + 100}
-      value={value}
-      filterTo={filterTo}
-      onChange={onChange}
-      onFocus={e => openFilter(e, column)}
-    />
-  );
+  let value = column.v,
+    div;
+  if (column.filterType === "values" && column.v) {
+    // value = "Y";
+    div = (
+      <div
+        style={{
+          height,
+          width
+        }}
+        id={id}
+        key={id}
+        className={className}
+        onClick={e => openFilter(e, column)}
+      >
+        <div
+          style={{
+            background: icons.filter,
+            backgroundSize: "cover",
+            height: "1em",
+            width: "1em",
+            marginTop: "0.1em",
+            marginRight: "0.1em"
+          }}
+        />
+      </div>
+    );
+  } else {
+    if (filterTo) {
+      value = column.vTo;
+    } else if (column.filterType === "values") {
+      value = "";
+    }
+    div = (
+      <Input
+        column={column}
+        id={id}
+        key={id}
+        className={className}
+        style={{
+          // position: "absolute",
+          height,
+          width,
+          textAlign
+        }}
+        editable={true}
+        focused={focused}
+        inputType="filter"
+        tabIndex={column.index_ * 2 + (filterTo || 0) + 100}
+        value={value}
+        filterTo={filterTo}
+        onChange={onChange}
+        onFocus={e => openFilter(e, column)}
+      />
+    );
+  }
+
+  return div;
 };
 const header = (
   column,

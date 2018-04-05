@@ -284,3 +284,5 @@ export class TableFilterSort extends TableEvent {
     }
   };
 }
+// const dataStrings = computeRowSearch(this.state.data, this.state.meta, {});
+//    const indexes = rowSearch(dataStrings, "22/02");
