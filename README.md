@@ -1,25 +1,27 @@
 # Zebulon table
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
-## Help and suggestions would be welcome.
+Please, look at the demo using Chrome as it's not yet fully compatible with other navigators.
+#### Help and suggestions would be welcome.
 ## Main features
 #### User experience
-* Key navigation.
+* [Key navigation.](#key-events)
 * Copy, paste.
-* Sorting, filtering.
+* [Sorting, filtering.](#filtering-and-sorting)
 * Formats.
-* Foreign key management.
+* [Foreign key management.](#object-properties-and-foreign-keys)
 * Column locks.
-* User interraction.
+* [User interactions.](#validation-and-saving-process)
 #### Server communication
 * Rich server communication.
-* Validations.
-* Conflicts resolution.
-* Subscription to server events.
+* [Validations.](#validation-and-saving-process)
+* [Conflicts resolution.](#validation-and-saving-process)
+* [Subscription to server events.](#subscription-to-server-events)
 #### Miscellaneous
-* Custom contextual menus.
-* Self description.
-* Computed columns.
+* [Custom contextual menus.](#custom-contextual-menu)
+* [Self description.](#self-description)
+* [Computed columns.](#computed-columns)
+* [Audit.](#audit)
 
 
 ## Table of contents
@@ -621,7 +623,72 @@ export const MyDatasetContainer = connect(
 )(ZebulonTable);
 ```
 ## Computed columns
-Not yet documented 
+You can create any computed columns using an accessor, as the result of a function using the global parameters and the row data.
+Those columns are dinamically refreshed on every changes impacting the value ( on cell quit).
+You can also create computed columns calculated by a functions as an aggregation operation on a subset of the dataset: typically a rolling average.
+For that you'll have to define 
+* a "window" function accessor with an order: previous 100 order by date.
+* an aggregation operation accessor : average
+* a group by accessor: product
+```js
+{
+  properties:{
+    ...
+    rollingAvg:{
+      ...
+      aggregation: "avg",
+      groupByAccessor: "country.id",
+      accessor: "amt_€",
+      comparisonAccessor: "row.d",
+      sortAccessor: "row.d",
+      windowStart: "since30d",
+      windowEnd: x => x
+    }
+  }
+}
+```
+Those columns are computed on data refresh or on demand.
+Demo: 
+* rolling average of amounts in € order by date since 30 days
+* sum of amounts in € by country
+## Audit
+If your backend is able to produce the successive versions of a data row, either as set of similar data rows, either as a set of objects only with changed values,
+```js
+[
+  {
+    user_:"toto",
+    time_:Fri Apr 06 2018 10:46:36,
+    price: 123 // changed value before saved 
+  }
+]
+```
+you can add a function (or a function accessor) in the meta description;
+```js
+{
+  table:{...}
+  row:{
+    audit:getAudit,
+    ...}
+  properties:{...}
+}
+```
+It will add an audit entry in the status cell contextual menu (right click on the left cell of the row) that will display the succesive states of the row.
+## Self description
+It's easy to use the new instances of the component to describe the dataset you are working on.
+
+In the demo, in the "Manage configuration" tab, you are able to :
+* update the original dataset,
+* add computed properties
+* modify formats, filters, sizes...
+* create new JS functions used as accessor for new properties...
+
+Please follow the tutorial to reproduce the dataset as it's displayed in the first tab.
+ZebulonTableAndConfiguration is a component you can use to manage configurations. It's a 3 tabs window:
+* dataset
+* properties
+* functions
+It changes dinamically the resitution following your own description. 
+You may add new tabs if needed: see zebulon Grid demo at http://polluxparis.github.io/zebulon-grid/ ("Configuration" checked) to define measures and dimensions on a pivot grid.
 ## Key events and navigation key handler
 To manage correctly key events, specialy with several instances of the component, you can pass from an upper component the event as a prop. Only active component,considering the isActive prop will handle the event.
 Key events are used to navigate in the the grid, select a range of cells, zoom, copy or paste.

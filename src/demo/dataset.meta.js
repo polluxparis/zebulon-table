@@ -10,8 +10,8 @@ export const rollingAverage = {
   comparisonAccessor: "row.d",
   sortAccessor: "row.d",
   windowStart: "since30d",
-  hidden: true,
   windowEnd: x => x,
+  hidden: true,
   format: "amt_€"
 };
 export const totalAmount = {
