@@ -5,8 +5,8 @@ Please, look at the demo using Chrome as it's not yet fully compatible with othe
 #### Help and suggestions would be welcome.
 ## Main features
 #### User experience
-* [Key navigation.](#key-events)
-* Copy, paste.
+* [Key navigation.](#key-events-and-navigation-key-handler)
+* [Copy, paste, search.](#key-events-and-navigation-key-handler)
 * [Sorting, filtering.](#filtering-and-sorting)
 * Formats.
 * [Foreign key management.](#object-properties-and-foreign-keys)
@@ -693,8 +693,10 @@ You may add new tabs if needed: see zebulon Grid demo at http://polluxparis.gith
 To manage correctly key events, specialy with several instances of the component, you can pass from an upper component the event as a prop. Only active component,considering the isActive prop will handle the event.
 Key events are used to navigate in the the grid, select a range of cells, zoom, copy or paste.
 The actual behaviour is 
-* ctrl + C, ctrl + V for copy paste,
+* ctrl c, ctrl v for copy paste,
 * ctrl -, ctrl +  for zoom in, zoom out,
+* ctrl f for search in the table,
+
 * shift to extend the selection,
 ###
 For a not editable table :
