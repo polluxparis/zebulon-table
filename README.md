@@ -260,10 +260,15 @@ An accessor is a descriptor(string) used to retrieve a function that returns dat
 #### data accessors (on properties)
 * The default accessor function is ({row})=>row[property.id].
 * You can refer to an other property value :"row.<referenced property id>", eg row.quantity. N.B. "row." is mandatory in this case to make the distinction with function accessors. Accessor function is ({row})=>row[referenced property.id] 
-* You can refer to a key of an object stored in a property :row.<referenced property id>.<key>, eg row.product.price. Accessor function is ({row})=>row[referenced property.id].[key]
+* You can refer to a key of an object stored in a property :row.<referenced object>.<key>, eg row.product.price. Accessor function is ({row})=>row[referenced property.id].[key]
 * You can refer to a function accessor.
 #### function accessors
-Functions can be defined directly in the meta description or referenced by accessors: f =typeof meta...x===function?meta...x:functions[object][function type][meta...x]
+Functions can be defined directly in the meta description or referenced by accessors: 
+```js
+f =typeof meta...x===function
+  ? meta...x
+  : functions[object][function type][meta...x]
+```
 ### meta object
 It contains 3 sections: table, row and properties.
 ```js
@@ -471,9 +476,9 @@ The updatedRows prop is an object with an entry for each updated rows in the tab
 ```
 If you pass an updatedRows prop as an empty object, it will mutate at each update in the table. Validation functions should update the error property (updatedRows.errors) if needed. In consequence, the component calling the table component can know at any time all the changes since the loading (or refresh) of data.
 exported functions to manage errors log.
-* manageRowError (updatedRows, index, object, type, error): log or remove an error in the row status object.
-* getRowErrors (status, rowIndex): return an array with logged errors of the specified row (absolute index).
-* getErrors :return an array with all the errors logged for the dataset.
+* manageRowError: (updatedRows, index, object, type, error): log or remove an error in the row status object.
+* getRowErrors: (status, rowIndex): returns an array with logged errors of the specified row (absolute index).
+* getErrors: returns an array with all the errors logged for the dataset.
 
 ## Filtering and sorting
 Filtering and sorting can be done directly in the table.
@@ -509,25 +514,32 @@ It must returns (as a promise) a page of rows including those two rows, the firs
 As only current page is known by the client, global functions as sorting and filtering must be managed by the server. With an editable grid, updates may have impacts on sorting and filtering. You may want to take into account those changes before commit.
 Filters and sorting informations plus updated rows are passed as arguments of the function({  startIndex, stopIndex, filters, sorts, params,updatedRows}).
 You can find an example in src/demo/datasource.
-### Actual restrictions
+### Actual restrictions with pagination manager
 * Filters with existing values is not implemented yet, values must be given by the server.
 * Computed columns with aggregation are not available.
 ## Validation and saving process
 ### Validations, error handling and saving
 Each validation step will be executed in two phases:
-* A validation function called with a "message" as parameter to detect errors and conflicts. Errors and conflicts must be written, mutating the object, in the errors, conflicts entries of the message. Returning false will cancel the action and the second phase won't be executed. For validation functions that may be executed asynchronously (onSaveBefore, onSave, onSaveAfter), a callback is added as a second parameter that must be executed, if the process is asynchronous, with true (if succeed or handling errors is required) or false as parameter.
-* An "errorHandler" function to manage the interractions with the user.
+* A validation function:
+###
+Called with a "message" as parameter to detect errors and conflicts. Errors and conflicts must be written, mutating the object, in the errors, conflicts entries of the message. Returning false will cancel the action and the second phase won't be executed. For validation functions that may be executed asynchronously (onSaveBefore, onSave, onSaveAfter), a callback is added as a second parameter that must be executed, if the process is asynchronous, with true (if succeed or handling errors is required) or false as parameter.
+* An "errorHandler" function:
+###
+Manage the interactions with the user.
 If no errors or conflicts are found in the message, the error handler will return true and the action will be resumed. Else the function defined in the errorHandler prop is then called with the message. 
 This prop function must build the element to display (as a string, an array of string or a JSX element) and to characterize the errors as blocking or subject to validation.
 For a blocking error, the error handler must return false and  a modal dialog will be displayed with an Ok button. The initial action is cancelled.
+###
 Demo:
-In the demo, the error handler has been defined to consider any error as blocking for sae actions.
+In the demo, the error handler has been defined to consider any error on save as blocking errors.
 
 For an alert, the error handler must return true. A modal dialog will be displayed with Yes and No buttons. The initial action is cancelled on No and resumed on Yes.
+###
 Demo:
 In the demo, the error handler has been defined to consider errors on row quit as an alert.
 
 For conflicts, typically when same data has changed on the server and in the component, a "conflicts resolution" modal will be opened, (with an other instance  of the component) to choose the versions that must be kept.
+###
 Demo:
  In the demo, you can test the "conflicts resolution" modal by subscribing to server changes:
 * update one or several rows (in the 10th first ordered by order#)
@@ -537,31 +549,35 @@ Demo:
 
 #### Cell level
 * onChange
+###
 The component checks the data type of the changed value, then call the function in the onChange prop (or defined in the meta description).
 * onCellQuit
+###
 If the cell has been updated and corresponds to a link with a foreign key on an other component (meta.property[*].foreignObject), the value is searched in the "foreign object". If no row match the value, the action is cancelled, if only one row match, the value is updated and the action continues else the component is opened, filtered by the value, to select the relevant row. 
 Then the onCellQuit prop function (or defined in the meta description) is called.
+###
 Demo:
 The Thirdparty column is defined as a linked to a foreign object: MyThirdparties.
 #### Row level
 * onRowQuit
+###
 If the row has been updated, the mandatory columns and the unicity of the primary key are checked. Errors are stored in the "message".
 Then the onRowQuit prop function (or defined in the meta description) is called.
+###
 N.B. The unicity of the primary key is checked only on data loaded on the client. It should be done on the server side during the saving process. 
 #### Dataset level (saving process)
 When the updated data must be saves, cell validations and row validations are executed first.
 All these functions can be executed asynchronously.
-* onSaveBefore
-Execute the onSaveBefore prop function (or defined in the meta description).
-* onSave
-Execute the onSave prop function (or defined in the meta description).
-* onSaveAfter
-Execute the onSaveAfter prop function (or defined in the meta description).
+* onSaveBefore: Execute the onSaveBefore prop function (or defined in the meta description).
+* onSave: Execute the onSave prop function (or defined in the meta description).
+* onSaveAfter: Execute the onSaveAfter prop function (or defined in the meta description).
 #### Table level
 Actions has refresh, filter ... may require to save data before.
 * onTableChange
+###
 If data have been updated, a confirmation modal with Yes, No and Cancel buttons is displayed. On Yes the whole saving process is executed and the action is resumed (if no intermediate cancellation occurs), on No, all updates are rolledback and action is resumed, On Cancel, the process stops. 
 * saveConfirmationRequired prop
+###
 You may need to save the update before an action called from outside of the component (exit, reload...). In this case, you can pass as a prop (saveConfirmationRequired) the function to callback after the saving.
 It will fired the onTableChange event and return the callback in case of success. 
 ## Working with a Redux store
@@ -652,13 +668,13 @@ Demo:
 * rolling average of amounts in € order by date since 30 days
 * sum of amounts in € by country
 ## Audit
-If your backend is able to produce the successive versions of a data row, either as set of similar data rows, either as a set of objects only with changed values,
+If your backend is able to produce the successive versions of a data row, either as a set of similar data rows, either as a set of objects only with changed values,
 ```js
 [
   {
     user_:"toto",
     time_:Fri Apr 06 2018 10:46:36,
-    price: 123 // changed value before saved 
+    price: 123 // previous value (before saved) 
   }
 ]
 ```
@@ -675,19 +691,20 @@ you can add a function (or a function accessor) in the meta description;
 It will add an audit entry in the status cell contextual menu (right click on the left cell of the row) that will display the succesive states of the row.
 ## Self description
 It's easy to use the new instances of the component to describe the dataset you are working on.
-
+###
 In the demo, in the "Manage configuration" tab, you are able to :
 * update the original dataset,
 * add computed properties
 * modify formats, filters, sizes...
 * create new JS functions used as accessor for new properties...
-
+###
 Please follow the tutorial to reproduce the dataset as it's displayed in the first tab.
 ZebulonTableAndConfiguration is a component you can use to manage configurations. It's a 3 tabs window:
-* dataset
-* properties
-* functions
-It changes dinamically the resitution following your own description. 
+* dataset,
+* properties,
+* functions,
+###
+It changes dinamically the restitution following your own description. 
 You may add new tabs if needed: see zebulon Grid demo at http://polluxparis.github.io/zebulon-grid/ ("Configuration" checked) to define measures and dimensions on a pivot grid.
 ## Key events and navigation key handler
 To manage correctly key events, specialy with several instances of the component, you can pass from an upper component the event as a prop. Only active component,considering the isActive prop will handle the event.
@@ -707,7 +724,7 @@ For a not editable table :
 * home and end to select the cell on the first or last row,
 * alt + home or end to select the first or last cell on the row,
 ###
-For an editable grid left and righ arrow must keep the default behavior in the edditable cells. The alt key is used to force the navigation behavior.
+For an editable grid left and righ arrow must keep the default behavior in the editable cells. The alt key is used to force the navigation behavior.
 ###
 You can overwrite the navigationKeyHandler functions setting your custom function in the navigationKeyHandler prop (see src/demo/navigation.handler.js).
 ## Custom contextual menu
@@ -749,24 +766,16 @@ It's possible to add custom contextual menu on
 On menu click, function is called with {meta, data, params, row || column}  as argument.
 ## Managing privileges
 Not yet documented
-## Self description
-Not yet documented
 ## Details and drilldown
 Not yet documented
 ## To do
 * Complete documentation.
-* Demo.
 * Loading from observable improvement.
 * Pagination manager improvement.
 * Computed columns with aggregation functions improvement. 
-* "values" filter improvement.
 * Styles and design improvement.
-* Contextual menu and tooltips management.
-* Audits.
-* Rollback of row updates.
-* Details improvement.
+ Details improvement.
 * Parameterisation of "actions".
 * Grouped columns.
-* Lock of columns.
 *...
 
