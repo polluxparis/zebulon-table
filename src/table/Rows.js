@@ -179,13 +179,19 @@ export class Rows extends ScrollableGrid {
       height,
       rowHeight,
       width,
-      selectedCell,
-      selectCell,
+      // selectedCell,
+      // selectCell,
       updatedRows,
       hasFocus,
       dataLength,
       componentId
     } = this.props;
+    console.log(
+      "getContent",
+      this.props.noVerticalScrollbar,
+      height,
+      this.props.scroll.rows
+    );
     // if (data.length === 0) {
     //   return null;
     // }
@@ -195,7 +201,6 @@ export class Rows extends ScrollableGrid {
       rows = data,
       columnStartIndex = this.props.scroll.columns.startIndex,
       columnShift = this.props.scroll.columns.shift;
-
     if (typeof data === "object" && data.page) {
       rows = data.page;
       indexPage = data.pageStartIndex;
@@ -227,9 +232,10 @@ export class Rows extends ScrollableGrid {
           rowHeight,
           index,
           hasFocus,
-          componentId,
-          selectedCell,
-          selectCell
+          componentId
+          // ,
+          // selectedCell,
+          // selectCell
         )
       );
       index++;
@@ -239,7 +245,8 @@ export class Rows extends ScrollableGrid {
       // position: "absolute",
       top: this.props.scroll.rows.shift || 0,
       width: visibleWidth,
-      position: "inherit"
+      position: "inherit",
+      height: "inherit"
     };
     // if (this.props.noVerticalScrollbar) {
     //   style.borderRight = "solid 0.03em rgba(0, 0, 0, 0.5)";

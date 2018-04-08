@@ -347,6 +347,9 @@ export class ZebulonTableAndConfiguration extends Component {
 					{this.tabs.map((tab, index) => (
 						<div
 							key={index}
+							style={{
+								width: `${(100 / this.tabs.length).toFixed(2)}%`
+							}}
 							className={cx({
 								"zebulon-tabs-tab": true,
 								"zebulon-tabs-tab-selected":

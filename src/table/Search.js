@@ -65,22 +65,12 @@ export class Search extends Component {
     }
     if (cell_.columns !== null) {
       const cellRange = { ...cell_, columns: properties[cell_.columns].index_ };
-      // if (cellRange.rows >= rowStopIndex || cellRange.rows <= rowStartIndex) {
       this.props.scrollTo(
         cellRange.rows,
         Math.sign(cellRange.rows - (this.state.cell.rows || 0)),
         cellRange.columns,
         Math.sign(cellRange.columns - (this.props.selectedCell.columns || 0))
       );
-      // } else {
-      //   this.props.selectRange(
-      //     { start: cellRange, end: cellRange },
-      //     () => {},
-      //     null,
-      //     "enter",
-      //     true
-      //   );
-      // }
       this.setState({ cell: cell_, indexRowIndex: index });
     }
   };

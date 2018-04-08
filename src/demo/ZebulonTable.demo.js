@@ -132,6 +132,7 @@ class ZebulonTableDemo extends Component {
             {this.tabs.map((tab, index) => (
               <div
                 key={index}
+                style={{ width: "50%" }}
                 className={cx({
                   "zebulon-tabs-tab": true,
                   "zebulon-tabs-tab-selected": index === this.state.selectedTab

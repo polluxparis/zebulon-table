@@ -499,7 +499,7 @@ export class Table extends TableFilterSort {
       !utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth;
     if (locked) {
       style = {
-        borderLeft: "solid 0.021em rgba(0, 0, 0, 1)",
+        borderLeft: "solid 0.05em rgba(0, 0, 0, .5)",
         boxSizing: "border-box"
       };
     }
@@ -633,8 +633,9 @@ export class Table extends TableFilterSort {
             style={{
               width: this.rowHeight,
               height: this.rowHeight,
-              border: "0.02em solid rgba(0, 0, 0, 0.3)",
-              padding: 4
+              top: i * this.rowHeight
+              // border: "0.02em solid rgba(0, 0, 0, 0.3)",
+              // padding: 4
             }}
           >
             {checkbox}
@@ -647,7 +648,7 @@ export class Table extends TableFilterSort {
           menuId="top-left-corner-menu"
           componentId={this.props.id}
         >
-          <div style={{ display: "block" }}>{statusBarHeader}</div>
+          {statusBarHeader}
         </ContextualMenuClient>
       );
     } else {
@@ -686,36 +687,44 @@ export class Table extends TableFilterSort {
         // onMouseUp={e => console.log("mouseup", e.target)}
         // onMouseleave={e => console.log("mouseleave", e.target)}
       >
-        {detail}
-        {this.filter}
-        {this.text}
-        {toolTip}
-        {search}
-        {title}
-        <div style={{ display: "-webkit-box" }}>
-          {statusBarHeader}
-          {lockedHeaders}
-          {headers}
-        </div>
-        <div
-          style={{
-            display: "-webkit-box"
-          }}
-        >
-          {statusBar}
-          {lockedColumns}
-          {rows}
+        <div style={{ border: "solid grey 0.05em" }}>
+          <ContextualMenu
+            key="table-menu"
+            getMenu={this.getMenu}
+            componentId={this.props.id}
+            id="table-menu"
+            ref={ref => (this.contextualMenu = ref)}
+          />
+          {detail}
+          {this.filter}
+          {this.text}
+          {toolTip}
+          {search}
+          {title}
+          <div
+            style={{
+              // display: "-webkit-box"
+              display: "flex"
+            }}
+          >
+            {statusBarHeader}
+            {lockedHeaders}
+            {headers}
+          </div>
+          <div
+            style={{
+              // display: "-webkit-box"
+              display: "flex"
+            }}
+          >
+            {statusBar}
+            {lockedColumns}
+            {rows}
+          </div>
         </div>
         <div style={{ height: actions.length ? 30 : 0, display: "flex" }}>
           {actions}
         </div>
-        <ContextualMenu
-          key="table-menu"
-          getMenu={this.getMenu}
-          componentId={this.props.id}
-          id="table-menu"
-          ref={ref => (this.contextualMenu = ref)}
-        />
       </div>
     );
   }

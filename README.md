@@ -1,7 +1,7 @@
 # Zebulon table
 Zebulon table is a hight performance fully virtualized React editable table component.
 ## Available demo at: http://polluxparis.github.io/zebulon-table/
-Please, look at the demo using Chrome as it's not yet fully compatible with other navigators.
+Please, look at the demo using Chrome as it's not yet fully compatible with other browsers.
 #### Help and suggestions would be welcome.
 ## Main features
 #### User experience
@@ -453,7 +453,7 @@ MyThirdparties class is used to manage thirdparties
     },
 ```
 N.B.
-You may want to use a "joined object" for limited items lists (eg currencies), in this case, it may be loaded on the client as an object of object 
+You may want to use a "joined object" for limited items lists (eg currencies), in this case, it may be loaded on the client as an object of objects 
 {
   [primary key 1]:{pk_:[primary key 1],code:...},
   [primary key 2]:{pk_:[primary key 2],code:...}},

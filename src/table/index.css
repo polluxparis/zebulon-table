@@ -1,7 +1,6 @@
-.zebulon-table: {
-  border: solid 0.05em;
-  color: red;
-  background-color: red;
+.zebulon-table-grid: {
+  border: solid lightgrey 0.5em;
+  /*border-left: unset;*/
 }
 .zebulon-table-title: {
   font-weight: bold;
@@ -34,7 +33,9 @@
   height: inherit;
   width: inherit;
   box-sizing: border-box;
-  border: solid rgba(0, 0, 0, 0.2) 0.02em;
+  border: solid rgba(0, 0, 0, 0.3) 0.03em;
+  border-right: unset;
+  border-top: unset;
   padding: 0.2em;
   outline: none;
   user-select: none;
@@ -83,7 +84,7 @@
 .zebulon-table-filter {
   padding: 0;
   /*margin: 0.01em;*/
-  border: solid rgba(0, 0, 0, 0.2) 0.05em;
+  /*border: solid rgba(0, 0, 0, 0.2) 0.05em;*/
 }
 .zebulon-table-filter-empty {
   background-color: white;
@@ -97,19 +98,25 @@
   background-color: rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
   text-align: center;
-  border: solid rgba(0, 0, 0, 0.3) 0.02em;
+  /*border: solid rgba(0, 0, 0, 0.3) 0.02em;*/
+  border: solid rgba(0, 0, 0, 0.4) 0.04em;
+  border-top: unset;
+  border-right: unset;
   padding: 0.2em;
   overflow: hidden;
 }
 .zebulon-table-status-selected {
-  border: solid blue 0.05em;
+  border: solid grey 0.04em;
   background-color: #eef8fb;
 }
 .zebulon-table-corner {
+  /*position: relative;*/
   outline: none;
   background-color: #eef8fb;
   height: inherit;
-  border: solid rgba(0, 0, 0, 0.2) 0.02em;
+  border: solid rgba(0, 0, 0, 0.4) 0.03em;
+  border-top: unset;
+  border-right: unset;
   box-sizing: border-box;
   /*z-index: 1;*/
   overflow: hidden;

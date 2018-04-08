@@ -32,7 +32,7 @@ const filter = (
       textAlign = "center";
   }
   const focused =
-    (focusedId || document.activeElement.id) ===
+    (focusedId || document.activeElement || {}.id) ===
     String(column.index_ + 1000 * filterTo);
   const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
   let value = column.v,
@@ -145,7 +145,6 @@ const header = (
           <div>{sort}</div>
           <div
             id={id}
-            draggable={true}
             style={{
               width: 3,
               cursor: "col-resize",
@@ -198,8 +197,10 @@ const filterEmpty = (id, position, width, height) => {
       className="zebulon-table-cell zebulon-table-header zebulon-table-filter-empty"
       style={{
         height,
-        width,
-        border: "0.02em solid rgba(0, 0, 0, 0.2) "
+        width
+        // ,
+        // border: "0.02em solid rgba(0, 0, 0, 0.2) ",
+        // borderRight
       }}
     />
   );
@@ -233,10 +234,13 @@ export class Headers extends Component {
     this.dragId = e.target.id;
     this.dragType = type;
     this.dragX = e.pageX;
+    // console.log("handleDragStart", this.dragId, e);
+    e.dataTransfer.setData("text", this.dragId);
     e.stopPropagation();
   };
 
   handleDragOver = e => {
+    // console.log("handleDragOver", e);
     if (
       this.dragType === "move" ||
       (this.dragType === "resize" &&
@@ -434,9 +438,13 @@ export class Headers extends Component {
     const style = {
       width,
       height,
-      overflow: "hidden",
+      // overflow: "hidden",
       display: "flex"
     };
+    if (!locked) {
+      style.overflow = "hidden";
+    }
+
     if (cells.length) {
       return (
         <div
@@ -494,8 +502,6 @@ export const statusCell = (
   const id = `status: ${componentId}-${row.index_}-`;
   return (
     <ContextualMenuClient
-      // id={"row-status: " + index}
-      // key={index}
       id={id}
       key={id}
       status={status}
@@ -504,12 +510,11 @@ export const statusCell = (
       componentId={componentId}
     >
       <div
-        id={id}
+        // id={id}
         key={id}
         className={className}
         style={style}
         onClick={() => onClick(index)}
-        // onDoubleClick={e => onDoubleClick(e, status)}
         onMouseOver={e => handleErrors(e, errors)}
         onMouseOut={e => handleErrors(e, [])}
         onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
@@ -535,10 +540,17 @@ export class Status extends Component {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   onClick = index => {
-    this.props.selectRange({
-      end: { rows: index, columns: 0 },
-      start: { rows: index, columns: this.props.meta.length - 1 }
-    });
+    this.props.selectRange(
+      {
+        end: { rows: index, columns: 0 },
+        start: { rows: index, columns: this.props.meta.length - 1 }
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      index === this.props.scroll.startIndex || index === this.stopIndex
+    );
   };
   onChange = index => {
     if (this.props.checkable) {
@@ -555,6 +567,7 @@ export class Status extends Component {
     }
   };
   handleDragStart = e => {
+    e.stopPropagation();
     e.dataTransfer.setData("text", `status: ${e.target.id}`);
   };
   render() {
@@ -585,9 +598,12 @@ export class Status extends Component {
     ) {
       const style = {
         // position: "relative",
-        top: scroll.shift + index * rowHeight,
+        top: index === 0 ? 0 : scroll.shift + index * rowHeight,
         width: rowHeight,
-        height: rowHeight
+        height:
+          index === 0
+            ? rowHeight + scroll.shift
+            : Math.min(rowHeight, height - (scroll.shift + index * rowHeight))
       };
       if (index + scroll.startIndex - indexPage < (dataLength || data.length)) {
         const row = rows[index + scroll.startIndex - indexPage];
@@ -617,13 +633,15 @@ export class Status extends Component {
       }
       index += 1;
     }
+    this.stopIndex = index + scroll.startIndex - 1;
     return (
       <div
         key={"status: " + componentId}
+        id={"status: " + componentId}
         style={{
           width: rowHeight,
           height,
-          overflow: "hidden",
+          // overflow: "hidden",
           position: "relative",
           diplay: "flex"
         }}

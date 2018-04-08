@@ -230,7 +230,7 @@ export class MyDataset extends Component {
                 checked={radioDataset === "get_array"}
                 onChange={this.handleRadioDataset}
               />
-              <label htmlFor="radioArray">an array </label>
+              <div>an array </div>
               <input
                 type="radio"
                 id="radioPromise"
@@ -239,7 +239,7 @@ export class MyDataset extends Component {
                 checked={radioDataset === "get_promise"}
                 onChange={this.handleRadioDataset}
               />
-              <label htmlFor="radioPromise"> a promise or </label>
+              <div> a promise or </div>
               <input
                 type="radio"
                 id="radioObservable"
@@ -248,7 +248,7 @@ export class MyDataset extends Component {
                 checked={radioDataset === "get_observable"}
                 onChange={this.handleRadioDataset}
               />
-              <label htmlFor="radioObservable"> an observable </label>{" "}
+              <div> an observable </div>
             </div>
             <div>
               {`Dataset length : ${dataLength}, filtered : ${filteredDataLength}, loaded :  ${loadedDataLength} ${pageStartIndex !==

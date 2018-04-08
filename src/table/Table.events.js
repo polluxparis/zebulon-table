@@ -384,27 +384,6 @@ export class TableEvent extends TableMenu {
         columnDirection
       );
     }
-    // if (columnDirection) {
-    //   this.rows.scrollOnKey(
-    //     { rows: rowIndex, columns: columnIndex },
-    //     constants.AxisType.COLUMNS,
-    //     columnDirection,
-    //     false
-    //   );
-    // }
-    // const scroll = { ...this.state.scroll };
-    // // if (){}
-    // scroll.rows = {
-    //   ...scroll.rows,
-    //   startIndex: rowIndex,
-    //   direction: rowDirection
-    // };
-    // scroll.columns = {
-    //   ...scroll.columns,
-    //   startIndex: columnIndex,
-    //   direction: columnDirection
-    // };
-    // this.setState({ scroll });
   };
   onScroll = (scroll, cell, extention) => {
     const startIndex = scroll.rows.startIndex;
@@ -431,8 +410,9 @@ export class TableEvent extends TableMenu {
       this.selectRange_(range, x => x);
     }
     this.setState({ scroll });
+    // console.log("onScroll", scroll.rows);
   };
-  selectRange = (range, callback, row, type, noFocus) => {
+  selectRange = (range, callback, row, type, noFocus, scrollOnClick) => {
     if (!this.state.status.loadingPage) {
       const startIndex = range.end.rows,
         stopIndex = range.end.rows;
@@ -441,7 +421,14 @@ export class TableEvent extends TableMenu {
           startIndex,
           stopIndex,
           callbackAfter: () =>
-            this.selectRange_(range, callback || (x => x), row, type, noFocus)
+            this.selectRange_(
+              range,
+              callback || (x => x),
+              row,
+              type,
+              noFocus,
+              scrollOnClick
+            )
         });
       } else {
         this.closeOpenedWindows(true);
@@ -450,7 +437,8 @@ export class TableEvent extends TableMenu {
           callback || (x => x),
           row,
           type,
-          noFocus
+          noFocus,
+          scrollOnClick
         );
         if (ok !== undefined) {
           if (callback) {
@@ -462,7 +450,7 @@ export class TableEvent extends TableMenu {
       }
     }
   };
-  selectRange_ = (range, callback, row, type, noFocus) => {
+  selectRange_ = (range, callback, row, type, noFocus, scrollOnClick) => {
     if (!this.props.isActive && this.props.onActivation) {
       this.props.onActivation();
     }
@@ -503,6 +491,13 @@ export class TableEvent extends TableMenu {
           this.onCellEnter(this.previousValue, this.row, this.column);
           if (meta.properties[range.end.columns].dataType === "text") {
             this.handleText(range.end, this.row, this.column);
+          }
+          if (scrollOnClick) {
+            this.rows.scrollOnKey(
+              { rows: range.end.rows, columns: range.end.columns },
+              constants.AxisType.ROWS,
+              range.end.rows === this.state.scroll.startIndex ? -1 : 1
+            );
           }
         } else {
           this.column = undefined;
@@ -607,15 +602,6 @@ export class TableEvent extends TableMenu {
           this.noUpdate = true;
           element.focus();
         } else {
-          // if (column.setForeignKeyAccessorFunction) {
-          //   // row[
-          //   //   column.foreignKeyAccessor.replace("row.", "")
-          //   // ] = column.primaryKeyAccessorFunction({ row: data });
-          //   column.setForeignKeyAccessorFunction({
-          //     value: column.primaryKeyAccessorFunction({ row: data }),
-          //     row
-          //   });
-          // }
           row[column.reference] = data;
         }
         return cellQuit(ok);
