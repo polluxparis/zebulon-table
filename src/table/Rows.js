@@ -107,11 +107,13 @@ export class Rows extends ScrollableGrid {
             selectedRange.end.rows === rowIndex &&
             selectedRange.end.columns === index,
           onClick = e => {
+            // if (column.dataType !== "boolean") {
             e.preventDefault();
             this.selectCell(
               { rows: rowIndex, columns: columnIndex },
               e.shiftKey
             );
+            // }
           },
           onMouseOver = e => {
             e.preventDefault();
@@ -186,15 +188,6 @@ export class Rows extends ScrollableGrid {
       dataLength,
       componentId
     } = this.props;
-    console.log(
-      "getContent",
-      this.props.noVerticalScrollbar,
-      height,
-      this.props.scroll.rows
-    );
-    // if (data.length === 0) {
-    //   return null;
-    // }
     let i = 0,
       index = this.props.scroll.rows.startIndex,
       indexPage = 0,

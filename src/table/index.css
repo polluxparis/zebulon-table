@@ -54,7 +54,6 @@
   border: solid rgba(0, 0, 0, 0.7) 0.04em;
 }
 .zebulon-table-cell-editable {
-  padding: 0;
   font: inherit;
 }
 .zebulon-table-select {
@@ -88,6 +87,9 @@
 }
 .zebulon-table-filter-empty {
   background-color: white;
+}
+.zebulon-table-filter-checkbox {
+  padding: 0.2em;
 }
 .zebulon-table-filter-checkbox-undefined {
   background-color: lightgrey;

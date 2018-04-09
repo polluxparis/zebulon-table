@@ -21,6 +21,7 @@ const filter = (
     "zebulon-table-cell": true,
     "zebulon-table-header": true,
     "zebulon-table-filter": true,
+    "zebulon-table-filter-checkbox": column.dataType === "boolean",
     "zebulon-table-filter-checkbox-undefined":
       (column.v === undefined || column.v === null) &&
       column.dataType === "boolean"
@@ -124,35 +125,43 @@ const header = (
       <div
         key={id}
         id={id}
-        draggable={true}
+        // draggable={true}
         className="zebulon-table-cell zebulon-table-header"
         onClick={() => handleClick(column, false)}
         onDoubleClick={() => handleClick(column, true)}
-        onDragStart={e => handleDragStart(e, "move")}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         style={{
           height,
           width,
           justifyContent: "space-between",
-          display: "flex"
+          display: "flex",
+          paddingRight: "unset"
         }}
       >
-        <div id={id} style={{ width: width - 12 }}>
+        <div
+          id={id}
+          key={0}
+          style={{ width: width - 15 }}
+          draggable={true}
+          onDragStart={e => handleDragStart(e, "move")}
+        >
           {column.caption || column.id}
         </div>
-        <div style={{ display: "flex" }}>
-          <div>{sort}</div>
-          <div
-            id={id}
-            style={{
-              width: 3,
-              cursor: "col-resize",
-              opacity: 0
-            }}
-            onDragStart={e => handleDragStart(e, "resize")}
-          />
+        <div key={1} style={{ width: 8 }}>
+          {sort}
         </div>
+        <div
+          id={id}
+          key={2}
+          style={{
+            width: 6,
+            cursor: "col-resize",
+            opacity: 0
+          }}
+          draggable={true}
+          onDragStart={e => handleDragStart(e, "resize")}
+        />
       </div>
     </ContextualMenuClient>
   );
@@ -423,7 +432,7 @@ export class Headers extends Component {
           }
           div = (
             <div
-              key={column.id}
+              key={column.id || `undefined ${column.index_}`}
               style={{ display: "block", width: columnWidth, height }}
             >
               {div}

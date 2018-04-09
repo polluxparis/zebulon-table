@@ -204,10 +204,16 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
     }
-    if (column.id === meta.table.primaryKey) {
+    if (
+      !utils.isNullOrUndefined(column.id) &&
+      column.id === meta.table.primaryKey
+    ) {
       meta.table.pk = column;
     }
-    if (column.id === meta.table.logicalKey) {
+    if (
+      !utils.isNullOrUndefined(column.id) &&
+      column.id === meta.table.logicalKey
+    ) {
       meta.table.lk = column;
     }
     if (column.dataType === "object" || column.dataType === "joined object") {

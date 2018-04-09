@@ -298,7 +298,7 @@ export const metaDescriptions = (
 	const getAccessorsAndProperties = obj => () => {
 		const dataAccessors = propertyAccessors;
 		const accessors = getFunctions("accessor", obj);
-		console.log("getAccessorsAndProperties", accessors, dataAccessors);
+		// console.log("getAccessorsAndProperties", accessors, dataAccessors);
 		return {
 			...dataAccessors,
 			...accessors
