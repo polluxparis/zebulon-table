@@ -59,12 +59,14 @@ export const meta = {
       {
         type: "save",
         caption: "Save",
-        enable: true
+        enable: true,
+        key: "f12"
       },
       {
         type: "refresh",
         caption: "Refresh",
-        enable: true
+        enable: true,
+        key: "f10"
       },
       {
         type: "action",

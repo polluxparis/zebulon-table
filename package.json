@@ -28,19 +28,15 @@
 		"gh-pages": "^1.0.0",
 		"postcss-cli": "^2.6.0",
 		"react-addons-perf": "^15.4.2",
-		"react-dom": "^16.0.0",
-		"react-resizable": "^1.6.0",
+		"react-resizable": "^1.7.5",
 		"react-scripts": "^1.0.7",
 		"react-test-renderer": "^15.5.4",
-		"reselect-change-memoize": "^1.1.0",
 		"rimraf": "^2.5.4"
 	},
 	"dependencies": {
 		"classnames": "^2.2.5",
-		"object.values": "^1.0.4",
-		"react": "^16.0.0",
-		"react-dom": "^16.0.0",
-		"zebulon-controls": "file:../controls/zebulon-controls-1.0.7.tgz"
+		"react": "^16.3.2",
+		"zebulon-controls": "file:../controls/zebulon-controls-1.0.8.tgz"
 	},
 	"scripts": {
 		"start": "react-scripts start",
@@ -55,10 +51,6 @@
 		"lint": "eslint src/**/*.js",
 		"compile:js": "rimraf lib && cross-env NODE_ENV=production babel src/table -d lib --presets es2015,react-app --ignore test.js",
 		"compile:css": "rimraf lib/index.css && postcss --use autoprefixer --use cssnano -o lib/index.css src/table/index.css"
-	},
-	"peerDependencies": {
-		"react": "^16.0.0",
-		"react-dom": "^16.0.0"
 	},
 	"babel": {
 		"presets": [

@@ -6,8 +6,16 @@ export class Rows extends ScrollableGrid {
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
-
+  componentDidUpdate() {
+    if (this.focused && this.focused.input) {
+      // && this.focused.props.dataType === "boolean"
+      this.focused.input.focus();
+      // this.focused = undefined;
+    }
+    this.noOver = false;
+  }
   cell = (
+    tableEditable,
     row,
     column,
     status,
@@ -17,13 +25,14 @@ export class Rows extends ScrollableGrid {
     focused,
     hasFocus,
     selected,
-    onClick,
+    onMouseDown,
+    onMouseUp,
     onMouseOver,
     onChange,
     onFocus,
     rowIndex,
     onDoubleClick,
-    componentId
+    component
   ) => {
     const { editable, value, select } = cellData(
       row,
@@ -40,8 +49,7 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-focused": focused,
       "zebulon-table-cell-editable": editable && focused
     });
-    // if (column.dataType === "boolean") value = value || false;
-    const id = `cell: ${componentId}-${row.index_}-${column.index_}`;
+    const id = `cell: ${component}-${row.index_}-${column.index_}`;
     return (
       <Input
         row={row}
@@ -49,23 +57,30 @@ export class Rows extends ScrollableGrid {
         style={style}
         className={className}
         value={value}
-        editable={editable}
+        editable={editable && tableEditable}
         focused={focused}
         hasFocus={hasFocus}
         select={select}
         id={id}
         key={id}
         onChange={onChange}
-        onClick={onClick}
+        onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
         onMouseOver={onMouseOver}
         onFocus={onFocus}
         onDoubleClick={
           onDoubleClick ? e => onDoubleClick(e, row, column) : () => {}
         }
+        ref={ref => {
+          if (focused && hasFocus) {
+            this.focused = ref;
+          }
+        }}
       />
     );
   };
   rowRenderer = (
+    tableEditable,
     row,
     status,
     meta,
@@ -75,9 +90,7 @@ export class Rows extends ScrollableGrid {
     rowHeight,
     rowIndex,
     hasFocus,
-    componentId
-    // selectedCell,
-    // selectCell
+    component
   ) => {
     const cells = [];
     let left = shift,
@@ -106,24 +119,26 @@ export class Rows extends ScrollableGrid {
           focused =
             selectedRange.end.rows === rowIndex &&
             selectedRange.end.columns === index,
-          onClick = e => {
-            // if (column.dataType !== "boolean") {
+          onMouseDown = e => {
             e.preventDefault();
             this.selectCell(
               { rows: rowIndex, columns: columnIndex },
               e.shiftKey
             );
-            // }
           },
           onMouseOver = e => {
-            e.preventDefault();
-            if (e.buttons === 1) {
+            if ((e.buttons & 1) === 1 && !this.noOver) {
+              e.preventDefault();
               this.selectCell({ rows: rowIndex, columns: columnIndex }, true);
             }
           },
-          onFocus = column.dataType === "text" ? this.props.onFocus : () => {};
+          onMouseUp = e => {
+            e.preventDefault();
+            this.mouseDown = false;
+          };
         cells.push(
           this.cell(
+            tableEditable,
             row,
             column,
             status,
@@ -136,21 +151,20 @@ export class Rows extends ScrollableGrid {
                 false ? column.computedWidth + shift : column.computedWidth,
                 visibleWidth - left
               ),
-              // column.computedWidth,
               height: rowHeight,
               textAlign
             },
             focused,
             hasFocus && focused,
             selected,
-            onClick,
+            onMouseDown,
+            onMouseUp,
             onMouseOver,
             this.props.onChange,
-            // () => {}, //onDoubleClick,
-            onFocus,
+            this.props.onFocus,
             rowIndex,
             this.props.onDoubleClick,
-            componentId
+            component
           )
         );
         left += column.computedWidth;
@@ -164,8 +178,6 @@ export class Rows extends ScrollableGrid {
         style={{
           display: "flex",
           height: rowHeight
-          // position: "inherit",
-          // left: 0
         }}
       >
         {cells}
@@ -174,6 +186,7 @@ export class Rows extends ScrollableGrid {
   };
 
   getContent = () => {
+    this.noOver = true;
     const items = [];
     const {
       data,
@@ -181,12 +194,10 @@ export class Rows extends ScrollableGrid {
       height,
       rowHeight,
       width,
-      // selectedCell,
-      // selectCell,
       updatedRows,
       hasFocus,
       dataLength,
-      componentId
+      component
     } = this.props;
     let i = 0,
       index = this.props.scroll.rows.startIndex,
@@ -208,7 +219,7 @@ export class Rows extends ScrollableGrid {
       columnStartIndex = 0;
       columnShift = 0;
     }
-    while (index < (dataLength || data.length) && i < height / rowHeight) {
+    while (index < rows.length && i < height / rowHeight) {
       let row = rows[index - indexPage];
       const status = updatedRows[row.index_];
       if (meta.serverPagination && status && status.rowUpdated) {
@@ -216,6 +227,7 @@ export class Rows extends ScrollableGrid {
       }
       items.push(
         this.rowRenderer(
+          meta.table.editable,
           row,
           status,
           meta.properties,
@@ -225,27 +237,20 @@ export class Rows extends ScrollableGrid {
           rowHeight,
           index,
           hasFocus,
-          componentId
-          // ,
-          // selectedCell,
-          // selectCell
+          component
         )
       );
       index++;
       i++;
     }
     const style = {
-      // position: "absolute",
       top: this.props.scroll.rows.shift || 0,
       width: visibleWidth,
       position: "inherit",
       height: "inherit"
     };
-    // if (this.props.noVerticalScrollbar) {
-    //   style.borderRight = "solid 0.03em rgba(0, 0, 0, 0.5)";
-    // }
     return (
-      <div id="totot" style={style} onWheel={this.onWheel}>
+      <div id="content" style={style} onWheel={this.onWheel}>
         {items}
       </div>
     );

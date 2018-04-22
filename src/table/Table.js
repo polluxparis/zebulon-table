@@ -17,9 +17,7 @@ import { computeMetaPositions } from "./utils/compute.meta";
 export class Table extends TableFilterSort {
   constructor(props) {
     super(props);
-
     let filteredData = this.filters(props.data, props.filters);
-
     let status = props.status;
     if (props.meta.serverPagination && status.loaded) {
       status = { loaded: false, loading: true };
@@ -64,7 +62,10 @@ export class Table extends TableFilterSort {
           position: 0
         }
       },
-      selectedRange: { start: {}, end: {} },
+      selectedRange: {
+        start: { rows: 0, columns: 0 },
+        end: { rows: 0, columns: 0 }
+      },
       detail: {},
       text: {},
       checkAll: false,
@@ -75,8 +76,14 @@ export class Table extends TableFilterSort {
     this.rowHeight = this.props.rowHeight;
     this.range = { start: {}, end: {} };
     this.onTableEnter();
+    if (status.loaded) {
+      this.bLoaded = true;
+    }
     // this.filtersOut = props.filters;
   }
+  // componentDidMount() {
+  //   this.selectRange(this.state.selectedRange, undefined, undefined, "enter");
+  // }
   componentWillReceiveProps(nextProps) {
     if (
       nextProps.data !== this.props.data ||
@@ -106,11 +113,11 @@ export class Table extends TableFilterSort {
         filteredData = this.filters(nextProps.data, this.state.filters);
         this.sorts(filteredData, nextProps.meta.properties);
       }
-      if (nextProps.updatedRows !== this.props.updatedRows) {
-        this.updated = false;
-        this.rowUpdated = false;
-        this.tableUpdated = false;
-      }
+      // if (nextProps.updatedRows !== this.props.updatedRows) {
+      //   this.updated = false;
+      //   this.rowUpdated = false;
+      //   this.tableUpdated = false;
+      // }
       this.setState({
         data: nextProps.data || [],
         filteredData,
@@ -135,6 +142,9 @@ export class Table extends TableFilterSort {
           }
         }
       });
+      if (status.loaded && this.bLoaded === undefined) {
+        this.bLoaded = true;
+      }
       if (
         status.loaded &&
         this.props.callbackForeignKey &&
@@ -159,6 +169,21 @@ export class Table extends TableFilterSort {
   componentWillUnmount() {
     return this.onTableClose();
   }
+  componentDidUpdate() {
+    if (this.bLoaded) {
+      this.selectRange(
+        {
+          start: { rows: 0, columns: 0 },
+          end: { rows: 0, columns: 0 }
+        },
+        undefined,
+        this.state.filteredData[0],
+        "enter"
+      );
+      this.bLoaded = null;
+    }
+    this.changingFilter = false;
+  }
   onCheckAll = () => {
     const checked_ = !this.state.checkAll;
 
@@ -172,15 +197,60 @@ export class Table extends TableFilterSort {
     let {
       status,
       meta,
-      scroll,
       selectedRange,
       updatedRows,
       data,
       filteredData,
-      filteredDataLength,
       auditedRow,
-      audits
+      audits,
+      scroll,
+      filteredDataLength
     } = this.state;
+    let { selectRange, onScroll } = this;
+    let headersLength =
+      1 +
+      !meta.table.noFilter *
+        (1 +
+          (meta.properties.findIndex(
+            column => column.filterType === "between" && !column.hidden
+          ) !==
+            -1));
+    // -----------------------------
+    // audit
+    // -----------------------------
+    console.log("render", scroll, selectedRange);
+    let auditStatus;
+    if (auditedRow) {
+      selectRange = undefined;
+      headersLength = 2;
+      auditStatus = updatedRows[auditedRow.index_];
+      meta = {
+        ...meta,
+        table: { ...meta.table, editable: false },
+        properties: [
+          {
+            id: "user_",
+            caption: "User",
+            width: 80
+          },
+          {
+            id: "time_",
+            caption: "Time",
+            dataType: "date",
+            format: "time",
+            formatFunction: ({ value }) =>
+              utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
+            width: 130
+          },
+          ...meta.properties
+        ]
+      };
+      computeMetaPositions(meta, this.props.zoom); // A voir zoom
+      meta.lockedIndex = 1;
+      meta.lockedWidth = 210 * this.props.zoom;
+      filteredData = computeAudit(auditedRow, meta, audits);
+      filteredDataLength = filteredData.length;
+    }
     if (data.length === 0 && meta.properties.length === 0) {
       return null;
     }
@@ -206,19 +276,11 @@ export class Table extends TableFilterSort {
     }
     const noUpdate = !this.isInPage(scroll.rows) || this.noUpdate;
     this.noUpdate = false;
-    let headersLength =
-      1 +
-      !meta.table.noFilter *
-        (1 +
-          (meta.properties.findIndex(
-            column => column.filterType === "between" && !column.hidden
-          ) !==
-            -1));
-
     // -----------------------------------
     // Filter check list
     // -----------------------------------
     const { openedFilter, filters } = this.state;
+    this.openedFilter = null;
     if (openedFilter !== undefined) {
       const { top, left, items, v, caption, computedWidth } = filters[
         openedFilter
@@ -240,6 +302,7 @@ export class Table extends TableFilterSort {
             opacity: 1
           }}
           onOk={this.onChangeFilterValues}
+          ref={ref => (this.openedFilter = ref)}
         />
       );
     } else {
@@ -376,38 +439,7 @@ export class Table extends TableFilterSort {
         </div>
       );
     }
-    // -----------------------------
-    // simulation of audit
-    // -----------------------------
-    let auditStatus;
-    if (auditedRow && audits) {
-      headersLength = 2;
-      auditStatus = updatedRows[auditedRow.index_];
-      meta = {
-        ...meta,
-        properties: [
-          {
-            id: "user_",
-            caption: "User",
-            width: 80
-          },
-          {
-            id: "time_",
-            caption: "Time",
-            dataType: "date",
-            format: "time",
-            formatFunction: ({ value }) =>
-              utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
-            width: 130
-          },
-          ...meta.properties
-        ]
-      };
-      computeMetaPositions(meta, this.props.zoom); // A voir zoom
-      meta.lockedIndex = 1;
-      meta.lockedWidth = 210 * this.props.zoom;
-      filteredData = computeAudit(auditedRow, meta, audits);
-    }
+
     // ----------------------------------
     // Status bar
     // ----------------------------------
@@ -429,7 +461,7 @@ export class Table extends TableFilterSort {
           meta={meta.properties}
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
-          componentId={this.props.id}
+          component={this.props.id}
           checkable={meta.table.checkable}
           onDoubleClick={this.onDoubleClick}
           draggable={meta.table.statusDraggable}
@@ -503,6 +535,7 @@ export class Table extends TableFilterSort {
         boxSizing: "border-box"
       };
     }
+
     const rows = (
       <Rows
         key="rows"
@@ -518,11 +551,11 @@ export class Table extends TableFilterSort {
         }
         rowHeight={this.rowHeight}
         scroll={scroll}
-        onScroll={this.onScroll}
+        onScroll={onScroll}
         selectedRange={selectedRange}
-        selectRange={this.selectRange}
+        selectRange={selectRange}
         onChange={this.onChange}
-        onFocus={() => {}}
+        onFocus={() => this.closeOpenedWindows(true)}
         hasFocus={this.hasFocus}
         updatedRows={updatedRows}
         params={params}
@@ -531,7 +564,7 @@ export class Table extends TableFilterSort {
         noUpdate={noUpdate}
         style={style}
         onDoubleClick={this.onDoubleClick}
-        componentId={this.props.id}
+        component={this.props.id}
       />
     );
     let lockedColumns = null;
@@ -547,21 +580,19 @@ export class Table extends TableFilterSort {
           width={meta.lockedWidth}
           rowHeight={this.rowHeight}
           scroll={scroll}
-          onScroll={this.onScroll}
+          onScroll={onScroll}
           selectedRange={selectedRange}
-          selectRange={this.selectRange}
+          selectRange={selectRange}
           onChange={this.onChange}
-          onFocus={() => {}}
+          onFocus={() => this.closeOpenedWindows(true)}
           hasFocus={this.hasFocus}
           updatedRows={updatedRows}
           params={params}
-          // navigationKeyHandler={this.props.navigationKeyHandler}
-          // ref={ref => (this.rows = ref)}
           noUpdate={noUpdate}
           noVerticalScrollbar={true}
           onDoubleClick={this.onDoubleClick}
           locked={locked}
-          componentId={this.props.id}
+          component={this.props.id}
         />
       );
     }
@@ -583,11 +614,12 @@ export class Table extends TableFilterSort {
         openFilter={this.openFilter}
         onChange={this.onChangeFilter}
         style={style}
-        componentId={this.props.id}
+        component={this.props.id}
         auditedRow={auditedRow}
         auditStatus={auditStatus}
         isActive={this.props.isActive}
         onActivation={this.props.onActivation}
+        changingFilter={this.changingFilter}
       />
     );
     let lockedHeaders = null;
@@ -596,7 +628,7 @@ export class Table extends TableFilterSort {
         <Headers
           onSort={this.onSort}
           meta={meta}
-          data={data}
+          data={auditedRow ? data : null}
           height={this.rowHeight * headersLength}
           width={meta.lockedWidth}
           scroll={scroll.columns}
@@ -605,11 +637,12 @@ export class Table extends TableFilterSort {
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           locked={true}
-          componentId={this.props.id}
+          component={this.props.id}
           auditedRow={auditedRow}
           auditStatus={auditStatus}
           isActive={this.props.isActive}
           onActivation={this.props.onActivation}
+          changingFilter={this.changingFilter}
         />
       );
     }
@@ -645,8 +678,8 @@ export class Table extends TableFilterSort {
       statusBarHeader = (
         <ContextualMenuClient
           id={"header-status"}
-          menuId="top-left-corner-menu"
-          componentId={this.props.id}
+          menu="top-left-corner-menu"
+          component={this.props.id}
         >
           {statusBarHeader}
         </ContextualMenuClient>
@@ -691,7 +724,7 @@ export class Table extends TableFilterSort {
           <ContextualMenu
             key="table-menu"
             getMenu={this.getMenu}
-            componentId={this.props.id}
+            component={this.props.id}
             id="table-menu"
             ref={ref => (this.contextualMenu = ref)}
           />

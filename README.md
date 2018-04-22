@@ -22,10 +22,13 @@ Please, look at the demo using Chrome as it's not yet fully compatible with othe
 * [Self description.](#self-description)
 * [Computed columns.](#computed-columns)
 * [Audit.](#audit)
-
-
+## Associated projects
+zebulon-table has been developped originally to manage the description data of a business intelligence application based on a pivot grid component called zebulon-grid :
+https//github.com/polluxparis/zebulon-grid
+It shares some base functions and components, such as a virtualized scrollable area/grid, contextual menus...  available in zebulon-controls
+https//github.com/polluxparis/zebulon-controls
 ## Table of contents
-* [Getting started.](#zegetting-started)
+* [Getting started.](#getting-started)
 * [Zebulon table props.](#zebulon-table-props)
 * [Data set.](#data-set)
 * [Foreign keys.](#object-properties-and-foreign-keys)
@@ -33,6 +36,7 @@ Please, look at the demo using Chrome as it's not yet fully compatible with othe
 * [Meta description.](#meta-description)
 * [Validation and saving process](#validation-and-saving-process)
 * [Working with a redux store.](#working-with-a-redux-store)
+* [Compatibility.](#compatibility)
 
 ## Getting started
 Install `zebulon-table` using npm.
@@ -770,11 +774,12 @@ Not yet documented
 Not yet documented
 ## To do
 * Complete documentation.
+* Computed columns with aggregation functins improvement. 
+* Styles and design improvement.
+* Replacement of input select and icons
 * Loading from observable improvement.
 * Pagination manager improvement.
-* Computed columns with aggregation functions improvement. 
-* Styles and design improvement.
- Details improvement.
+* Details improvement.
 * Parameterisation of "actions".
 * Grouped columns.
 *...

@@ -15,7 +15,7 @@ const filter = (
   onChange,
   openFilter,
   focusedId,
-  componentId
+  component
 ) => {
   const className = classnames({
     "zebulon-table-cell": true,
@@ -35,7 +35,7 @@ const filter = (
   const focused =
     (focusedId || document.activeElement || {}.id) ===
     String(column.index_ + 1000 * filterTo);
-  const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
+  const id = `filter${filterTo ? "To" : ""}: ${component}--${column.index_}`;
   let value = column.v,
     div;
   if (column.filterType === "values" && column.v) {
@@ -104,7 +104,7 @@ const header = (
   handleDragStart,
   handleDragOver,
   handleDrop,
-  componentId
+  component
   // handleDragEnd
 ) => {
   let sort = "";
@@ -113,60 +113,54 @@ const header = (
   } else if (column.sort === "desc") {
     sort = "↓";
   }
-  const id = `header: ${componentId}--${column.index_}`;
+  const id = `header: ${component}--${column.index_}`;
   return (
     <ContextualMenuClient
-      id={id}
       key={id}
+      id={id}
+      className="zebulon-table-cell zebulon-table-header"
+      onClick={() => handleClick(column, false)}
+      onDoubleClick={() => handleClick(column, true)}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+      style={{
+        height,
+        width,
+        justifyContent: "space-between",
+        display: "flex",
+        paddingRight: "unset"
+      }}
       column={column}
-      menuId="column-header-menu"
-      componentId={componentId}
+      menu="column-header-menu"
+      component={component}
     >
       <div
-        key={id}
         id={id}
-        // draggable={true}
-        className="zebulon-table-cell zebulon-table-header"
-        onClick={() => handleClick(column, false)}
-        onDoubleClick={() => handleClick(column, true)}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
-        style={{
-          height,
-          width,
-          justifyContent: "space-between",
-          display: "flex",
-          paddingRight: "unset"
-        }}
+        key={0}
+        style={{ width: width - 15 }}
+        draggable={true}
+        onDragStart={e => handleDragStart(e, "move")}
       >
-        <div
-          id={id}
-          key={0}
-          style={{ width: width - 15 }}
-          draggable={true}
-          onDragStart={e => handleDragStart(e, "move")}
-        >
-          {column.caption || column.id}
-        </div>
-        <div key={1} style={{ width: 8 }}>
-          {sort}
-        </div>
-        <div
-          id={id}
-          key={2}
-          style={{
-            width: 6,
-            cursor: "col-resize",
-            opacity: 0
-          }}
-          draggable={true}
-          onDragStart={e => handleDragStart(e, "resize")}
-        />
+        {column.caption || column.id}
       </div>
+      <div key={1} style={{ width: 8 }}>
+        {sort}
+      </div>
+      <div
+        id={id}
+        key={2}
+        style={{
+          width: 6,
+          cursor: "col-resize",
+          opacity: 0
+        }}
+        draggable={true}
+        onDragStart={e => handleDragStart(e, "resize")}
+      />
     </ContextualMenuClient>
   );
 };
-const auditCell = (row, column, status, data, params, style, componentId) => {
+const auditCell = (row, column, status, data, params, style, component) => {
   const { value } = cellData(row, column, status, data, params, false);
   let textAlign = column.alignement || "left";
   if (!column.alignement) {
@@ -186,7 +180,7 @@ const auditCell = (row, column, status, data, params, style, componentId) => {
     // "zebulon-table-cell-editable": editable && focused
   });
   // if (column.dataType === "boolean") value = value || false;
-  const id = `audit-cell: ${componentId}-${row.index_}-${column.index_}`;
+  const id = `audit-cell: ${component}-${row.index_}-${column.index_}`;
   return (
     <Input
       row={row}
@@ -217,6 +211,9 @@ const filterEmpty = (id, position, width, height) => {
 
 // ↑↓
 export class Headers extends Component {
+  shouldComponentUpdate() {
+    return !this.props.changingFilter;
+  }
   handleClick = (column, double) => {
     if (!this.props.isActive && this.props.onActivation) {
       this.props.onActivation();
@@ -308,7 +305,7 @@ export class Headers extends Component {
       locked,
       auditedRow,
       auditStatus,
-      componentId,
+      component,
       data,
       params
     } = this.props;
@@ -345,7 +342,7 @@ export class Headers extends Component {
           this.handleDragStart,
           this.handleDragOver,
           this.handleDrop,
-          componentId
+          component
         );
         if (headersLength > 1) {
           if (auditedRow) {
@@ -365,7 +362,7 @@ export class Headers extends Component {
                 data,
                 params,
                 style,
-                componentId
+                component
               )
             );
           } else {
@@ -385,7 +382,7 @@ export class Headers extends Component {
                   onChange,
                   openFilter,
                   focusedId,
-                  componentId
+                  component
                 )
               );
             } else {
@@ -415,7 +412,7 @@ export class Headers extends Component {
                     onChange,
                     openFilter,
                     focusedId,
-                    componentId
+                    component
                   )
                 );
               } else {
@@ -457,6 +454,7 @@ export class Headers extends Component {
     if (cells.length) {
       return (
         <div
+          id="tutut"
           key={-2 - locked}
           // id={type + filterTo ? "To" : ""}
           style={{ ...this.props.style, ...style }}
@@ -478,7 +476,7 @@ export const statusCell = (
   onClick,
   onDoubleClick,
   handleErrors,
-  componentId,
+  component,
   checkable,
   onChange,
   draggable,
@@ -508,30 +506,25 @@ export const statusCell = (
       />
     );
   }
-  const id = `status: ${componentId}-${row.index_}-`;
+  const id = `status: ${component}-${row.index_}-`;
   return (
     <ContextualMenuClient
       id={id}
       key={id}
+      className={className}
+      style={style}
+      onClick={() => onClick(index)}
+      onMouseOver={e => handleErrors(e, errors)}
+      onMouseOut={e => handleErrors(e, [])}
+      onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
+      draggable={draggable}
+      onDragStart={handleDragStart}
       status={status}
       row={row}
-      menuId="row-header-menu"
-      componentId={componentId}
+      menu="row-header-menu"
+      component={component}
     >
-      <div
-        // id={id}
-        key={id}
-        className={className}
-        style={style}
-        onClick={() => onClick(index)}
-        onMouseOver={e => handleErrors(e, errors)}
-        onMouseOut={e => handleErrors(e, [])}
-        onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
-        draggable={draggable}
-        onDragStart={handleDragStart}
-      >
-        {glyph}
-      </div>
+      {glyph}
     </ContextualMenuClient>
   );
 };
@@ -588,7 +581,7 @@ export class Status extends Component {
       selectedIndex,
       handleErrors,
       dataLength,
-      componentId,
+      component,
       checkable,
       onDoubleClick,
       draggable
@@ -614,7 +607,7 @@ export class Status extends Component {
             ? rowHeight + scroll.shift
             : Math.min(rowHeight, height - (scroll.shift + index * rowHeight))
       };
-      if (index + scroll.startIndex - indexPage < (dataLength || data.length)) {
+      if (index + scroll.startIndex - indexPage < rows.length) {
         const row = rows[index + scroll.startIndex - indexPage];
         const updatedRow = updatedRows[row.index_] || { errors: {} };
         const className = classnames({
@@ -633,7 +626,7 @@ export class Status extends Component {
             this.onClick,
             onDoubleClick,
             (e, errors) => handleErrors(e, ix, errors),
-            componentId,
+            component,
             checkable,
             this.onChange,
             draggable
@@ -645,8 +638,8 @@ export class Status extends Component {
     this.stopIndex = index + scroll.startIndex - 1;
     return (
       <div
-        key={"status: " + componentId}
-        id={"status: " + componentId}
+        key={"status: " + component}
+        id={"status: " + component}
         style={{
           width: rowHeight,
           height,

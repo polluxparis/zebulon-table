@@ -2,6 +2,7 @@ import React from "react";
 import { TableMenu } from "./Table.menu";
 import { utils, constants } from "zebulon-controls";
 import { computeData, computeRowSearch, rowSearch } from "./utils/compute.data";
+import { hasParent } from "./utils/utils";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import {
   manageRowError,
@@ -30,42 +31,58 @@ export class TableEvent extends TableMenu {
     if (!keepSearch && this.state.search !== undefined) {
       this.setState({ search: undefined });
     }
-    this.contextualMenu.close();
-  };
-  hasParent(element, id) {
-    if (!element.parentElement) {
-      return false;
-    } else if (element.parentElement.id === id) {
-      return true;
-    } else {
-      return this.hasParent(element.parentElement, id);
+    if (this.contextualMenu) {
+      this.contextualMenu.close();
     }
-  }
+  };
+  fKeyMap = {
+    f12: "save",
+    // f8: "filter",
+    f10: "refresh"
+  };
   handleKeyDown = e => {
     // a voir
+    const keyCode = e.which || e.keyCode;
+    const key = utils.keyMap[keyCode];
     const { openedFilter, detail } = this.state;
-    const isFilter = this.hasParent(document.activeElement, "filter");
-    if (e.key === "Escape") {
+    const isFilter = hasParent(document.activeElement, "filter");
+    if (key === "Escape") {
+      if (openedFilter) {
+        this.hasFocus = true;
+      }
       this.closeOpenedWindows();
     }
-    if (openedFilter && e.key === "Tab") {
+    if (key === "Tab" && (openedFilter || detail.content || isFilter)) {
       return false;
     }
-    if (detail.content && e.key === "Tab") {
-      return false;
-    }
-    if (["F", "f"].includes(e.key) && e.ctrlKey) {
-      this.handleSearch(e);
-    } else if (
-      !isFilter &&
-      this.rows &&
-      this.rows.handleNavigationKeys &&
-      utils.isNavigationKey(e)
-    ) {
-      if (openedFilter) {
-        this.setState({ openedFilter: undefined });
+    //function Keys
+    if (keyCode > 112 && keyCode < 124) {
+      const index = this.state.meta.table.actions.findIndex(
+        action => action.key === key
+      );
+      if (index !== -1) {
+        e.preventDefault();
+        this.handleClickButton(index);
       }
-      return this.rows.handleNavigationKeys(e);
+    }
+    // const fKey = this.fKeyMap[key];
+    // ctrl+F
+    if (70 === (e.which || e.keyCode) && e.ctrlKey) {
+      this.handleSearch(e);
+    } else if (utils.isNavigationKey(e)) {
+      if (openedFilter) {
+        if (key === "Enter") {
+          e.preventDefault();
+          this.hasFocus = true;
+          return this.openedFilter.onOk();
+        } else {
+          return this.openedFilter.values.handleNavigationKeys(e);
+        }
+      } else if (isFilter && ["ArrowLeft", "ArrowRight"].includes(key)) {
+        return false;
+      } else if (this.rows) {
+        return this.rows.handleNavigationKeys(e);
+      }
     }
   };
   handleCopy = e => {
@@ -225,10 +242,18 @@ export class TableEvent extends TableMenu {
     }
   };
   newRow = (row, index) => {
-    const { selectedRange, updatedRows, filteredData, meta, data } = this.state;
-    if (this.selectRange(selectedRange, undefined, this.row, "quit") === false)
-      return false;
+    const ok = this.canQuit("new", ok => {
+      if (ok) {
+        this.newRow_(row, index);
+      }
+    });
+    if (ok) {
+      this.newRow_(row, index);
+    }
+  };
 
+  newRow_ = (row, index) => {
+    const { selectedRange, updatedRows, filteredData, meta, data } = this.state;
     const status = {
       new_: true,
       errors: {},
@@ -375,7 +400,13 @@ export class TableEvent extends TableMenu {
             this.state.filteredData.pageLength)
     );
   };
-  scrollTo = (rowIndex, rowDirection, columnIndex, columnDirection) => {
+  scrollTo = (
+    rowIndex,
+    rowDirection,
+    columnIndex,
+    columnDirection,
+    noFocus
+  ) => {
     if (rowDirection || columnDirection) {
       this.rows.scrollOnKey(
         { rows: rowIndex, columns: columnIndex },
@@ -383,6 +414,9 @@ export class TableEvent extends TableMenu {
         rowDirection,
         columnDirection
       );
+    }
+    if (noFocus) {
+      this.hasFocus = false;
     }
   };
   onScroll = (scroll, cell, extention) => {
@@ -401,19 +435,20 @@ export class TableEvent extends TableMenu {
   };
   onScroll_ = (scroll, cell, extension) => {
     this.closeOpenedWindows(true);
+    const range = { ...this.state.selectedRange };
     if (cell) {
-      const range = { ...this.state.selectedRange };
       range.end = cell;
       if (!extension) {
         range.start = cell;
       }
       this.selectRange_(range, x => x);
     }
+    console.log("onScroll_", scroll, range);
     this.setState({ scroll });
     // console.log("onScroll", scroll.rows);
   };
   selectRange = (range, callback, row, type, noFocus, scrollOnClick) => {
-    if (!this.state.status.loadingPage) {
+    if (!this.state.status.loadingPage && !this.state.status.loading) {
       const startIndex = range.end.rows,
         stopIndex = range.end.rows;
       if (this.paginationIsRequired({ startIndex, stopIndex })) {
@@ -455,12 +490,8 @@ export class TableEvent extends TableMenu {
       this.props.onActivation();
     }
     const { selectedRange, meta, search } = this.state;
-    this.hasFocus = !noFocus && !search;
-    if (range.end.rows > this.getDataLength() - 1) {
-      range.end = {};
-      range.start = {};
-      this.hasFocus = false;
-    }
+    // this.hasFocus = !noFocus && !search;
+    this.hasFocus = !noFocus;
     const prevEnd = selectedRange.end;
     const prevStart = selectedRange.start;
     const endChanged =
@@ -560,7 +591,6 @@ export class TableEvent extends TableMenu {
     ) {
       return false;
     }
-    message.row[message.column.id] = message.value;
     if (this.props.onChange) {
       if (this.props.onChange(message) === false) {
         return false;
@@ -590,8 +620,7 @@ export class TableEvent extends TableMenu {
         row[column.reference] = undefined;
         return cellQuit(ok_);
       }
-
-      const element = document.activeElement;
+      let element = document.activeElement;
       let col = column.accessor.replace("row.", "");
       col = col.replace(column.reference + ".", "");
       const filters = {
@@ -600,9 +629,16 @@ export class TableEvent extends TableMenu {
       const callback = (ok, data) => {
         if (!ok) {
           this.noUpdate = true;
-          element.focus();
+          element = document.getElementById(
+            `cell: ${this.props.id}-${row.index_}-${column.index_}`
+          ).children[0];
         } else {
           row[column.reference] = data;
+        }
+        if (element) {
+          this.isOpening = true;
+          element.focus();
+          this.isOpening = false;
         }
         return cellQuit(ok);
       };
@@ -868,6 +904,7 @@ export class TableEvent extends TableMenu {
   };
   onMetaChange = resetScroll => {
     const bReset = false;
+    console.log("onMetaChange", this.state.scroll.rows);
     this.setState({
       scroll: {
         rows: this.state.scroll.rows,

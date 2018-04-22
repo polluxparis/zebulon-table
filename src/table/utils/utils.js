@@ -51,7 +51,7 @@ export const setStatus = (status, type) => {
 };
 //------------------------------------------------------------
 export const manageRowError = (updatedRows, index, column, type, error) => {
-  const status = updatedRows[index];
+  const status = updatedRows[index] || {};
   const existsErrors = !utils.isNullOrUndefined(status.errors);
   const errors = status.errors || {};
   const existsObject = !utils.isNullOrUndefined(errors[column.id]);
@@ -83,7 +83,7 @@ export const manageRowError = (updatedRows, index, column, type, error) => {
 };
 export const getRowErrors = (status, rowIndex) => {
   const errors = [];
-  if (status.errors) {
+  if (!status.deleted_ && status.errors) {
     Object.keys(status.errors).forEach(column => {
       if (status.errors[column] || column !== "n_") {
         Object.keys(status.errors[column]).forEach(type => {
@@ -104,7 +104,7 @@ export const getRowErrors = (status, rowIndex) => {
 export const getErrors = updatedRows => {
   let errors = [];
   Object.values(updatedRows).forEach(status => {
-    if ((status.errors || {}).n_) {
+    if (!status.deleted_ && (status.errors || {}).n_) {
       errors = errors.concat(getRowErrors(status, status.rowUpdated.index_));
     }
   });
@@ -317,3 +317,15 @@ export const loadFileButton = ({
 //     );
 //   }
 // }
+// -------------------------------------------
+// miscelaneous
+// -------------------------------------------
+export const hasParent = (element, id) => {
+  if (!element.parentElement) {
+    return false;
+  } else if (element.parentElement.id.slice(0, id.length) === id) {
+    return true;
+  } else {
+    return hasParent(element.parentElement, id);
+  }
+};

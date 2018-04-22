@@ -274,6 +274,7 @@ const stringValue = (property, row) => {
 };
 export const computeRowSearch = (data, properties, dataStrings) => {
   const strings = [];
+  console.log("computeRowSearch", new Date());
   data.forEach((row, index) => {
     if (!dataStrings[row.index_]) {
       let rowStrings = [];
@@ -287,6 +288,7 @@ export const computeRowSearch = (data, properties, dataStrings) => {
     }
     strings.push(dataStrings[row.index_]);
   });
+  console.log("computeRowSearch2", new Date());
   return strings;
 };
 export const rowSearch = (dataStrings, exp) => {

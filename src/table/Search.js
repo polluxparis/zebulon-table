@@ -74,8 +74,7 @@ export class Search extends Component {
       this.setState({ cell: cell_, indexRowIndex: index });
     }
   };
-
-  handleChange = (e, visible) => {
+  handleChange = e => {
     const value = e.target.value;
     const exp = getRegExp(value);
     const cell = { rows: undefined, columns: undefined };
@@ -83,14 +82,10 @@ export class Search extends Component {
       direction = null;
     if (!utils.isNullValue(value && value !== this.state.value)) {
       const { rowStartIndex, rowStopIndex, filteredData } = this.props;
-      const rows =
-        visible && false
-          ? this.state.dataStrings.slice(rowStartIndex, rowStopIndex)
-          : this.state.dataStrings;
+      const rows = this.state.dataStrings;
       const rowIndexes = rowSearch(rows, exp);
       this.setState({ value, rowIndexes });
       if (rowIndexes.length) {
-        // const index = rowIndexes[0] + (visible && false ? rowStartIndex : 0);
         ix = rowIndexes.findIndex(
           index => index >= rowStartIndex && index <= rowStopIndex
         );
@@ -110,28 +105,19 @@ export class Search extends Component {
           ...cell,
           columns: this.state.properties[cell.columns].index_
         };
-        // if (direction) {
         this.props.scrollTo(
           cellRange.rows,
           Math.sign(cellRange.rows - (this.props.selectedCell.rows || 0)),
           cellRange.columns,
-          Math.sign(cellRange.columns - (this.props.selectedCell.columns || 0))
+          Math.sign(cellRange.columns - (this.props.selectedCell.columns || 0)),
+          true
         );
-        // } else {
-        //   this.props.selectRange(
-        //     { start: cellRange, end: cellRange },
-        //     () => {},
-        //     null,
-        //     "enter",
-        //     true
-        //   );
-        // }
-        console.log("range", cell.rows, direction, cell.columns);
       }
       this.setState({ value, rowIndexes, cell, indexRowIndex: ix });
     } else {
       this.setState({ value, rowIndexes: [], cell, indexRowIndex: -1 });
     }
+    this.input.focus();
   };
   render() {
     // const rowHeight = 20;
@@ -140,10 +126,10 @@ export class Search extends Component {
       <div style={{ display: "flex" }}>
         <input
           style={{ width: 200 }}
-          onChange={e => this.handleChange(e, true)}
-          // onBlur={this.handleChange}
+          onChange={e => this.handleChange(e)}
           value={this.state.value}
           autoFocus={true}
+          ref={ref => (this.input = ref)}
         />
         <div
           style={{

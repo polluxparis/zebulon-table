@@ -13,7 +13,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { rollbackAll, errorHandler } from "./utils/utils";
+import { rollback, rollbackAll, errorHandler, hasParent } from "./utils/utils";
 // import { utils.isPromise, isDate } from "./utils/generic";
 
 export class ZebulonTable extends Component {
@@ -74,10 +74,6 @@ export class ZebulonTable extends Component {
   getData = (props, sorts) => {
     this.observable = null;
     let { data, meta, params, filters } = props,
-      // data =
-      //   meta.table.noDataMutation && Array.isArray(data)
-      //     ? [...props.data]
-      //     : data,
       status = { loaded: false, loading: true };
     const message = {
       dataObject: meta.table.object,
@@ -87,7 +83,6 @@ export class ZebulonTable extends Component {
       sorts: this.sorts ? Object.values(this.sorts) : getSorts(meta.properties)
     };
     if (typeof data === "function") {
-      // this.select = data;
       data = data(message);
     } else if ((meta && props.select) || meta.table.select) {
       data =
@@ -98,7 +93,6 @@ export class ZebulonTable extends Component {
           "dml",
           meta.table.select
         );
-      // this.select = data;
       data = data(message);
     }
     if (Array.isArray(data)) {
@@ -275,7 +269,6 @@ export class ZebulonTable extends Component {
             )
           );
       }
-      // this.setState({ sizes });
     }
   };
   componentDidMount() {
@@ -304,12 +297,6 @@ export class ZebulonTable extends Component {
       saveConfirmationRequired,
       refresh
     } = nextProps;
-    // console.log(
-    //   "zebulon-table",
-    //   this.props.status !== status,
-    //   nextProps,
-    //   this.props
-    // );
     if (this.state.sizes !== nextProps.sizes) {
       if (sizes.zoom) {
         if (this.zoomValue !== sizes.zoom) {
@@ -327,7 +314,6 @@ export class ZebulonTable extends Component {
       }
       if (
         this.props.data !== data ||
-        // this.props.meta !== meta ||
         this.props.status !== status ||
         this.props.filters !== filters ||
         this.props.refresh !== refresh
@@ -350,7 +336,7 @@ export class ZebulonTable extends Component {
     }
   }
   shouldComponentUpdate(nextProps, nextState) {
-    if (this.keyEvent && !this.state.confirmationModal) {
+    if (this.keyEvent && !this.confirmationModal) {
       this.keyEvent = false;
       return false;
     }
@@ -358,9 +344,11 @@ export class ZebulonTable extends Component {
     return true;
   }
   handleKeyEvent = e => {
-    if (this.state.confirmationModal) {
+    if (this.confirmationModal) {
       this.setState({ keyEvent: e });
       return;
+    } else if (this.state.keyEvent) {
+      this.setState({ keyEvent: null });
     }
     const zoom = utils.isZoom(e);
     if (zoom && (this.props.isActive === undefined || this.props.isActive)) {
@@ -370,22 +358,17 @@ export class ZebulonTable extends Component {
       computeMeta(this.state.meta, this.zoomValue, this.state.functions);
       return;
     }
-    if (e.key === "Escape" && this.state.confirmationModal) {
-      // this.confirmationModal = false;
-      this.setState({ confirmationModal: false });
-    } else {
-      if (this.props.keyEvent) {
-        this.keyEvent = true;
-      }
-      if (!this.table) {
-        return;
-      } else if (e.type === "copy") {
-        this.handleCopy(e);
-      } else if (e.type === "paste") {
-        this.handlePaste(e);
-      } else if (e.type === "keydown") {
-        this.handleKeyDown(e);
-      }
+    if (this.props.keyEvent) {
+      this.keyEvent = true;
+    }
+    if (!this.table) {
+      return;
+    } else if (e.type === "copy") {
+      this.handleCopy(e);
+    } else if (e.type === "paste") {
+      this.handlePaste(e);
+    } else if (e.type === "keydown") {
+      this.handleKeyDown(e);
     }
   };
   handleKeyDown = e => {
@@ -418,7 +401,6 @@ export class ZebulonTable extends Component {
   // ----------------------------------------
   // comunication with server
   // ----------------------------------------
-
   errorHandler = (message, action, callback) => {
     let handler = (this.props.errorHandler || errorHandler)[action];
     if (
@@ -437,6 +419,7 @@ export class ZebulonTable extends Component {
       message.conflicts = null;
       if (ok === false) {
         if (body) {
+          this.confirmationModal = true;
           this.setState({
             confirmationModal: true,
             modal: { body, type: "Ok" }
@@ -444,7 +427,7 @@ export class ZebulonTable extends Component {
         }
         return false;
       } else if (body) {
-        // this.confirmationModal = true;
+        this.confirmationModal = true;
         const type = action === "onTableChange" ? "YesNoCancel" : "YesNo";
         this.setState({
           confirmationModal: true,
@@ -456,12 +439,12 @@ export class ZebulonTable extends Component {
           if (ok) {
             // back to server version
             data.forEach(index => {
-              message.data[index] = message.updatedRows[index].row;
-              delete message.updatedRows[index];
+              rollback(message.updatedRows[index]);
             });
             callback(ok);
           }
         };
+        this.confirmationModal = true;
         this.setState({
           confirmationModal: true,
           modal: {
@@ -476,6 +459,16 @@ export class ZebulonTable extends Component {
     return true;
   };
   onTableChange = (type, callback_) => {
+    const ok = this.table.canQuit("rowQuit", ok => {
+      if (ok) {
+        this.onTableChange_(type, callback_);
+      }
+    });
+    if (ok) {
+      this.onTableChange_(type, callback_);
+    }
+  };
+  onTableChange_ = (type, callback_) => {
     const callback =
       !callback_ && type === "refresh"
         ? ok => {
@@ -498,13 +491,18 @@ export class ZebulonTable extends Component {
       params: this.props.params,
       type
     };
-    // let ok = onTableChange(message);
     const save = (carryOn, ok) => {
       if (carryOn && ok) {
         this.onSave(callback);
       } else if (carryOn) {
         rollbackAll(this.state.updatedRows, this.state.data);
         this.setState({ updatedRows: {} });
+        if (this.table) {
+          this.table.updated = false;
+          this.table.rowUpdated = false;
+          this.table.tableUpdated = false;
+          this.table.adjustScrollRows(this.table.state.filteredData);
+        }
         callback(true);
       } else {
         callback(false);
@@ -512,6 +510,7 @@ export class ZebulonTable extends Component {
     };
     const ok = this.errorHandler(message, "onTableChange", save);
     if (ok !== undefined) {
+      // console.log("errorHandler", ok, this.state);
       callback(ok);
     }
   };
@@ -529,30 +528,52 @@ export class ZebulonTable extends Component {
   };
   onSave_ = (message, callback) => {
     // local checks and process
+    console.log("save", this.state);
     const end = ok_ => {
       if (ok_) {
         const { data, meta, serverData } = message;
+        const deleteds = [];
         if (serverData) {
-          const deleted = [];
           serverData.forEach(row => {
             if (row.status_ === "deleted") {
-              deleted.push(row.index_);
+              deleteds.push(row.index_);
             } else {
               delete row.status_;
               data[row.index_] = row;
             }
           });
-          deleted.sort((x, y) => x > y - y > x);
-          deleted.forEach((index_, index) => data.splice(index_ - index, 1));
+          deleteds.sort((x, y) => x > y - y > x);
+          deleteds.forEach((index_, index) => data.splice(index_ - index, 1));
         } else {
           Object.values(message.updatedRows)
             .filter(status => status.deleted_)
-            .forEach(status =>
-              message.data.splice(status.rowUpdated.index_, 1)
-            );
+            .forEach(status => {
+              message.data.splice(status.rowUpdated.index_, 1);
+              deleteds.push(status.rowUpdated.index_);
+            });
         }
         computeData(data, meta, 0); // a voir startIndex en mode pagination
-        this.setState({ updatedRows: {} });
+        // this.setState({ updatedRows: {} });
+        Object.keys(message.updatedRows).forEach(
+          key => delete message.updatedRows[key]
+        );
+        if (this.table) {
+          const filteredData = this.table.state.filteredData;
+
+          if (deleteds.length) {
+            deleteds.forEach(index =>
+              filteredData.splice(
+                filteredData.findIndex(row => row.index_ === index),
+                1
+              )
+            );
+            this.table.adjustScrollRows(filteredData);
+            this.table.updated = false;
+            this.table.rowUpdated = false;
+            this.table.tableUpdated = false;
+          }
+          this.table.setState({ filteredDataLength: filteredData.length });
+        }
       }
       if (callback) {
         callback(ok_);
@@ -630,20 +651,28 @@ export class ZebulonTable extends Component {
     this.setState({
       modalCancel: false,
       modal: null,
-      confirmationModal: false
+      confirmationModal: false,
+      keyEvent: null
     });
-    // this.confirmationModal = false;
+    this.confirmationModal = false;
   };
   // foreign key modal
   onForeignKey = (ForeignObject, filters, callback) => {
+    const { rowHeight, zoom, height, width } = this.state.sizes;
     const element = (
       <ForeignObject
-        sizes={{ minHeight: 200, maxHeight: 400, minWidth: 300, maxWidth: 800 }}
+        sizes={{
+          minHeight: 200,
+          maxHeight: height,
+          minWidth: 300,
+          maxWidth: width,
+          rowHeight: rowHeight * zoom
+        }}
         filters={filters}
         keyEvent={this.state.keyEvent}
       />
     );
-    // this.confirmationModal = true;
+    this.confirmationModal = true;
     this.setState({
       confirmationModal: true,
       modal: { body: element, type: "foreignKey", callback }
@@ -665,7 +694,7 @@ export class ZebulonTable extends Component {
         select: undefined,
         subscription: undefined,
         noFilter: true,
-        caption: `${this.state.meta.table.caption}: conflict resolution.`
+        caption: `Conflicts resolution.`
       },
       properties
     };
@@ -685,13 +714,15 @@ export class ZebulonTable extends Component {
       data.push(conflict.table);
       index += 2;
     });
+    const { rowHeight, zoom, height, width } = this.state.sizes;
     return (
       <ZebulonTable
         sizes={{
           minHeight: 200,
-          maxHeight: this.state.sizes.height,
+          maxHeight: height,
           minWidth: 300,
-          maxWidth: this.state.sizes.width
+          maxWidth: width,
+          rowHeight: rowHeight * zoom
         }}
         meta={meta}
         data={data}
@@ -703,9 +734,13 @@ export class ZebulonTable extends Component {
   };
 
   render() {
+    const style = {
+      fontSize: `${(this.props.isModal ? 1 : this.zoomValue) * 100}%`,
+      position: "relative"
+    };
     let div = (
       <div
-        style={{ fontSize: `${this.zoomValue * 100}%`, position: "relative" }}
+        style={style}
         className="zebulon-table"
         id={`zebulon-table-${this.props.id}`}
       >
@@ -722,9 +757,7 @@ export class ZebulonTable extends Component {
           width={this.state.sizes.width}
           height={this.state.sizes.height}
           zoom={this.state.sizes.zoom}
-          rowHeight={
-            (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
-          }
+          rowHeight={(this.state.sizes.rowHeight || 25) * (this.zoomValue || 1)}
           isActive={this.props.isActive}
           onActivation={this.props.onActivation}
           ref={ref => (this.table = ref)}
@@ -761,15 +794,13 @@ export class ZebulonTable extends Component {
           detail={this.state.modal}
           onConfirm={this.onConfirm}
           keyEvent={this.state.keyEvent}
+          ref={ref => (this.modal = ref)}
         />
       </div>
     );
-
     return div;
   }
 }
-
 ZebulonTable.prototype["getState"] = function() {
   return this.state;
 };
-// export  ZebulonTable;

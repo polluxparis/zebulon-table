@@ -10,15 +10,29 @@ export class TableFilterSort extends TableEvent {
   // ----------------------------------------
   // filtering
   // ----------------------------------------
-  adjustScrollRows = filteredDataLength => {
+  adjustScrollRows = filteredData => {
     if (this.state) {
       let { rows, columns } = this.state.scroll;
+      const selectedRange = this.state.selectedRange;
+      if (!filteredData.length) {
+        selectedRange.end = {};
+        selectedRange.start = {};
+        this.hasFocus = false;
+        this.bLoaded = undefined;
+      } else if (
+        selectedRange.end.rows === undefined ||
+        selectedRange.end.rows > filteredData.length - 1
+      ) {
+        selectedRange.end = { rows: 0, columns: 0 };
+        selectedRange.start = { rows: 0, columns: 0 };
+        this.bLoaded = true;
+      }
       if (
-        filteredDataLength !== this.getFilteredDataLength &&
+        filteredData.length !== this.getFilteredDataLength &&
         rows.startIndex !== 0 &&
         rows.index +
           (rows.direction === 1 ? this.rowsHeight / this.rowHeight : 0) >
-          filteredDataLength
+          filteredData.length
       ) {
         rows = {
           index: 0,
@@ -27,27 +41,35 @@ export class TableFilterSort extends TableEvent {
           shift: 0,
           position: 0
         };
+        console.log(
+          "adjustScrollRows",
+          rows,
+          columns,
+          filteredData,
+          selectedRange
+        );
         this.setState({ scroll: { rows, columns } });
       }
+      return filteredData[selectedRange.end.rows];
     }
   };
   filters = (data, filters, noFocus, updatedRows) => {
     if (!Array.isArray(data)) {
-      if (this.state && this.state.meta.serverPagination) {
-        return this.pagination({
-          filters,
-          callbackAfter: page => {
-            this.selectRange_(
-              this.range,
-              undefined,
-              undefined,
-              "enter",
-              noFocus
-            );
-            this.adjustScrollRows(page.filteredDataLength);
-          }
-        });
-      }
+      //   if (this.state && this.state.meta.serverPagination) {
+      //     return this.pagination({
+      //       filters,
+      //       callbackAfter: page => {
+      //         this.selectRange_(
+      //           this.range,
+      //           undefined,
+      //           undefined,
+      //           "enter",
+      //           noFocus
+      //         );
+      //         this.adjustScrollRows(page.filteredDataLength);
+      //       }
+      //     });
+      //   }
       return [];
     }
     const filter = filtersFunction(
@@ -57,7 +79,6 @@ export class TableFilterSort extends TableEvent {
       updatedRows
     );
     const filteredData = data.filter(filter);
-    this.adjustScrollRows(filteredData.length);
     if (this.props.onFilter) {
       this.props.onFilter({
         filters,
@@ -123,23 +144,32 @@ export class TableFilterSort extends TableEvent {
     return filter;
   };
   openFilter = (e, column) => {
-    if (column.filterType !== "values") {
-      return this.closeOpenedWindows();
+    if (this.isOpening) {
+      return;
     }
-    if (
-      this.selectRange(
-        this.state.selectedRange,
-        undefined,
-        this.row,
-        "quit"
-      ) === false
-    )
-      return false;
+    e.preventDefault();
+    e.stopPropagation();
+    e.persist();
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
     filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
     filter.left = e.target.offsetLeft;
+    const ok = this.canQuit("rowQuit", ok => {
+      if (ok) {
+        return this.openFilter_(e, column, filter);
+      }
+    });
+    if (ok) {
+      return this.openFilter_(e, column, filter);
+    }
+  };
+  openFilter_ = (e, column, filter) => {
+    if (column.filterType !== "values") {
+      e.target.focus();
+      return this.closeOpenedWindows();
+    }
     // column.position + this.rowHeight - this.state.scroll.columns.position;
+    this.hasFocus = false;
     this.setState({
       openedFilter: column.id,
       filters: { ...this.state.filters, [column.id]: filter }
@@ -157,8 +187,8 @@ export class TableFilterSort extends TableEvent {
   };
   onChangeFilter_ = (e, row, column, filterTo) => {
     const { selectedRange, filters, meta, data, updatedRows } = this.state;
-    if (this.selectRange(selectedRange, undefined, this.row, "quit") === false)
-      return false;
+    // const ok = this.selectRange(selectedRange, undefined, this.row, "quit");
+    // return false;
     this.closeOpenedWindows();
     const v = e;
     if (v === undefined) {
@@ -171,12 +201,19 @@ export class TableFilterSort extends TableEvent {
         column.v = v;
       }
       filters[column.id] = column;
+      this.changingFilter = true;
       const filteredData = this.filters(data, filters, true, updatedRows);
-      if (!meta.serverPagination) {
-        this.sorts(filteredData, meta.properties);
-        this.setState({ filteredData });
-        this.selectRange(selectedRange, undefined, undefined, "enter", true);
-      }
+      // if (!meta.serverPagination) {
+      this.sorts(filteredData, meta.properties);
+      this.setState({ filteredData });
+      this.selectRange(
+        selectedRange,
+        undefined,
+        this.adjustScrollRows(filteredData),
+        "enter",
+        true
+      );
+      // }
     }
   };
   onChangeFilterValues = filter => {
@@ -197,11 +234,16 @@ export class TableFilterSort extends TableEvent {
     column.v = filter;
     filters[column.id] = column;
     const filteredData = this.filters(data, filters);
-    if (!meta.serverPagination) {
-      this.sorts(filteredData, meta.properties);
-      this.setState({ filteredData });
-      this.selectRange(this.range, undefined, undefined, "enter");
-    }
+    // if (!meta.serverPagination) {
+    this.sorts(filteredData, meta.properties);
+    this.setState({ filteredData });
+    this.selectRange(
+      this.range,
+      undefined,
+      this.adjustScrollRows(filteredData),
+      "enter"
+    );
+    // }
   };
   // ----------------------------------------
   //sorting

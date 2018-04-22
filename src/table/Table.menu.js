@@ -5,7 +5,7 @@ import { rollback } from "./utils/utils";
 
 export class TableMenu extends Component {
     handleClickMenu = (data, item) => {
-        if (data.menuId === "column-header-menu") {
+        if (data.menu === "column-header-menu") {
             if (item.id <= 1) {
                 const meta = this.state.meta;
                 if (!utils.isNullOrUndefined(meta.lockedIndex)) {
@@ -28,7 +28,7 @@ export class TableMenu extends Component {
                     }
                 });
             }
-        } else if (data.menuId === "row-header-menu") {
+        } else if (data.menu === "row-header-menu") {
             if (item.id === 0) {
                 rollback(data.status);
                 this.setState({ scroll: this.state.scroll });
@@ -36,21 +36,45 @@ export class TableMenu extends Component {
                 const audits = this.state.meta.row.auditFunction({
                     row: data.row
                 });
+                const prevScroll = this.state.scroll;
+                const scroll = {
+                    rows: {
+                        index: 0,
+                        direction: 1,
+                        startIndex: 0,
+                        shift: 0,
+                        position: 0
+                    },
+                    columns: {
+                        index: 0,
+                        direction: 1,
+                        startIndex: 0,
+                        shift: 0,
+                        position: 0
+                    }
+                };
                 if (utils.isPromise(audits)) {
-                    audits.then(audits =>
-                        this.setState({
-                            auditedRow: data.row,
-                            audits
-                        })
-                    );
-                } else {
+                    audits.then(audits => {
+                        if (audits) {
+                            this.setState({
+                                auditedRow: data.row,
+                                audits,
+                                scroll,
+                                prevScroll
+                            });
+                        }
+                    });
+                } else if (audits) {
+                    const scroll = this.state.prevScroll;
                     this.setState({
                         auditedRow: data.row,
-                        audits
+                        audits,
+                        scroll,
+                        prevScroll
                     });
                 }
             }
-        } else if (data.menuId === "top-left-corner-menu") {
+        } else if (data.menu === "top-left-corner-menu") {
             const { filters, data, updatedRows } = this.state;
             let filter = filters.status_;
             if (!filter) {
@@ -67,18 +91,24 @@ export class TableMenu extends Component {
             } else if (item.id >= 100) {
                 filters.status_ = filter;
             } else if (item.id === 2) {
+                const scroll = this.state.prevScroll;
                 const meta = this.state.meta;
                 computeMetaPositions(meta);
-                this.setState({ auditedRow: undefined, audits: undefined });
+                this.setState({
+                    auditedRow: undefined,
+                    audits: undefined,
+                    scroll,
+                    prevScroll: undefined
+                });
             }
             this.setState({
                 filteredData: this.filters(data, filters, false, updatedRows)
             });
         }
     };
-    getMenu = (menuId, data) => {
+    getMenu = (menu, data) => {
         const menus = [];
-        if (menuId === "row-header-menu") {
+        if (menu === "row-header-menu") {
             if (this.state.meta.table.editable) {
                 menus.push({
                     id: menus.length,
@@ -99,11 +129,8 @@ export class TableMenu extends Component {
                     onClick: this.handleClickMenu
                 });
             }
-            if (
-                this.props.contextualMenu &&
-                this.props.contextualMenu[menuId]
-            ) {
-                this.props.contextualMenu[menuId].forEach((menu, index) =>
+            if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
+                this.props.contextualMenu[menu].forEach((menu, index) =>
                     menus.push({
                         id: menus.length,
                         separation: index === 0 && menus.length > 0,
@@ -113,7 +140,7 @@ export class TableMenu extends Component {
                     })
                 );
             }
-        } else if (menuId === "column-header-menu") {
+        } else if (menu === "column-header-menu") {
             menus.push({
                 id: menus.length,
                 type: "menu-item",
@@ -129,11 +156,8 @@ export class TableMenu extends Component {
                 caption: `Lock columns until ${data.column.caption}`,
                 onClick: this.handleClickMenu
             });
-            if (
-                this.props.contextualMenu &&
-                this.props.contextualMenu[menuId]
-            ) {
-                this.props.contextualMenu[menuId].forEach((menu, index) =>
+            if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
+                this.props.contextualMenu[menu].forEach((menu, index) =>
                     menus.push({
                         id: menus.length,
                         separation: index === 0 && menus.length > 0,
@@ -143,7 +167,7 @@ export class TableMenu extends Component {
                     })
                 );
             }
-        } else if (menuId === "top-left-corner-menu") {
+        } else if (menu === "top-left-corner-menu") {
             if (this.state.meta.table.editable) {
                 menus.push({
                     id: menus.length,
@@ -221,11 +245,8 @@ export class TableMenu extends Component {
                     onClick: this.handleClickMenu
                 });
             }
-            if (
-                this.props.contextualMenu &&
-                this.props.contextualMenu[menuId]
-            ) {
-                this.props.contextualMenu[menuId].forEach((menu, index) =>
+            if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
+                this.props.contextualMenu[menu].forEach((menu, index) =>
                     menus.push({
                         id: menus.length,
                         separation: index === 0 && menus.length > 0,
