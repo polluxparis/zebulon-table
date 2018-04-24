@@ -218,7 +218,7 @@ export class Table extends TableFilterSort {
     // -----------------------------
     // audit
     // -----------------------------
-    console.log("render", scroll, selectedRange);
+    // console.log("render", scroll, selectedRange);
     let auditStatus;
     if (auditedRow) {
       selectRange = undefined;

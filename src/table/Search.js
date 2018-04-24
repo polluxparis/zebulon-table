@@ -13,7 +13,6 @@ export class Search extends Component {
       filteredData,
       meta,
       dataStrings,
-      scroll,
       rowStartIndex,
       rowStopIndex
     } = props;
@@ -28,16 +27,7 @@ export class Search extends Component {
     };
   }
   handleClickNext = direction => {
-    const {
-      cell,
-      value,
-      rowIndexes,
-      dataStrings,
-      indexRowIndex,
-      properties,
-      rowStartIndex,
-      rowStopIndex
-    } = this.state;
+    const { cell, value, rowIndexes, indexRowIndex, properties } = this.state;
     const exp = getRegExp(value);
     const cell_ = { ...cell };
     let index = indexRowIndex;
@@ -78,8 +68,7 @@ export class Search extends Component {
     const value = e.target.value;
     const exp = getRegExp(value);
     const cell = { rows: undefined, columns: undefined };
-    let ix = -1,
-      direction = null;
+    let ix = -1;
     if (!utils.isNullValue(value && value !== this.state.value)) {
       const { rowStartIndex, rowStopIndex, filteredData } = this.props;
       const rows = this.state.dataStrings;
@@ -92,10 +81,8 @@ export class Search extends Component {
         if (ix === -1) {
           if (rowIndexes[rowIndexes.length - 1] > rowStopIndex) {
             ix = rowIndexes.findIndex(index => index > rowStopIndex);
-            direction = 1;
           } else {
             ix = rowIndexes.length - 1;
-            direction = -1;
           }
         }
         cell.rows = rowIndexes[ix];
@@ -120,8 +107,6 @@ export class Search extends Component {
     this.input.focus();
   };
   render() {
-    // const rowHeight = 20;
-    const { maxRows, rowHeight } = this.state;
     return (
       <div style={{ display: "flex" }}>
         <input

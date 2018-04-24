@@ -1,7 +1,7 @@
 import React from "react";
 import { TableMenu } from "./Table.menu";
 import { utils, constants } from "zebulon-controls";
-import { computeData, computeRowSearch, rowSearch } from "./utils/compute.data";
+import { computeData } from "./utils/compute.data";
 import { hasParent } from "./utils/utils";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import {
@@ -443,7 +443,7 @@ export class TableEvent extends TableMenu {
       }
       this.selectRange_(range, x => x);
     }
-    console.log("onScroll_", scroll, range);
+    // console.log("onScroll_", scroll, range);
     this.setState({ scroll });
     // console.log("onScroll", scroll.rows);
   };
@@ -489,7 +489,7 @@ export class TableEvent extends TableMenu {
     if (!this.props.isActive && this.props.onActivation) {
       this.props.onActivation();
     }
-    const { selectedRange, meta, search } = this.state;
+    const { selectedRange, meta } = this.state;
     // this.hasFocus = !noFocus && !search;
     this.hasFocus = !noFocus;
     const prevEnd = selectedRange.end;
@@ -904,7 +904,7 @@ export class TableEvent extends TableMenu {
   };
   onMetaChange = resetScroll => {
     const bReset = false;
-    console.log("onMetaChange", this.state.scroll.rows);
+    // console.log("onMetaChange", this.state.scroll.rows);
     this.setState({
       scroll: {
         rows: this.state.scroll.rows,

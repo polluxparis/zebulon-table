@@ -175,11 +175,11 @@ export const get_observable = ({ params, meta, filters, sorts }) => {
 	while (i < data.length) {
 		data2.push(data.slice(i, (i += 1000)));
 	}
-	console.log("observable", i);
+	// console.log("observable", i);
 	return Observable.interval(20)
 		.take(data2.length)
 		.map(i => {
-			console.log("observable1", i, data2.length);
+			// console.log("observable1", i, data2.length);
 			return data2[i];
 		});
 };
@@ -196,7 +196,7 @@ export const get_subscription = ({ params, meta, filters, sorts }) => {
 	return Observable.interval(1000)
 		.take(1)
 		.map(i => {
-			console.log("observable2", i, data2[i].length);
+			// console.log("observable2", i, data2[i].length);
 			return data2[i];
 		});
 };

@@ -47,7 +47,7 @@ const audits = {};
 // synchronous function (keep audits of changes)
 // return true or false
 const onSaveAfter = message => {
-	const { updatedRows, meta, params } = message;
+	const { updatedRows, meta } = message;
 	// audits
 	Object.keys(updatedRows).forEach(key => {
 		if (!audits[key]) {

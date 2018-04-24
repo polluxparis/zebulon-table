@@ -135,11 +135,11 @@ export class MyDataset extends Component {
   };
   // radio buttons datasource
   handleRadioDataset = e => {
-    console.log("radio", e.target);
+    // console.log("radio", e.target);
     const value = e.target.value;
     this.setState({
       saveConfirmationRequired: ok => {
-        console.log("confirmation", ok);
+        // console.log("confirmation", ok);
         if (ok) {
           if (value === "get_array") {
             this.text =

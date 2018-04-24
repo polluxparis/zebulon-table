@@ -41,13 +41,13 @@ export class TableFilterSort extends TableEvent {
           shift: 0,
           position: 0
         };
-        console.log(
-          "adjustScrollRows",
-          rows,
-          columns,
-          filteredData,
-          selectedRange
-        );
+        // console.log(
+        //   "adjustScrollRows",
+        //   rows,
+        //   columns,
+        //   filteredData,
+        //   selectedRange
+        // );
         this.setState({ scroll: { rows, columns } });
       }
       return filteredData[selectedRange.end.rows];

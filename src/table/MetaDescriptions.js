@@ -310,7 +310,7 @@ export const metaDescriptions = (
 	const getWindowFunctions = obj => () => getFunctions("window", obj);
 	const getSelects = obj => () => getFunctions("select", obj);
 	const getValidators = obj => () => getFunctions("validator", obj);
-	const getEditables = obj => () => getFunctions("editable", obj);
+	// const getEditables = obj => () => getFunctions("editable", obj);
 	const getDefaults = obj => () => getFunctions("default", obj);
 	const getForeignObjects = obj => () => getFunctions("foreignObject", obj);
 	if (object === "dataset") {

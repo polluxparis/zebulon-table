@@ -2,8 +2,6 @@ import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
 import { utils, ConfirmationModal } from "zebulon-controls";
-// import { MyThirdparties } from "../demo/thirdparties";
-// import { get_observable2 } from "../demo/datasources";
 import {
   computeMeta,
   computeMetaFromData,
@@ -13,9 +11,7 @@ import {
 } from "./utils/compute.meta";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { rollback, rollbackAll, errorHandler, hasParent } from "./utils/utils";
-// import { utils.isPromise, isDate } from "./utils/generic";
-
+import { rollback, rollbackAll, errorHandler } from "./utils/utils";
 export class ZebulonTable extends Component {
   constructor(props) {
     super(props);
@@ -528,7 +524,7 @@ export class ZebulonTable extends Component {
   };
   onSave_ = (message, callback) => {
     // local checks and process
-    console.log("save", this.state);
+    // console.log("save", this.state);
     const end = ok_ => {
       if (ok_) {
         const { data, meta, serverData } = message;

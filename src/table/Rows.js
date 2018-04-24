@@ -196,7 +196,6 @@ export class Rows extends ScrollableGrid {
       width,
       updatedRows,
       hasFocus,
-      dataLength,
       component
     } = this.props;
     let i = 0,
