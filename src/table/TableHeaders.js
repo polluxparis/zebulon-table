@@ -143,7 +143,7 @@ const header = (
       >
         {column.caption || column.id}
       </div>
-      <div key={1} style={{ width: 8 }}>
+      <div id={id} key={1} style={{ width: 8 }}>
         {sort}
       </div>
       <div
@@ -479,6 +479,7 @@ export const statusCell = (
   component,
   checkable,
   onChange,
+  isAudit,
   draggable,
   handleDragStart
 ) => {
@@ -506,7 +507,7 @@ export const statusCell = (
       />
     );
   }
-  const id = `status: ${component}-${row.index_}-`;
+  const id = `status: ${component}-${isAudit ? index : row.index_}-`;
   return (
     <ContextualMenuClient
       id={id}
@@ -584,6 +585,7 @@ export class Status extends Component {
       component,
       checkable,
       onDoubleClick,
+      isAudit,
       draggable
     } = this.props;
     const updatedRows = this.state.updatedRows;
@@ -620,7 +622,7 @@ export class Status extends Component {
           statusCell(
             style,
             className,
-            index + scroll.startIndex,
+            ix + scroll.startIndex,
             row,
             updatedRow,
             this.onClick,
@@ -629,7 +631,8 @@ export class Status extends Component {
             component,
             checkable,
             this.onChange,
-            draggable
+            draggable,
+            isAudit
           )
         );
       }

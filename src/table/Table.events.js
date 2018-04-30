@@ -15,11 +15,14 @@ export class TableEvent extends TableMenu {
   // ------------------------------------
   // Navigation
   // ------------------------------------
-  closeOpenedWindows = keepSearch => {
+  closeOpenedWindows = (keepSearch, column) => {
     if (this.state.openedFilter) {
       this.setState({ openedFilter: undefined });
     }
-    if (this.state.text.top !== undefined) {
+    if (
+      this.state.text.top !== undefined &&
+      !(column && column.dataType === "text")
+    ) {
       this.setState({ text: {} });
     }
     if (this.state.detail.content !== undefined) {
@@ -44,6 +47,9 @@ export class TableEvent extends TableMenu {
     // a voir
     const keyCode = e.which || e.keyCode;
     const key = utils.keyMap[keyCode];
+    if (key === undefined) {
+      return;
+    }
     const { openedFilter, detail } = this.state;
     const isFilter = hasParent(document.activeElement, "filter");
     if (key === "Escape") {
@@ -315,6 +321,9 @@ export class TableEvent extends TableMenu {
   handleDuplicate = index => {
     if (this.row) {
       const row = { ...this.row, index_: this.getDataLength() };
+      if (this.state.meta.table.rowId) {
+        row[this.state.meta.table.rowId] = undefined;
+      }
       if (this.state.meta.table.primaryKey) {
         row[this.state.meta.table.primaryKey] = null;
       }

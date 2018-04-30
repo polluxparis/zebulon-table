@@ -55,20 +55,21 @@ export class TableMenu extends Component {
                 };
                 if (utils.isPromise(audits)) {
                     audits.then(audits => {
-                        if (audits) {
-                            this.setState({
-                                auditedRow: data.row,
-                                audits,
-                                scroll,
-                                prevScroll
-                            });
-                        }
+                        // if (audits) {
+                        this.setState({
+                            auditedRow: data.row,
+                            audits: audits || [],
+                            scroll,
+                            prevScroll
+                        });
+                        // }
                     });
-                } else if (audits) {
+                } else {
+                    // if (audits)
                     const scroll = this.state.prevScroll;
                     this.setState({
                         auditedRow: data.row,
-                        audits,
+                        audits: audits || [],
                         scroll,
                         prevScroll
                     });
@@ -86,11 +87,7 @@ export class TableMenu extends Component {
             } else {
                 filter.v += v;
             }
-            if (item.id === 0 || filter.v === 0) {
-                delete filters.status_;
-            } else if (item.id >= 100) {
-                filters.status_ = filter;
-            } else if (item.id === 2) {
+            if (item.id === 2) {
                 const scroll = this.state.prevScroll;
                 const meta = this.state.meta;
                 computeMetaPositions(meta);
@@ -100,10 +97,21 @@ export class TableMenu extends Component {
                     scroll,
                     prevScroll: undefined
                 });
+            } else {
+                if (item.id === 0 || filter.v === 0) {
+                    delete filters.status_;
+                } else if (item.id >= 100) {
+                    filters.status_ = filter;
+                }
+                this.setState({
+                    filteredData: this.filters(
+                        data,
+                        filters,
+                        false,
+                        updatedRows
+                    )
+                });
             }
-            this.setState({
-                filteredData: this.filters(data, filters, false, updatedRows)
-            });
         }
     };
     getMenu = (menu, data) => {

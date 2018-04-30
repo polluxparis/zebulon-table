@@ -30,7 +30,8 @@ export class MyDataset extends Component {
       rollingAverage: false,
       confirmationModal: false,
       activeTable: "dataset",
-      saveConfirmationRequired: false
+      saveConfirmationRequired: false,
+      params: { user_: "Pollux" }
     };
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
@@ -181,7 +182,8 @@ export class MyDataset extends Component {
       radioDataset,
       status,
       activeTable,
-      saveConfirmationRequired
+      saveConfirmationRequired,
+      params
     } = this.state;
     let header = null,
       footer = null;
@@ -332,6 +334,7 @@ export class MyDataset extends Component {
         <ZebulonTable
           id="dataset"
           meta={meta}
+          params={params}
           filters={filters}
           sorts={sorts}
           status={status}

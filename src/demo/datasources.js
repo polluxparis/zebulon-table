@@ -96,8 +96,11 @@ for (let i = 0; i < 200; i++) {
 }
 export const getProducts = () => products;
 
+const users = ["Margote", "Pollux", "Zébulon", "Azalée"];
 export const getMockDataset = nRow => {
+	const timestamp = new Date().getTime();
 	const d = [];
+	audits = {};
 	const thp = Object.values(thirdparties);
 	for (let i = 0; i < nRow; i++) {
 		const row = {};
@@ -117,7 +120,16 @@ export const getMockDataset = nRow => {
 			Math.round(12 * Math.random()),
 			Math.round(31 * Math.random())
 		);
+		row.timestamp_ = timestamp - Math.round(1000000 * Math.random());
+		row.rowId_ = i;
 		d.push(row);
+		audits[i] = [
+			{
+				user_: users[Math.round(4 * Math.random() - 0.0001)],
+				timestamp_: timestamp,
+				status_: "new"
+			}
+		];
 	}
 	data = d;
 	return {
@@ -139,28 +151,35 @@ export const getMockDataset = nRow => {
 // 	]);
 // };
 export let data;
+export let audits = {};
+export const dataPk = {};
+
 export const get_array = ({ params, meta, filters }) => {
 	if (!data) {
 		data = getMockDataset(25000).data;
 		// this is necessary only because for demo, we are using the same filters and sorts functions as the client
 		// to simulate server actions
-		data.forEach(row => {
+		data.forEach((row, index) => {
 			row.product = products[row.product_id];
 			row.country = countries[row.country_id];
 			row.currency = currencies[row.currency_id];
+			dataPk[row.id] = index;
 		});
 	}
-	return data;
+	return JSON.parse(JSON.stringify(data)).filter(row => !row.deleted_);
 };
 // -------------------------------------------
 // promise
 // -------------------------------------------
 export const get_promise = ({ params, meta, filters }) => {
-	let data = get_array({ params, filters });
-	if (filters) {
-		data = data.filter(filtersFunction(filters, params, data));
-	}
-	return new Promise(resolve => setTimeout(resolve, 20)).then(() => data);
+	return new Promise(resolve => {
+		let data = get_array({ params, filters });
+		// if the filters are applied on the server data:
+		if (filters) {
+			data = data.filter(filtersFunction(filters, params, data));
+		}
+		resolve(data);
+	});
 };
 // -------------------------------------------
 // observable
@@ -184,16 +203,18 @@ export const get_observable = ({ params, meta, filters, sorts }) => {
 		});
 };
 export const get_subscription = ({ params, meta, filters, sorts }) => {
-	const data = get_array({ params, filters });
+	// const data = get_array({ params, filters });
+	const timestamp = new Date().getTime();
 	const data2 = [[], [], []];
 	for (let i = 0; i < 10; i++) {
 		// const row = data[Math.floor(Math.random() * data.length)];
-		const row = { ...data[i] };
+		const row = data[i];
+		row.timestamp_ = timestamp;
 		row.qty = Math.floor(2000 * Math.random());
-		data2[Math.floor(i / 100)].push(row);
+		data2[Math.floor(i / 100)].push({ ...row });
 	}
 	// console.log("observable", i);
-	return Observable.interval(1000)
+	return Observable.interval(100)
 		.take(1)
 		.map(i => {
 			// console.log("observable2", i, data2[i].length);

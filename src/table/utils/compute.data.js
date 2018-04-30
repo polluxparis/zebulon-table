@@ -51,8 +51,7 @@ export const computeRows = (data, meta, startIndex) => {
     column =>
       column.dataType === "joined object" && column.accessor !== undefined
   );
-  const pk = meta.table.pk;
-  const lk = meta.table.lk;
+  const { pk, lk, rwd } = meta.table;
 
   data.forEach((row, index) => {
     // if (calcIndex) {
@@ -63,6 +62,9 @@ export const computeRows = (data, meta, startIndex) => {
     }
     if (lk) {
       meta.indexLk[row[lk.id]] = row.index_;
+    }
+    if (rwd) {
+      meta.indexRowId[row[rwd.id]] = row.index_;
     }
     foreignObjects.forEach(
       column => (row[column.id] = column.accessorFunction({ row }))
@@ -230,16 +232,25 @@ export const computeAnalytic = (data, column) => {
 
   return data;
 };
-export const computeAudit = (row, meta, audits) => {
+export const computeAudit = (rowUpdated, row, meta, audits) => {
   const rows = [];
-
-  if (audits.length) {
+  if (rowUpdated) {
+    rows.push(rowUpdated);
+  }
+  if (audits && audits.length) {
     const audits_ = [...audits].reverse();
     let nextRow = row;
     audits_.forEach(audit => {
-      nextRow = { ...nextRow, ...audit };
-      rows.push(nextRow);
+      const { user_, timestamp_, status_ } = audit;
+      rows.push({
+        ...nextRow,
+        user_,
+        time_: new Date(timestamp_),
+        status_
+      });
+      nextRow = { ...nextRow, ...audit.row };
     });
+    // rows.push(nextRow);
     const foreignObjects = meta.properties.filter(
       column => column.dataType === "joined object"
     );
@@ -250,6 +261,8 @@ export const computeAudit = (row, meta, audits) => {
         );
       });
     }
+  } else if (!rowUpdated) {
+    rows.push(row);
   }
   return rows;
 };

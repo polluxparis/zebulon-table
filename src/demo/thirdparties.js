@@ -48,7 +48,7 @@ export const metaThirdparties = {
 	properties: [
 		{
 			id: "id",
-			dataType: "date",
+			dataType: "number",
 			mandatory: true,
 			hidden: true
 		},

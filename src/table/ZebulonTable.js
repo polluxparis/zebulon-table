@@ -215,9 +215,10 @@ export class ZebulonTable extends Component {
   };
   subscribe = (message, subscription) => {
     if (subscription) {
-      message.indexPk = this.state.meta.indexPk;
-      message.data = this.state.data;
-      message.updatedRows = this.state.updatedRows;
+      const { data, meta, updatedRows } = this.state;
+      message.index = meta.indexRowId || meta.indexPk;
+      message.data = data;
+      message.updatedRows = updatedRows;
       this.observable = subscription.observableFunction(message);
       const { onNext, onError, onCompleted } = subscription.observerFunctions;
       const onNextFunction = data => {
@@ -404,7 +405,10 @@ export class ZebulonTable extends Component {
       !(message.updatedRows || {}).nErrors
     ) {
       handler = null;
-    } else if (action === "onRowQuit" && !(message.status.errors || {}).n_) {
+    } else if (
+      action === "onRowQuit" &&
+      !((message.status || {}).errors || {}).n_
+    ) {
       handler = null;
     }
     if (handler) {
@@ -435,6 +439,9 @@ export class ZebulonTable extends Component {
           if (ok) {
             // back to server version
             data.forEach(index => {
+              const row = conflicts[index].server;
+              row.index_ = index;
+              message.updatedRows[index].row = row;
               rollback(message.updatedRows[index]);
             });
             callback(ok);
@@ -538,17 +545,19 @@ export class ZebulonTable extends Component {
               data[row.index_] = row;
             }
           });
-          deleteds.sort((x, y) => x > y - y > x);
-          deleteds.forEach((index_, index) => data.splice(index_ - index, 1));
         } else {
           Object.values(message.updatedRows)
             .filter(status => status.deleted_)
-            .forEach(status => {
-              message.data.splice(status.rowUpdated.index_, 1);
+            .forEach((status, index) => {
               deleteds.push(status.rowUpdated.index_);
             });
         }
-        computeData(data, meta, 0); // a voir startIndex en mode pagination
+        if (deleteds.length) {
+          deleteds.sort((x, y) => x > y - y > x);
+          deleteds.forEach((index_, index) => data.splice(index_ - index, 1));
+        }
+        computeData(data, meta, 0);
+        // a voir startIndex en mode pagination
         // this.setState({ updatedRows: {} });
         Object.keys(message.updatedRows).forEach(
           key => delete message.updatedRows[key]
@@ -557,12 +566,14 @@ export class ZebulonTable extends Component {
           const filteredData = this.table.state.filteredData;
 
           if (deleteds.length) {
-            deleteds.forEach(index =>
-              filteredData.splice(
-                filteredData.findIndex(row => row.index_ === index),
-                1
-              )
-            );
+            deleteds.forEach(index_ => {
+              const index = filteredData.findIndex(
+                row => row.index_ === index_
+              );
+              if (index !== -1) {
+                filteredData.splice(index, 1);
+              }
+            });
             this.table.adjustScrollRows(filteredData);
             this.table.updated = false;
             this.table.rowUpdated = false;
@@ -698,16 +709,27 @@ export class ZebulonTable extends Component {
     let index = 0,
       updatedRows = {};
 
-    conflicts.forEach(conflict => {
-      conflict.server.From = "Server";
-      updatedRows[index] = { checked_: true, index_: conflict.server.index_ };
-      conflict.server.index_ = index;
-
+    Object.keys(conflicts).forEach(index_ => {
+      const conflict = conflicts[index_];
+      conflict.server.From = conflict.server.deleted_ ? (
+        <div style={{ color: "red" }}>Server</div>
+      ) : (
+        "Server"
+      );
+      updatedRows[index] = { checked_: true, index_ };
+      const ix = index;
+      conflict.server.index_ = ix;
       data.push(conflict.server);
-      conflict.table.From = "Table";
-      conflict.table.index_ = index + 1;
       updatedRows[index + 1] = { checked_: false };
-      data.push(conflict.table);
+      data.push({
+        ...conflict.client,
+        From: conflict.client.deleted_ ? (
+          <div style={{ color: "red" }}>Client</div>
+        ) : (
+          "Client"
+        ),
+        index_: ix + 1
+      });
       index += 2;
     });
     const { rowHeight, zoom, height, width } = this.state.sizes;

@@ -31,7 +31,8 @@ export const meta = {
     object: "dataset",
     editable: true,
     select: "get_array",
-    primaryKey: "id",
+    // primaryKey: "id",
+    rowId: "rowId_",
     onSave: "onSave",
     onSaveAfter: "onSaveAfter",
     onSaveBefore: "onSaveBefore",
@@ -87,6 +88,9 @@ export const meta = {
   },
   properties: [
     {
+      id: "rowId_"
+    },
+    {
       id: "d",
       caption: "Date",
       width: 100,
@@ -102,7 +106,7 @@ export const meta = {
       dataType: "number",
       mandatory: true,
       editable: "is_new",
-      filterType: "starts"
+      filterType: "between"
     },
     {
       id: "product",
@@ -194,7 +198,8 @@ export const meta = {
       dataType: "string",
       editable: true,
       filterType: "values",
-      accessor: "row.country.code"
+      accessor: "row.country.code",
+      onQuit: "onChangeCountry"
     },
     {
       id: "flag",

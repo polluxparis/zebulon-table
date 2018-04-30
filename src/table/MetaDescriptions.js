@@ -45,28 +45,22 @@ const stringToFunction = ({ row, status, meta }) => {
 	return true;
 };
 export const onNext = (data, message) => {
-	// console.log("onNext", data);
+	const indexedColumn =
+		message.meta.table.rowId || message.meta.table.primaryKey;
 	data.forEach(row => {
-		if (message.indexPk) {
-			const index = message.indexPk[row[message.meta.table.primaryKey]];
+		//  a voir deleted row on server side + conflict (zebulon table) => recreation of the row (new_=true) index_=...
+		if (message.index) {
+			const index = message.index[row[indexedColumn]];
 			if (index !== undefined) {
 				row.index_ = index;
 				const status = message.updatedRows[index];
 				if (status) {
-					status.row = { ...row };
-					if (status.updated_ || status.deleted_) {
-						status.conflict_ = true;
-						message.updatedRows.nConflicts =
-							(message.updatedRows.nConflicts || 0) + 1;
-					} else {
-						message.data[index] = row;
-						status.rowUpdated = row;
-					}
+					status.row = row;
 				} else {
 					message.data[index] = row;
 				}
 			} else {
-				message.indexPk[row[message.meta.table.primaryKey]] =
+				message.index[row[message.meta.table.primaryKey]] =
 					message.data.length;
 				message.data.push(row);
 			}
@@ -487,6 +481,7 @@ export const metaDescriptions = (
 					select: [
 						"starts",
 						"starts (case sensitive)",
+						"contains",
 						"=",
 						">=",
 						"<=",

@@ -129,6 +129,9 @@ export const computeMeta = (meta, zoom = 1, functions) => {
   if (!meta.indexLk && !utils.isNullValue(meta.table.logicalKey)) {
     meta.indexLk = {};
   }
+  if (!meta.indexRowId && !utils.isNullValue(meta.table.rowId)) {
+    meta.indexRowId = {};
+  }
   meta.row.descriptorFunction = getFunction(
     functions,
     meta.table.object,
@@ -215,6 +218,11 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       column.id === meta.table.logicalKey
     ) {
       meta.table.lk = column;
+    }
+    if (!utils.isNullOrUndefined(column.id) && column.id === meta.table.rowId) {
+      column.dataType = "number";
+      column.hidden = true;
+      meta.table.rwd = column;
     }
     if (column.dataType === "object" || column.dataType === "joined object") {
       column.hidden = true;

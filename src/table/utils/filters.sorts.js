@@ -57,6 +57,10 @@ export const filterFunction = (column, params, data, updatedRows) => {
   } else if (column.filterType === "starts (case sensitive)") {
     column.f = row =>
       String(facc(row) || "").startsWith(String(column.v || ""));
+  } else if (column.filterType === "contains") {
+    column.f = row => {
+      return String(facc(row) || "").indexOf(String(column.v || "")) !== -1;
+    };
   } else if (column.filterType === "starts") {
     const v = String(column.v).toUpperCase() || "";
     column.f = row =>

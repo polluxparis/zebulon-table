@@ -94,33 +94,30 @@ export class Table extends TableFilterSort {
       // const filteredData = this.filters(nextProps.data, nextProps.filters);
       let filteredData = [];
       let status = nextProps.status;
-      if (nextProps.meta.serverPagination) {
-        if (status.loaded && !this.props.status.loaded) {
-          status = { loaded: false, loading: true };
-          nextProps.data({ startIndex: 0 }).then(filteredData => {
-            computeData(filteredData.page, nextProps.meta, 0);
-            if (nextProps.onGetPage) {
-              nextProps.onGetPage(filteredData);
-            }
-            this.setState({
-              filteredData,
-              filteredDataLength: filteredData.filteredDataLength,
-              status: { loaded: true, loading: false }
-            });
-          });
-        }
-      } else {
-        filteredData = this.filters(nextProps.data, this.state.filters);
-        this.sorts(filteredData, nextProps.meta.properties);
-      }
-      // if (nextProps.updatedRows !== this.props.updatedRows) {
-      //   this.updated = false;
-      //   this.rowUpdated = false;
-      //   this.tableUpdated = false;
+      // if (nextProps.meta.serverPagination) {
+      //   if (status.loaded && !this.props.status.loaded) {
+      //     status = { loaded: false, loading: true };
+      //     nextProps.data({ startIndex: 0 }).then(filteredData => {
+      //       computeData(filteredData.page, nextProps.meta, 0);
+      //       if (nextProps.onGetPage) {
+      //         nextProps.onGetPage(filteredData);
+      //       }
+      //       this.setState({
+      //         filteredData,
+      //         filteredDataLength: filteredData.filteredDataLength,
+      //         status: { loaded: true, loading: false }
+      //       });
+      //     });
+      //   }
+      // } else {
+      filteredData = this.filters(nextProps.data, this.state.filters);
+      this.sorts(filteredData, nextProps.meta.properties);
       // }
+
       this.setState({
         data: nextProps.data || [],
         filteredData,
+        filteredDataLength: filteredData.length,
         meta: nextProps.meta,
         status,
         updatedRows: nextProps.updatedRows,
@@ -171,10 +168,12 @@ export class Table extends TableFilterSort {
   }
   componentDidUpdate() {
     if (this.bLoaded) {
+      const columns = (this.state.meta.visibleIndexes || [0])[0];
+
       this.selectRange(
         {
-          start: { rows: 0, columns: 0 },
-          end: { rows: 0, columns: 0 }
+          start: { rows: 0, columns },
+          end: { rows: 0, columns }
         },
         undefined,
         this.state.filteredData[0],
@@ -195,17 +194,17 @@ export class Table extends TableFilterSort {
   render() {
     const { height, width, isModal, visible, params } = this.props;
     let {
-      status,
-      meta,
-      selectedRange,
-      updatedRows,
-      data,
+        status,
+        meta,
+        selectedRange,
+        updatedRows,
+        data,
+        auditedRow,
+        audits,
+        scroll
+      } = this.state,
       filteredData,
-      auditedRow,
-      audits,
-      scroll,
-      filteredDataLength
-    } = this.state;
+      filteredDataLength;
     let { selectRange, onScroll } = this;
     let headersLength =
       1 +
@@ -223,7 +222,7 @@ export class Table extends TableFilterSort {
     if (auditedRow) {
       selectRange = undefined;
       headersLength = 2;
-      auditStatus = updatedRows[auditedRow.index_];
+      auditStatus = updatedRows[auditedRow.index_] || {};
       meta = {
         ...meta,
         table: { ...meta.table, editable: false },
@@ -242,14 +241,30 @@ export class Table extends TableFilterSort {
               utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
             width: 130
           },
+          {
+            id: "status_",
+            caption: "Status",
+            dataType: "string",
+            width: 70
+          },
           ...meta.properties
         ]
       };
       computeMetaPositions(meta, this.props.zoom); // A voir zoom
-      meta.lockedIndex = 1;
-      meta.lockedWidth = 210 * this.props.zoom;
-      filteredData = computeAudit(auditedRow, meta, audits);
+      meta.lockedIndex = 2;
+      meta.lockedWidth = 280 * this.props.zoom;
+      const row = auditStatus.row || auditStatus.rowUpdated || auditedRow;
+      const rowUpdated =
+        auditStatus.updated_ && !auditStatus.new_
+          ? auditStatus.rowUpdated
+          : undefined;
+      filteredData = computeAudit(rowUpdated, row, meta, audits);
+      auditedRow = filteredData[0];
+      filteredData.splice(0, 1);
       filteredDataLength = filteredData.length;
+    } else {
+      filteredData = this.state.filteredData;
+      filteredDataLength = this.state.filteredDataLength;
     }
     if (data.length === 0 && meta.properties.length === 0) {
       return null;
@@ -449,6 +464,7 @@ export class Table extends TableFilterSort {
     } else {
       statusBar = (
         <Status
+          key="statusBar"
           data={filteredData}
           status={status}
           dataLength={filteredDataLength}
@@ -465,6 +481,7 @@ export class Table extends TableFilterSort {
           checkable={meta.table.checkable}
           onDoubleClick={this.onDoubleClick}
           draggable={meta.table.statusDraggable}
+          isAudit={auditedRow ? true : false}
         />
       );
     }
@@ -555,7 +572,7 @@ export class Table extends TableFilterSort {
         selectedRange={selectedRange}
         selectRange={selectRange}
         onChange={this.onChange}
-        onFocus={() => this.closeOpenedWindows(true)}
+        onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
         hasFocus={this.hasFocus}
         updatedRows={updatedRows}
         params={params}
@@ -584,7 +601,7 @@ export class Table extends TableFilterSort {
           selectedRange={selectedRange}
           selectRange={selectRange}
           onChange={this.onChange}
-          onFocus={() => this.closeOpenedWindows(true)}
+          onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
           hasFocus={this.hasFocus}
           updatedRows={updatedRows}
           params={params}
@@ -677,6 +694,7 @@ export class Table extends TableFilterSort {
       }
       statusBarHeader = (
         <ContextualMenuClient
+          key={"header-status"}
           id={"header-status"}
           menu="top-left-corner-menu"
           component={this.props.id}
