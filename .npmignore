@@ -2,5 +2,5 @@ build
 src
 public
 yarn.lock
-zebulon-table*
+zebulon-table-*
 *.sublime-*

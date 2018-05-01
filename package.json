@@ -21,7 +21,7 @@
 	"dependencies": {
 		"classnames": "^2.2.5",
 		"react": "^16.3.2",
-		"zebulon-controls": "^1.2.3"
+		"zebulon-controls": "^1.2.4"
 	},
 	"scripts": {
 		"start": "react-scripts start",
