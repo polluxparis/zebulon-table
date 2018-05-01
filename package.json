@@ -1,16 +1,10 @@
 {
-	"name": "zebulon-table",
+	"name": "zebulon-controls",
 	"version": "1.1.4",
 	"homepage": "http://polluxparis.github.io/zebulon-table",
 	"license": "MIT",
 	"description": "React editable table",
-	"tags": [
-		"table",
-		"grid",
-		"editable",
-		"react",
-		"javascript"
-	],
+	"tags": ["table", "grid", "editable", "react", "javascript"],
 	"author": "Thomas Bres <thomas.bres@pollux.paris>",
 	"main": "lib/index.js",
 	"devDependencies": {
@@ -21,7 +15,7 @@
 	"dependencies": {
 		"classnames": "^2.2.5",
 		"react": "^16.3.2",
-		"zebulon-controls": "^1.2.4"
+		"zebulon-controls": "file:../controls/zebulon-controls-1.2.4.tgz"
 	},
 	"scripts": {
 		"start": "react-scripts start",
@@ -31,15 +25,10 @@
 		"deploy": "gh-pages -d build"
 	},
 	"babel": {
-		"presets": [
-			"react-app"
-		]
+		"presets": ["react-app"]
 	},
 	"eslintConfig": {
-		"extends": [
-			"react-app",
-			"prettier"
-		],
+		"extends": ["react-app", "prettier"],
 		"env": {
 			"browser": true,
 			"jest": true
