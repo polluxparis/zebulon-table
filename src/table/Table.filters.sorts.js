@@ -165,11 +165,13 @@ export class TableFilterSort extends TableEvent {
   };
   openFilter_ = (e, column, filter) => {
     if (column.filterType !== "values") {
+      this.hasFocus = false;
       e.target.focus();
+      // this.hasFocus = false;
       return this.closeOpenedWindows();
     }
     // column.position + this.rowHeight - this.state.scroll.columns.position;
-    this.hasFocus = false;
+    console.log("filtersort", this.hasFocus);
     this.setState({
       openedFilter: column.id,
       filters: { ...this.state.filters, [column.id]: filter }
@@ -195,6 +197,7 @@ export class TableFilterSort extends TableEvent {
       return;
     }
     if ((v !== column.v && !filterTo) || (v !== column.vTo && filterTo)) {
+      this.hasFocus = false;
       if (column.filterType === "between" && filterTo) {
         column.vTo = v;
       } else {

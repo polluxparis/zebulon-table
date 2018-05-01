@@ -169,7 +169,6 @@ export class Table extends TableFilterSort {
   componentDidUpdate() {
     if (this.bLoaded) {
       const columns = (this.state.meta.visibleIndexes || [0])[0];
-
       this.selectRange(
         {
           start: { rows: 0, columns },
@@ -177,11 +176,13 @@ export class Table extends TableFilterSort {
         },
         undefined,
         this.state.filteredData[0],
-        "enter"
+        "enter",
+        true
       );
       this.bLoaded = null;
     }
     this.changingFilter = false;
+    // this.hasFocus = true;
   }
   onCheckAll = () => {
     const checked_ = !this.state.checkAll;
@@ -552,7 +553,7 @@ export class Table extends TableFilterSort {
         boxSizing: "border-box"
       };
     }
-
+    console.log("table", this.hasFocus, this.changingFilter);
     const rows = (
       <Rows
         key="rows"
@@ -573,7 +574,7 @@ export class Table extends TableFilterSort {
         selectRange={selectRange}
         onChange={this.onChange}
         onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
-        hasFocus={this.hasFocus}
+        hasFocus={this.hasFocus && !this.changingFilter}
         updatedRows={updatedRows}
         params={params}
         navigationKeyHandler={this.props.navigationKeyHandler}
@@ -602,7 +603,7 @@ export class Table extends TableFilterSort {
           selectRange={selectRange}
           onChange={this.onChange}
           onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
-          hasFocus={this.hasFocus}
+          hasFocus={this.hasFocus && !this.changingFilter}
           updatedRows={updatedRows}
           params={params}
           noUpdate={noUpdate}

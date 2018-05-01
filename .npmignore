@@ -1,12 +1,6 @@
 build
 src
-coverage
 public
-.vscode
-.chrome
-specs
-docs
-config
-webpack.configuration.umd.js
 yarn.lock
+zebulon-table*
 *.sublime-*

@@ -59,6 +59,7 @@ export class TableEvent extends TableMenu {
       this.closeOpenedWindows();
     }
     if (key === "Tab" && (openedFilter || detail.content || isFilter)) {
+      this.hasFocus = false;
       return false;
     }
     //function Keys
@@ -74,6 +75,7 @@ export class TableEvent extends TableMenu {
     // const fKey = this.fKeyMap[key];
     // ctrl+F
     if (70 === (e.which || e.keyCode) && e.ctrlKey) {
+      this.hasFocus = false;
       this.handleSearch(e);
     } else if (utils.isNavigationKey(e)) {
       if (openedFilter) {
@@ -416,6 +418,7 @@ export class TableEvent extends TableMenu {
     columnDirection,
     noFocus
   ) => {
+    console.log("scroll", rowIndex, noFocus);
     if (rowDirection || columnDirection) {
       this.rows.scrollOnKey(
         { rows: rowIndex, columns: columnIndex },
@@ -457,6 +460,7 @@ export class TableEvent extends TableMenu {
     // console.log("onScroll", scroll.rows);
   };
   selectRange = (range, callback, row, type, noFocus, scrollOnClick) => {
+    console.log("selectRange", type, noFocus);
     if (!this.state.status.loadingPage && !this.state.status.loading) {
       const startIndex = range.end.rows,
         stopIndex = range.end.rows;

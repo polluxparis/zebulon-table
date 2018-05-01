@@ -11,6 +11,7 @@ export class Rows extends ScrollableGrid {
       // && this.focused.props.dataType === "boolean"
       this.focused.input.focus();
       // this.focused = undefined;
+      console.log("row", this.focused);
     }
     this.noOver = false;
   }
