@@ -4,3 +4,4 @@ public
 yarn.lock
 zebulon-table-*
 *.sublime-*
+package-o*
