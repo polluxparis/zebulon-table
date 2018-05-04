@@ -308,14 +308,16 @@ N.B. if the table section is the only one defined, properties section will be in
 ##### Actions  
 It's possible to define action buttons, displayed after the grid in the action property.
 ```js
- [{
+ actions:[{
           type: "select",
           id: "submit",
           caption: "Submit",
           enable: "is_selected",
+          hidden: false,
           action: "myAction",
           onTableChange: "submit", // save requirement before action
-          doubleClick: true
+          doubleClick: true,
+          key:"f2"
         },
         ...]
 ```   
@@ -327,7 +329,7 @@ types:
 * action: execute the action (defined in the action property)     
 ### row
 ```js
-{
+row:{
   onEnter:undefined,
   onQuit:undefined
 }
@@ -338,7 +340,7 @@ types:
 ### properties
 N.B. width and properties order can be defined on the table by drag and drop.
 ```js
-{
+properties:[{
     id: "id", // mandatory
     caption: "Code", // default : id
     width: 100, // default : props.sizes.cellWidth
@@ -361,7 +363,7 @@ N.B. width and properties order can be defined on the table by drag and drop.
     groupByAccessord:undefined,
     windowStart:undefined,
     windowEnd:undefined
-}
+}]
 ```
 ##### Accessors
 * value accessor : Function (or function accessor) that returns a computed value. By default (row,column)=> row[column.id].
@@ -375,7 +377,8 @@ Custom sort function. Parameters :(sortAccesor(rowA),sortAccesor(rowB)).
 ##### Filter type
 Filtering method used for the column.
 * starts : value.startsWith(filterValue) 
-* startsNoCase : value.toUpperCase().startsWith(filterValue.toUpperCase()) 
+* startsNoCase : value.toUpperCase().startsWith(filterValue.toUpperCase())
+* contains
 * =
 * \>=
 * <=
@@ -769,12 +772,45 @@ It's possible to add custom contextual menu on
 ```
 On menu click, function is called with {meta, data, params, row || column}  as argument.
 ## Managing privileges
-Not yet documented
+The params prop object is used to propagate global data.
+It can contains user data in specific keys to manage privileges:
+* user_
+* privileges_
+* filter_
+You can add restriction at the row level by adding a filter,  at the column level overwriting the visibility and editability (editable, visible, hidden or an accessor for an editable function)  or at the action level (enable, disable, hidden or or an accessor for an editable function).
+```js
+params={
+        user_: "Zébulon",
+        privileges_: {
+          dataset: { 
+            table: "editable",
+            actions: { New: "hidden", Duplicate: "hidden", Delete: "hidden" },
+            properties: {
+              thirdparty_cd: "hidden",
+              qty: "visible",
+              color: "visible",
+              currency: "visible",
+              d: "visible",
+              product_lb: "visible",
+              country_cd: "visible",
+              id: "editable"
+            }
+          }
+        },
+        filter_: [
+          {
+            filterType: "values",
+            id: "country_id",
+            v: { 2: 2 }
+          }
+        ]
+      };
+```
 ## Details and drilldown
 Not yet documented
 ## To do
 * Complete documentation.
-* Computed columns with aggregation functins improvement. 
+* Computed columns with aggregation functions improvement. 
 * Styles and design improvement.
 * Replacement of input select and icons
 * Loading from observable improvement.

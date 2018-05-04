@@ -86,12 +86,50 @@ export const computeMetaPositions = (meta, zoom) => {
   });
   return meta.visibleIndexes;
 };
-export const computeMeta = (meta, zoom = 1, functions) => {
+const grantPrivilege = (object, subObject, target, privileges, type) => {
+  if (privileges && privileges[object] && privileges[object][type]) {
+    let priv = privileges[object][type];
+    if (type !== "table") {
+      priv = priv[subObject];
+    }
+    if (priv) {
+      if (type === "actions") {
+        if (priv === "enable") {
+          target.enable = true;
+          target.hidden = false;
+        } else if (priv === "disable") {
+          target.enable = false;
+          target.hidden = false;
+        } else if (priv === "hidden") {
+          target.hidden = true;
+          target.enable = false;
+        } else {
+          target.enable = priv;
+        }
+      } else if (type === "properties") {
+        if (priv === "editable") {
+          target.editable = true;
+          target.hidden = false;
+        } else if (priv === "visible") {
+          target.editable = false;
+          target.enable = false;
+        } else if (priv === "hidden") {
+          target.editable = false;
+          target.hidden = true;
+        } else {
+          target.editable = priv;
+        }
+      }
+    }
+  }
+};
+export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   let position = 0;
   // table
   meta.functions = functions;
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
+  grantPrivilege(meta.table.object, null, meta.table, privileges, "table");
   meta.zoom = zoom;
   meta.table.selectFunction = getFunction(
     functions,
@@ -143,7 +181,7 @@ export const computeMeta = (meta, zoom = 1, functions) => {
     functions,
     meta.table.object,
     "validator",
-    meta.row.onQuit
+    meta.row.onQuist
   );
   meta.row.auditFunction = getFunction(
     functions,
@@ -153,6 +191,13 @@ export const computeMeta = (meta, zoom = 1, functions) => {
   );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
+      grantPrivilege(
+        meta.table.object,
+        action.id || action.caption,
+        action,
+        privileges,
+        "actions"
+      );
       if (action.action) {
         action.actionFunction =
           typeof action.action === "function"
@@ -204,6 +249,13 @@ export const computeMeta = (meta, zoom = 1, functions) => {
 
   // properties
   meta.properties.forEach((column, index) => {
+    grantPrivilege(
+      meta.table.object,
+      column.id,
+      column,
+      privileges,
+      "properties"
+    );
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
     }
@@ -285,12 +337,6 @@ export const computeMeta = (meta, zoom = 1, functions) => {
       "accessor",
       column.accessor
     );
-    // column.primaryKeyAccessorFunction = getFunction(
-    //   functions,
-    //   meta.table.object,
-    //   "accessor",
-    //   column.primaryKeyAccessor
-    // );
     if (column.dataType === "joined object" && column.select) {
       column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
       // column.primaryKeyAccessorFunction=({row})=>
@@ -455,7 +501,13 @@ export const getDataType = value => {
   }
   return dataType;
 };
-export const computeMetaFromData = (data, meta, zoom, functions) => {
+export const computeMetaFromData = (
+  data,
+  meta,
+  zoom,
+  functions,
+  privileges
+) => {
   let position = 0;
   if (!meta.properties.length && data && data.length) {
     const row = data[0];
@@ -485,7 +537,9 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
           dataType === "object" ||
           dataType === "joined object" ||
           dataType === "array" ||
-          key === "index_",
+          key === "index_" ||
+          key === "timestamp_" ||
+          key === "rowId_",
         position,
         editable: !!meta.table.editable,
         index_: index,
@@ -498,7 +552,7 @@ export const computeMetaFromData = (data, meta, zoom, functions) => {
       position += width;
     });
   }
-  computeMeta(meta, zoom, functions);
+  computeMeta(meta, zoom, functions, privileges);
 };
 // -----------------------------------------------------------
 // build a table of functions from the initial function object

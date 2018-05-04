@@ -315,26 +315,42 @@ export const metaDescriptions = (
 				noFilter: false,
 				// caption: "Dataset",
 				actions: [
-					{ type: "insert", caption: "New", enable: true },
+					{
+						type: "insert",
+						caption: "New",
+						enable: true,
+						key: "f2"
+					},
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f3"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f4"
 					},
 					{
 						type: "save",
 						caption: "Save",
-						enable: true
+						enable: true,
+						key: "f12"
 					},
 					{
 						type: "refresh",
 						caption: "Refresh",
-						enable: true
+						enable: true,
+						key: "10"
+					},
+					{
+						type: "action",
+						enable: true,
+						hidden: true,
+						action: "toggleFilter",
+						key: "f11"
 					}
 				]
 			},
@@ -349,16 +365,30 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New", enable: true },
+					{
+						type: "insert",
+						caption: "New",
+						enable: true,
+						key: "f2"
+					},
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "isNotDataset"
+						enable: "isNotDataset",
+						key: "f3"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f4"
+					},
+					{
+						type: "action",
+						enable: true,
+						hidden: true,
+						action: "toggleFilter",
+						key: "f11"
 					}
 					// ,
 					// {
@@ -629,22 +659,36 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New", enable: true },
+					{
+						type: "insert",
+						caption: "New",
+						enable: true,
+						key: "f2"
+					},
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f3"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f4"
 					},
 					{
 						type: "action",
 						caption: "Export functions",
 						action: "exportFunctions",
 						hidden: true
+					},
+					{
+						type: "action",
+						enable: true,
+						hidden: true,
+						action: "toggleFilter",
+						key: "f11"
 					}
 				]
 			},
@@ -726,22 +770,37 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New", enable: true },
+					{
+						type: "insert",
+						caption: "New",
+						enable: true,
+						key: "f2"
+					},
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f3"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f4"
 					},
 					{
 						type: "action",
 						caption: "Apply",
 						action: callbacks.applyMeasures,
-						enable: true
+						enable: true,
+						key: "f12"
+					},
+					{
+						type: "action",
+						enable: true,
+						hidden: true,
+						action: "toggleFilter",
+						key: "f11"
 					}
 				]
 			},
@@ -802,22 +861,37 @@ export const metaDescriptions = (
 				primaryKey: "id",
 				code: "caption",
 				actions: [
-					{ type: "insert", caption: "New", enable: true },
+					{
+						type: "insert",
+						caption: "New",
+						enable: true,
+						key: "f2"
+					},
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f3"
 					},
 					{
 						type: "duplicate",
 						caption: "Duplicate",
-						enable: "is_selected"
+						enable: "is_selected",
+						key: "f4"
 					},
 					{
 						type: "action",
 						caption: "Apply",
 						action: callbacks.applyDimensions,
-						enable: true
+						enable: true,
+						key: "f12"
+					},
+					{
+						type: "action",
+						enable: true,
+						hidden: true,
+						action: "toggleFilter",
+						key: "f11"
 					}
 				]
 			},

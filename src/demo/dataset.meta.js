@@ -46,16 +46,18 @@ export const meta = {
     noStatus: false,
     noOrder: false,
     actions: [
-      { type: "insert", caption: "New", enable: true },
+      { type: "insert", caption: "New", enable: true, key: "f2" },
       {
         type: "delete",
         caption: "Delete",
-        enable: "is_selected"
+        enable: "is_selected",
+        key: "f3"
       },
       {
         type: "duplicate",
         caption: "Duplicate",
-        enable: "is_selected"
+        enable: "is_selected",
+        key: "f4"
       },
       {
         type: "save",
@@ -71,16 +73,24 @@ export const meta = {
       },
       {
         type: "action",
-        caption: "Test",
         enable: true,
         hidden: true,
-        onTableChange: "test",
-        action: ({ row, column }) =>
-          alert(
-            `test row: order# ${row.id} column: ${column ? column.id : null}`
-          ),
-        doubleClick: true
+        action: "toggleFilter",
+        key: "f11"
       }
+      // ,
+      // {
+      //   type: "action",
+      //   caption: "Test",
+      //   enable: true,
+      //   hidden: true,
+      //   onTableChange: "test",
+      //   action: ({ row, column }) =>
+      //     alert(
+      //       `test row: order# ${row.id} column: ${column ? column.id : null}`
+      //     ),
+      //   doubleClick: true
+      // }
     ]
   },
   row: {
@@ -161,7 +171,7 @@ export const meta = {
       dataType: "string",
       editable: true,
       select: "getColors",
-      mandatory: true,
+      // mandatory: true,
       filterType: "values"
     },
 

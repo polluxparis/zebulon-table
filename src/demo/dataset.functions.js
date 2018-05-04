@@ -3,11 +3,12 @@ import { utils } from "zebulon-controls";
 import { computeData, aggregations } from "../table/utils/compute.data";
 import { MyThirdparties } from "./thirdparties";
 import { getRowErrors, getErrors, manageRowError } from "../table/utils/utils";
+import { Observable } from "rx-lite";
+import { isEqual } from "../table/utils/utils";
 import {
 	get_array,
 	get_promise,
 	get_observable,
-	get_subscription,
 	get_pagination_manager,
 	getCountries,
 	getCurrencies,
@@ -29,11 +30,13 @@ const onSaveBefore_ = updatedRows => {
 	const conflicts = [];
 	// if the timestamp on the server side is > timestamp client side => conflict
 	Object.keys(updatedRows).forEach(index_ => {
-		const status = updatedRows[index_];
-		const row = status.rowUpdated || status.row;
-		const serverRow = data[dataPk[row.id]];
-		if (serverRow && serverRow.timestamp_ > row.timestamp_) {
-			conflicts.push({ index_, row: { ...serverRow } });
+		if (index_ !== "nErrors" && index_ !== "nErrorsServer") {
+			const status = updatedRows[index_];
+			const row = status.rowUpdated || status.row;
+			const serverRow = data[dataPk[row.id]];
+			if (serverRow && serverRow.timestamp_ > row.timestamp_) {
+				conflicts.push({ index_, row: { ...serverRow } });
+			}
 		}
 	});
 	if (conflicts.length) {
@@ -48,7 +51,6 @@ const onSaveBefore = (message, callback) => {
 		resolve(onSaveBefore_(JSON.parse(JSON.stringify(message.updatedRows))))
 	).then(ok => {
 		if (ok !== true) {
-			// if (message.updatedRows.nConflicts) {
 			message.conflicts = ok.reduce((acc, conflict) => {
 				const status = message.updatedRows[conflict.index_];
 				acc[conflict.index_] = {
@@ -76,7 +78,14 @@ const onSaveBefore = (message, callback) => {
 
 // simulation of saving on server + audit management + error management(unique id)
 // server side
-const computeAudit = (user_, timestamp_, status_, columns, row, nextRow) => {
+export const computeAudit = (
+	user_,
+	timestamp_,
+	status_,
+	columns,
+	row,
+	nextRow
+) => {
 	const key = nextRow.rowId_ || row.rowId_;
 
 	if (!audits[key]) {
@@ -86,7 +95,7 @@ const computeAudit = (user_, timestamp_, status_, columns, row, nextRow) => {
 	const audit = { user_, timestamp_, status_, row: {} };
 	if (status_ === "updated") {
 		columns.forEach(column => {
-			if (nextRow[column] !== row[column]) {
+			if (!isEqual(nextRow[column], row[column])) {
 				audit.row[column] = row[column];
 			}
 		});
@@ -99,7 +108,7 @@ const onSave_ = (updatedRows, user) => {
 	const pk = {},
 		deleteds = [];
 	Object.keys(updatedRows).forEach(index => {
-		if (index !== "nErrors") {
+		if (index !== "nErrors" && index !== "nErrorsServer") {
 			const status = updatedRows[index];
 			const row = status.rowUpdated || status.row;
 			if (!pk[row.id]) {
@@ -141,29 +150,22 @@ const onSave_ = (updatedRows, user) => {
 	});
 	const keys = Object.keys(pk);
 	const timestamp = new Date().getTime();
-	let ok = true,
-		i = 0;
-	while (timestamp && i < keys.length) {
-		const key = keys[i];
+	const errors = [];
+	keys.forEach(key => {
 		const pKey = pk[key];
 		pKey.n += dataPk[key] !== undefined;
 		if (pKey.n > 1) {
-			ok = false;
-			return {
-				ok,
-				errors: [
-					{
-						index_: pKey.row.index_,
-						type: "duplicate key",
-						id: "id",
-						caption: "Order#",
-						error: `Order# - duplicate key: ${key}`
-					}
-				]
-			};
-		} else {
-			i++;
+			errors.push({
+				index_: pKey.row.index_,
+				type: "duplicate key",
+				id: "id",
+				caption: "Order#",
+				error: `Order# - duplicate key: ${key}`
+			});
 		}
+	});
+	if (errors.length) {
+		return { ok: false, errors };
 	}
 	// compute audit
 	const columns = meta.properties
@@ -171,62 +173,60 @@ const onSave_ = (updatedRows, user) => {
 		.map(column => column.id);
 	// saves on server and returns rowid +timestamp to client
 	const rows = [];
-	if (ok) {
-		keys.forEach(key => {
-			const pKey = pk[key];
-			if (pKey.n === 1) {
-				const index_ = pKey.row.index_;
-				delete pKey.row.index_;
-				pKey.row.timestamp_ = timestamp;
-				if (utils.isNullOrUndefined(pKey.serverIndex_)) {
-					pKey.row.rowId_ = data.length;
-					dataPk[key] = data.length;
-					computeAudit(user, timestamp, "new", columns, {}, pKey.row);
-					data.push(pKey.row);
-				} else {
-					dataPk[key] = pKey.serverIndex_;
-					computeAudit(
-						user,
-						timestamp,
-						"updated",
-						columns,
-						data[pKey.serverIndex_],
-						pKey.row
-					);
-					data[pKey.serverIndex_] = pKey.row;
-				}
-				rows.push({
-					index_,
-					rowId_: pKey.row.rowId_,
-					timestamp_: timestamp
-				});
+	keys.forEach(key => {
+		const pKey = pk[key];
+		if (pKey.n === 1) {
+			const index_ = pKey.row.index_;
+			delete pKey.row.index_;
+			pKey.row.timestamp_ = timestamp;
+			if (utils.isNullOrUndefined(pKey.serverIndex_)) {
+				pKey.row.rowId_ = data.length;
+				dataPk[key] = data.length;
+				computeAudit(user, timestamp, "new", columns, {}, pKey.row);
+				data.push(pKey.row);
 			} else {
-				delete dataPk[key];
+				dataPk[key] = pKey.serverIndex_;
+				computeAudit(
+					user,
+					timestamp,
+					"updated",
+					columns,
+					data[pKey.serverIndex_],
+					pKey.row
+				);
+				data[pKey.serverIndex_] = pKey.row;
 			}
-		});
-		deleteds.forEach(deleted => {
-			computeAudit(
-				user,
-				timestamp,
-				"deleted",
-				columns,
-				data[deleted.serverIndex_],
-				{}
-			);
-			data[deleted.serverIndex_].deleted_ = true;
-			data[deleted.serverIndex_].timestamp_ = timestamp;
 			rows.push({
-				index_: deleted.index_,
-				rowId_: deleted.rowId_,
+				index_,
+				rowId_: pKey.row.rowId_,
 				timestamp_: timestamp
 			});
+		} else {
+			delete dataPk[key];
+		}
+	});
+	deleteds.forEach(deleted => {
+		computeAudit(
+			user,
+			timestamp,
+			"deleted",
+			columns,
+			data[deleted.serverIndex_],
+			{}
+		);
+		data[deleted.serverIndex_].deleted_ = true;
+		data[deleted.serverIndex_].timestamp_ = timestamp;
+		rows.push({
+			index_: deleted.index_,
+			rowId_: deleted.rowId_,
+			timestamp_: timestamp
 		});
-	}
-	return { ok, rows };
+	});
+
+	return { ok: true, rows };
 };
 // client side
 const onSave = (message, callback) => {
-	// new Promise(resolve => setTimeout(resolve, 20)).then(() => {
 	new Promise(resolve =>
 		resolve(
 			onSave_(
@@ -243,7 +243,8 @@ const onSave = (message, callback) => {
 						error.index_,
 						{ id: error.id, caption: error.caption },
 						error.type,
-						error.error
+						error.error,
+						true
 					);
 					return error.error;
 				})
@@ -266,38 +267,31 @@ const onSave = (message, callback) => {
 // synchronous function (keep audits of changes)
 // return true or false
 const onSaveAfter = message => {
-	// const { updatedRows, meta } = message;
-	// // audits
-	// Object.keys(updatedRows).forEach(key => {
-	// 	if (!audits[key]) {
-	// 		audits[key] = [];
-	// 	}
-	// 	const updatedRow = updatedRows[key];
-	// 	let audit = {};
-	// 	if (updatedRow.new_ && !updatedRow.deleted_) {
-	// 		audit = [updatedRow.rowUpdated].concat(audits[key]);
-	// 	} else if (updatedRow.updated_) {
-	// 		meta.properties
-	// 			.filter(column => !column.accessorFunction)
-	// 			.forEach(column => {
-	// 				if (
-	// 					updatedRow.rowUpdated[column.id] !==
-	// 					updatedRow.row[column.id]
-	// 				) {
-	// 					audit[column.id] = updatedRow.row[column.id];
-	// 				}
-	// 			});
-	// 	}
-	// 	audit.user_ = "userX";
-	// 	audit.time_ = new Date(updatedRow.timestamp);
-	// 	audits[key].push(audit);
-	// 	// delete updatedRows[key];
-	// });
 	return true;
 };
 const getAudits_ = rowId => audits[rowId];
 const getAudits = ({ row }) => {
 	return new Promise(resolve => resolve(getAudits_(row.rowId_)));
+};
+export const get_subscription = ({ params, meta, filters, sorts }) => {
+	const columns = meta.properties
+		.filter(column => !column.accessor)
+		.map(column => column.id);
+	const timestamp = new Date().getTime();
+	const data2 = [[], [], []];
+	for (let i = 0; i < 12; i++) {
+		const row = data[i];
+		const row0 = { ...data[i] };
+		row.timestamp_ = timestamp;
+		row.qty = Math.floor(2000 * Math.random());
+		computeAudit("Zébulon", timestamp, "updated", columns, row0, row);
+		data2[Math.floor(i / 4)].push({ ...row });
+	}
+	return Observable.interval(800)
+		.take(3)
+		.map(i => {
+			return data2[i];
+		});
 };
 // errors an user interractions management
 export const errorHandler = {
@@ -486,7 +480,8 @@ export const datasetFunctions = {
 		audit: getAudits
 	},
 	actions: {
-		computeData
+		computeData,
+		toggleFilter: ({ ref }) => ref.toggleFilter()
 	},
 	dmls: {
 		get_array,
@@ -547,4 +542,9 @@ export const customMenuFunctions = {
 			function: e => console.log("toto2")
 		}
 	]
+};
+const params = {
+	user_: "Pollux",
+	privileges_: { dataset: "editable", actions: { new: "hidden" } },
+	filter_: [{ filterType: "values", id: "country_id", v: [1, 2, 3] }]
 };

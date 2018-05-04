@@ -40,8 +40,23 @@ export class TableEvent extends TableMenu {
   };
   fKeyMap = {
     f12: "save",
-    // f8: "filter",
+    f11: "filter",
     f10: "refresh"
+  };
+  toggleFilter = () => {
+    if (this.hasFocus) {
+      const element = document.getElementById(
+        `filter: ${this.props.id}--${this.state.selectedRange.end.columns}`
+      );
+      if (element && element.children[0]) {
+        element.children[0].focus();
+        this.hasFocus = false;
+      }
+    } else {
+      document.activeElement.blur();
+      this.hasFocus = true;
+      this.setState({ selectedRange: this.state.selectedRange });
+    }
   };
   handleKeyDown = e => {
     // a voir
@@ -64,13 +79,17 @@ export class TableEvent extends TableMenu {
     }
     //function Keys
     if (keyCode > 112 && keyCode < 124) {
-      const index = this.state.meta.table.actions.findIndex(
+      const action = this.state.meta.table.actions.find(
         action => action.key === key
       );
-      if (index !== -1) {
+      if (action) {
         e.preventDefault();
-        this.handleClickButton(index);
+        this.handleAction(action);
       }
+      // else if (key === "f11") {
+      //   e.preventDefault();
+      //   this.toggleFilter();
+      // }
     }
     // const fKey = this.fKeyMap[key];
     // ctrl+F
@@ -162,12 +181,14 @@ export class TableEvent extends TableMenu {
     if (this.props.onDoubleClick) {
       this.props.onDoubleClick(row, column);
     } else if (this.doubleClickAction) {
-      this.handleClickButton(this.doubleClickAction, e, row, column);
+      this.handleAction(this.doubleClickAction, e, row, column);
     }
   };
-  handleClickButton = (index, e, row, column) => {
+  handleAction = (action, e, row, column) => {
+    if (action.statusEnable === false || action.enable === false) {
+      return false;
+    }
     this.closeOpenedWindows();
-    const button = this.state.meta.table.actions[index];
     const rowIndex = this.state.selectedRange.end.rows;
     // let row = {};
     if (!row && rowIndex !== undefined) {
@@ -175,55 +196,51 @@ export class TableEvent extends TableMenu {
     }
     if (
       this.state.selectedRange ||
-      !(button.type === "delete" || button.type === "select")
+      !(action.type === "delete" || action.type === "select")
     ) {
-      if (button.type === "delete") {
+      if (action.type === "delete") {
         return this.handleDelete(row);
-      } else if (button.type === "insert") {
+      } else if (action.type === "insert") {
         return this.handleNew(rowIndex || 0);
-      } else if (button.type === "duplicate") {
+      } else if (action.type === "duplicate") {
         return this.handleDuplicate(rowIndex || 0);
-      } else if (button.type === "save") {
+      } else if (action.type === "save") {
         return this.props.onSave();
-      } else if (button.type === "refresh") {
+      } else if (action.type === "refresh") {
         this.props.onTableChange("refresh");
       } else {
-        if (button.type === "detail" && button.content) {
-          this.setState({ detail: button });
-        } else {
-          return this.handleAction(button, e, row, column);
-        }
-      }
-    }
-  };
-  handleAction = (button, e, row, column) => {
-    if (button.action) {
-      const { selectedRange, updatedRows, data, meta } = this.state;
-      const f = () =>
-        button.actionFunction(
-          {
-            row: row || this.row,
-            column,
-            selectedRange,
-            updatedRows,
-            data,
-            meta,
-            params: this.props.params,
-            action: button
-          },
-          e
-        );
-      // if changes save is required
-      if (button.onTableChange) {
-        this.props.onTableChange(button.onTableChange, ok => {
-          if (ok) {
+        if (action.type === "detail" && action.content) {
+          this.setState({ detail: action });
+        } else if (action.action) {
+          const { selectedRange, updatedRows, data, meta } = this.state;
+          const f = () =>
+            action.actionFunction(
+              {
+                row: row || this.row,
+                column,
+                selectedRange,
+                updatedRows,
+                data,
+                meta,
+                params: this.props.params,
+                action: action,
+                ref: this
+              },
+              e
+            );
+          // if changes save is required
+          if (action.onTableChange) {
+            this.props.onTableChange(action.onTableChange, ok => {
+              if (ok) {
+                f();
+              }
+            });
+          } else {
             f();
           }
-        });
-      } else {
-        f();
+          this.setState({ status: this.state.status });
+        }
       }
-      this.setState({ status: this.state.status });
     }
   };
 
@@ -261,7 +278,14 @@ export class TableEvent extends TableMenu {
   };
 
   newRow_ = (row, index) => {
-    const { selectedRange, updatedRows, filteredData, meta, data } = this.state;
+    const {
+      selectedRange,
+      updatedRows,
+      filteredData,
+      meta,
+      data,
+      scroll
+    } = this.state;
     const status = {
       new_: true,
       errors: {},
@@ -292,20 +316,30 @@ export class TableEvent extends TableMenu {
       this.setState({ filteredData: rows });
     }
     if (this.onRowNew(row)) {
-      this.selectRange(
-        {
-          end: { rows: selectedRange.end.rows || 0, columns: 0 },
-          start: {
-            rows: selectedRange.end.rows,
-            columns: meta.properties.length - 1
-          }
-        },
-        undefined,
-        row,
-        "enter"
+      const columns = (meta.visibleIndexes || [0])[0];
+      const range = {
+        end: { rows: selectedRange.end.rows || 0, columns },
+        start: {
+          rows: selectedRange.end.rows,
+          columns: meta.properties.length - 1
+        }
+      };
+      const cell = selectedRange.end;
+      const rowDirection = Math.sign(
+        range.end.rows - (scroll.rows.startIndex || 0)
+      );
+      const columnDirection = Math.sign(
+        range.end.columns - scroll.columns.startIndex
+      );
+      this.selectRange(range, undefined, row, "enter");
+      this.rowUpdated = true;
+      this.scrollTo(
+        range.end.rows,
+        rowDirection,
+        range.end.columns,
+        columnDirection
       );
     }
-    this.rowUpdated = true;
   };
   handleNew = index => {
     const row = { index_: this.getDataLength() };
@@ -460,7 +494,7 @@ export class TableEvent extends TableMenu {
     // console.log("onScroll", scroll.rows);
   };
   selectRange = (range, callback, row, type, noFocus, scrollOnClick) => {
-    console.log("selectRange", type, noFocus);
+    // console.log("selectRange", type, noFocus);
     if (!this.state.status.loadingPage && !this.state.status.loading) {
       const startIndex = range.end.rows,
         stopIndex = range.end.rows;

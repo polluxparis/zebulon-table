@@ -5,6 +5,7 @@ import { filtersFunction, sortsFunction } from "../table/utils/filters.sorts";
 // import { computeData } from "../table/utils/compute.data";
 import { utils } from "zebulon-controls";
 import { thirdparties } from "./thirdparties";
+// import { computeAudit } from "./dataset.functions";
 // -------------------------------------------
 // simulation of the different ways to provide
 // a dataset to the table and server communication
@@ -142,18 +143,9 @@ export const getMockDataset = nRow => {
 		colors: getColors()
 	};
 };
-// export const getAudits = id => {
-// 	return new Promise(resolve => setTimeout(resolve, 20)).then(() => [
-// 		{ user_: "toto", time_: new Date(), qty: 200, color: "blue" },
-// 		{ user_: "tutu_", time_: new Date(), qty: 100, product_id: 143 },
-// 		{ user_: "titi", time_: new Date(), qty: 0 },
-// 		{ user_: "titi", time_: new Date(), country_id: 0, currency_id: 0 }
-// 	]);
-// };
 export let data;
 export let audits = {};
 export const dataPk = {};
-
 export const get_array = ({ params, meta, filters }) => {
 	if (!data) {
 		data = getMockDataset(25000).data;
@@ -199,25 +191,6 @@ export const get_observable = ({ params, meta, filters, sorts }) => {
 		.take(data2.length)
 		.map(i => {
 			// console.log("observable1", i, data2.length);
-			return data2[i];
-		});
-};
-export const get_subscription = ({ params, meta, filters, sorts }) => {
-	// const data = get_array({ params, filters });
-	const timestamp = new Date().getTime();
-	const data2 = [[], [], []];
-	for (let i = 0; i < 10; i++) {
-		// const row = data[Math.floor(Math.random() * data.length)];
-		const row = data[i];
-		row.timestamp_ = timestamp;
-		row.qty = Math.floor(2000 * Math.random());
-		data2[Math.floor(i / 100)].push({ ...row });
-	}
-	// console.log("observable", i);
-	return Observable.interval(100)
-		.take(1)
-		.map(i => {
-			// console.log("observable2", i, data2[i].length);
 			return data2[i];
 		});
 };

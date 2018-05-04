@@ -41,13 +41,6 @@ export class TableFilterSort extends TableEvent {
           shift: 0,
           position: 0
         };
-        // console.log(
-        //   "adjustScrollRows",
-        //   rows,
-        //   columns,
-        //   filteredData,
-        //   selectedRange
-        // );
         this.setState({ scroll: { rows, columns } });
       }
       return filteredData[selectedRange.end.rows];
@@ -55,21 +48,6 @@ export class TableFilterSort extends TableEvent {
   };
   filters = (data, filters, noFocus, updatedRows) => {
     if (!Array.isArray(data)) {
-      //   if (this.state && this.state.meta.serverPagination) {
-      //     return this.pagination({
-      //       filters,
-      //       callbackAfter: page => {
-      //         this.selectRange_(
-      //           this.range,
-      //           undefined,
-      //           undefined,
-      //           "enter",
-      //           noFocus
-      //         );
-      //         this.adjustScrollRows(page.filteredDataLength);
-      //       }
-      //     });
-      //   }
       return [];
     }
     const filter = filtersFunction(
@@ -165,13 +143,13 @@ export class TableFilterSort extends TableEvent {
   };
   openFilter_ = (e, column, filter) => {
     if (column.filterType !== "values") {
-      this.hasFocus = false;
       e.target.focus();
-      // this.hasFocus = false;
+      this.hasFocus = false;
       return this.closeOpenedWindows();
     }
     // column.position + this.rowHeight - this.state.scroll.columns.position;
     console.log("filtersort", this.hasFocus);
+    this.hasFocus = false;
     this.setState({
       openedFilter: column.id,
       filters: { ...this.state.filters, [column.id]: filter }

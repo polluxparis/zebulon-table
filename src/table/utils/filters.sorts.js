@@ -75,6 +75,7 @@ export const filtersFunction = (filters, params, data, updatedRows) => {
     return x => x;
   }
   const f = Object.values(filters)
+    .concat((params || {}).filter_ || [])
     .filter(filter => {
       return (
         !utils.isNullOrUndefined(filter.v) ||

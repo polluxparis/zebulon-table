@@ -120,7 +120,13 @@ export class ZebulonTable extends Component {
   };
   initData = (data, meta, zoom, functions, startIndex, filters, status) => {
     if (data && data.length) {
-      computeMetaFromData(data, meta, zoom, functions);
+      computeMetaFromData(
+        data,
+        meta,
+        zoom,
+        functions,
+        (this.props.params || {}).privileges_
+      );
       computeData(data, meta, startIndex);
       if (this.props.onGetData) {
         this.props.onGetData({ data, meta, status });
@@ -298,7 +304,12 @@ export class ZebulonTable extends Component {
       if (sizes.zoom) {
         if (this.zoomValue !== sizes.zoom) {
           this.zoomValue = sizes.zoom;
-          computeMeta(meta, this.zoomValue, this.props.functions);
+          computeMeta(
+            meta,
+            this.zoomValue,
+            this.props.functions,
+            this.props.params.privileges_
+          );
         }
       }
       this.setState({ sizes: { ...sizes, zoom: this.zoomValue } });
@@ -352,7 +363,12 @@ export class ZebulonTable extends Component {
       e.preventDefault();
       this.zoomValue *= zoom === 1 ? 1.1 : 1 / 1.1;
       this.setState({ sizes: { ...this.props.sizes, zoom: this.zoomValue } });
-      computeMeta(this.state.meta, this.zoomValue, this.state.functions);
+      computeMeta(
+        this.state.meta,
+        this.zoomValue,
+        this.state.functions,
+        this.props.params.privileges_
+      );
       return;
     }
     if (this.props.keyEvent) {
@@ -401,8 +417,8 @@ export class ZebulonTable extends Component {
   errorHandler = (message, action, callback) => {
     let handler = (this.props.errorHandler || errorHandler)[action];
     if (
-      (action === "onTableQuit" || action === "onSave") &&
-      !(message.updatedRows || {}).nErrors
+      (action === "onTableQuit" && !(message.updatedRows || {}).nErrors) ||
+      (action === "onSave" && !(message.updatedRows || {}).nErrorsServer)
     ) {
       handler = null;
     } else if (
@@ -630,6 +646,7 @@ export class ZebulonTable extends Component {
         Object.keys(updatedRows).filter(
           key =>
             key !== "nErrors" &&
+            key !== "nErrorsServer" &&
             ((updatedRows[key].new_ || 0) - (updatedRows[key].deleted_ || 0) ||
               updatedRows[key].updated_)
         ).length === 0

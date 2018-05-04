@@ -17,8 +17,8 @@ class ZebulonTableDemo extends Component {
     this.state = {
       data: null,
       sizes: {
-        height: 700,
-        width: 1200,
+        height: 600,
+        width: 1300,
         rowHeight: 25
       },
       keyEvent: null,

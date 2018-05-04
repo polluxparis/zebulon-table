@@ -50,10 +50,19 @@ export const setStatus = (status, type) => {
   status.timeStamp = new Date().getTime();
 };
 //------------------------------------------------------------
-export const manageRowError = (updatedRows, index, column, type, error) => {
+export const manageRowError = (
+  updatedRows,
+  index,
+  column,
+  type,
+  error,
+  onServer
+) => {
   const status = updatedRows[index] || {};
-  const existsErrors = !utils.isNullOrUndefined(status.errors);
-  const errors = status.errors || {};
+  const existsErrors = !utils.isNullOrUndefined(
+    onServer ? status.errorsServer : status.errors
+  );
+  const errors = (onServer ? status.errorsServer : status.errors) || {};
   const existsObject = !utils.isNullOrUndefined(errors[column.id]);
   const objectErrors = errors[column.id] || {};
   const existsType = !utils.isNullOrUndefined(objectErrors[type]);
@@ -66,9 +75,17 @@ export const manageRowError = (updatedRows, index, column, type, error) => {
       }
       errors.n_ = (errors.n_ || 0) + 1;
       if (!existsErrors) {
-        status.errors = errors;
+        if (onServer) {
+          status.errorsServer = errors;
+        } else {
+          status.errors = errors;
+        }
       }
-      updatedRows.nErrors = (updatedRows.nErrors || 0) + 1;
+      if (onServer) {
+        updatedRows.nErrorsServer = (updatedRows.nErrorsServer || 0) + 1;
+      } else {
+        updatedRows.nErrors = (updatedRows.nErrors || 0) + 1;
+      }
     }
   } else {
     if (existsType) {
@@ -78,6 +95,11 @@ export const manageRowError = (updatedRows, index, column, type, error) => {
         delete errors[column.id];
       }
       errors.n_--;
+      if (onServer) {
+        updatedRows.nErrorsServer = (updatedRows.nErrorsServer || 0) - 1;
+      } else {
+        updatedRows.nErrors = (updatedRows.nErrors || 0) - 1;
+      }
     }
   }
 };
@@ -92,6 +114,22 @@ export const getRowErrors = (status, rowIndex) => {
               column,
               type,
               error: status.errors[column][type],
+              rowIndex
+            });
+          }
+        });
+      }
+    });
+  }
+  if (!status.deleted_ && status.errorsServer) {
+    Object.keys(status.errorsServer).forEach(column => {
+      if (status.errorsServer[column] || column !== "n_") {
+        Object.keys(status.errorsServer[column]).forEach(type => {
+          if (type !== "n_") {
+            errors.push({
+              column,
+              type,
+              error: status.errorsServer[column][type],
               rowIndex
             });
           }
@@ -329,3 +367,29 @@ export const hasParent = (element, id) => {
     return hasParent(element.parentElement, id);
   }
 };
+export const isEqual = (v0, v1) => {
+  if (
+    v0 === v1 ||
+    (utils.isDate(v0) && utils.isDate(v1) && v0.getTime() === v1.getTime()) ||
+    (utils.isDate(v0) &&
+      typeof v1 === "string" &&
+      v0.getTime() === new Date(v1).getTime()) ||
+    (utils.isDate(v1) &&
+      typeof v0 === "string" &&
+      v1.getTime() === new Date(v0).getTime()) ||
+    (typeof v0 === "object" &&
+      typeof v1 === "object" &&
+      Object.keys(v0).length === Object.keys(v1).length &&
+      Object.keys(v0).reduce(
+        (acc, key) => acc && isEqual(v0[key], v1[key], true)
+      ))
+  ) {
+    return true;
+  }
+  return false;
+};
+
+// -------------------------------------------
+// privileges
+// -------------------------------------------
+const applyPrivileges = ({ filter, editableFunctions }) => {};

@@ -8,7 +8,7 @@ export const get_thp = ({ params, meta, filters }) => {
 	if (filters) {
 		data = data.filter(filtersFunction(filters, params, data));
 	}
-	return new Promise(resolve => setTimeout(resolve, 20)).then(() => data);
+	return new Promise(resolve => resolve(data));
 };
 // export const thirdparty = id => thirdparties[id];
 export const metaThirdparties = {

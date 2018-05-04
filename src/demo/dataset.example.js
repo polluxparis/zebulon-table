@@ -1,11 +1,10 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
-import { get_subscription } from "./datasources";
 import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
 import { getRowErrors, getErrors } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
-import { errorHandler } from "./dataset.functions";
+import { errorHandler, get_subscription } from "./dataset.functions";
 import { meta, rollingAverage, totalAmount } from "./dataset.meta";
 // customMenuFunctions;
 
@@ -31,7 +30,8 @@ export class MyDataset extends Component {
       confirmationModal: false,
       activeTable: "dataset",
       saveConfirmationRequired: false,
-      params: { user_: "Pollux" }
+      params: { user_: "Pollux" },
+      userZebulon: false
     };
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
@@ -169,6 +169,44 @@ export class MyDataset extends Component {
       }
     });
   };
+  handleUser = () => {
+    let params;
+    if (!this.state.userZebulon) {
+      params = {
+        user_: "Zébulon",
+        privileges_: {
+          dataset: {
+            table: "editable",
+            actions: { New: "hidden", Duplicate: "hidden", Delete: "hidden" },
+            properties: {
+              thirdparty_cd: "hidden",
+              qty: "visible",
+              color: "visible",
+              currency: "visible",
+              d: "visible",
+              product_lb: "visible",
+              country_cd: "visible",
+              id: "editable"
+            }
+          }
+        },
+        filter_: [
+          {
+            filterType: "values",
+            id: "country_id",
+            v: { 2: 2 }
+          }
+        ]
+      };
+    } else {
+      params = { user_: "Pollux" };
+    }
+    this.setState({
+      userZebulon: !this.state.userZebulon,
+      params,
+      status: { loading: true }
+    });
+  };
   render() {
     const { keyEvent, functions } = this.props;
     const {
@@ -212,7 +250,7 @@ export class MyDataset extends Component {
             style={{
               display: "block",
               padding: 5,
-              height: 140,
+              height: 170,
               boxSizing: "border-box"
             }}
           >
@@ -289,34 +327,48 @@ export class MyDataset extends Component {
                 onChange={this.handleTotalAmount}
               />sum of amounts in € by country.
             </div>
+            <div style={{ display: "flex", marginTop: 10, height: 30 }}>
+              <input
+                type="checkbox"
+                checked={this.state.userZebulon}
+                onChange={this.handleUser}
+              />
+              Connect with a restricted user only allowed to update # of US
+              orders,thirdparty hidden.
+            </div>
           </div>
-          <textarea
-            readOnly
-            rows="6"
-            cols="120"
-            value={this.text}
-            style={{
-              fontFamily: "sans-serif",
-              border: "unset",
-              fontSize: "medium",
-              color: "blue",
-              marginLeft: 30
-            }}
-          />
+          <div style={{ display: "block" }}>
+            <textarea
+              readOnly
+              rows="6"
+              cols="120"
+              value={this.text}
+              style={{
+                fontFamily: "sans-serif",
+                border: "unset",
+                fontSize: "medium",
+                color: "blue",
+                marginLeft: 30
+              }}
+            />
+            <button
+              onClick={this.subscribe}
+              style={{ marginTop: 15, marginLeft: 30 }}
+            >
+              Subscription to three server events updating the quantity of the
+              12th (by four) first rows by order#
+            </button>
+          </div>
         </div>
       </div>
     );
     const text =
-      "Test key, navigation, zoom, scroll, wheel...\n• resize the grid using the handle at right, down corner. \n• ctrl  -, ctrl + for zoom in zoom out.\n• ctrl -, \n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a thirdparty, enter 'a' then quit the cell to select one in the thirdparties beginning by 'a'.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters, sorts...\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n• Lock and unlock columns with the contectual menu on column headers (right click). \n• Test 'between filters' (date, quantity...), 'values filters' (product, thirdparties..., 'starts filters' (order).\n• Test 'status filters' : right click on top left status cells.\n• Test 'ctrl f' to search values in the grid.\n• Resize and move columns by drag and drop.\n• Test conflict resolution by updatating rows in the 10 first rows by order#, subscribe to a server event then save.\n• Test the 'audit' functionality : right click on status cell on an updated and saved rows (exit of audit by right click on top left status cells).\n...";
+      "Test key, navigation, zoom, scroll, wheel, accelerators...\n• resize the grid using the handle at right, down corner. \n• ctrl +, ctrl - for zoom in zoom out.\n• ctrl A to select all.\n• F2 New,F3 Duplicate,F4 Delete,F10 Refresh, F11 toggle from/to filters bar, F12 Save.\n• shift to extend the selection,\n• left and right arrows to select previous or next cell in the row,\n• up and down arrows to select the same cell in previous or next row,\n• page up and page down to select the same cell at previous or next page,\n• alt + page up or page down to select on the same row the on previous next, page,\n• home and end to select the cell on the first or last row,\n• alt + home or end to select the first or last cell on the row,\nIn an editable cell, left and right arrow must keep the default behaviour .\n• Alt key is used to force the navigation.\n\nUpdate editable columns\n• update a product -> linked columns from product object are updated.\n• update a quantity -> computed columns (amounts) are updated.\n• update a thirdparty, enter 'a' then quit the cell to select one in the thirdparties beginning by 'a'.\n• update a date to null -> check the status bar tooltip after row change.\n• copy paste from excel (ctrl + C to copy selected  range, ctrl + V to paste from the focused cell. Only editables cells are updates. All validations are done.\n\nTry filters, sorts...\n• Click on a column will toggle the sort direction from none to ascending then descending. The column is added to columns allready sorted (multisort). Reset multisort by double click.\n• Lock and unlock columns with the contectual menu on column headers (right click). \n• Test 'between filters' (date, quantity...), 'values filters' (product, thirdparties..., 'starts filters' (order).\n• Test 'status filters' : right click on top left status cells.\n• Test 'ctrl f' to search values in the grid.\n• Resize and move columns by drag and drop.\n• Test conflict resolution by updatating rows in the 10 first rows by order#, subscribe to a server event then save.\n• Test the 'audit' functionality : right click on status cell on an updated and saved rows (exit of audit by right click on top left status cells).\n• Test privileges management with the 'Connect with a restricted user' check box  ...";
     footer = (
       <div style={{ marginTop: 10, marginLeft: 2 }}>
-        <button onClick={this.subscribe}>
-          Subscription to one server event updating the quantity of the 10th
-          first rows by order#
-        </button>
         <textarea
           readOnly
-          rows="40"
+          rows="20"
           cols="180"
           value={text}
           style={{

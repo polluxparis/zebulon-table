@@ -517,7 +517,7 @@ export const statusCell = (
       key={id}
       className={className}
       style={style}
-      onClick={() => onClick(index)}
+      onClick={e => onClick(index, e.shiftKey)}
       onMouseOver={e => handleErrors(e, errors)}
       onMouseOut={e => handleErrors(e, [])}
       onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
@@ -545,17 +545,20 @@ export class Status extends Component {
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
-  onClick = index => {
+  onClick = (index, extension) => {
+    const { meta, scroll } = this.props;
+    const columns = (meta.visibleIndexes || [0])[0];
+    const startRowIndex = extension ? this.props.selectedIndex : index;
     this.props.selectRange(
       {
-        end: { rows: index, columns: 0 },
-        start: { rows: index, columns: this.props.meta.length - 1 }
+        end: { rows: index, columns },
+        start: { rows: startRowIndex, columns: meta.properties.length - 1 }
       },
       undefined,
       undefined,
       undefined,
       undefined,
-      index === this.props.scroll.startIndex || index === this.stopIndex
+      index === scroll.startIndex || index === this.stopIndex
     );
   };
   onChange = index => {
