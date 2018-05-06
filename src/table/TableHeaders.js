@@ -89,7 +89,7 @@ const filter = (
         filterTo={filterTo}
         onChange={onChange}
         onFocus={e => {
-          console.log("filter", this);
+          // console.log("filter", this);
           openFilter(e, column);
         }}
       />

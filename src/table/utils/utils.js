@@ -285,76 +285,6 @@ export const loadFileButton = ({
     </div>
   );
 };
-
-// export class ConfirmationModal extends React.Component {
-//   render() {
-//     // Render nothing if the "show" prop is false
-//     if (!this.props.show) {
-//       return null;
-//     }
-//     const { text, type } = this.props.detail;
-//     let buttons;
-//     if (type === "YesNoCancel") {
-//       buttons = [
-//         <button
-//           style={{ minWidth: 70, margin: 5 }}
-//           onClick={() => this.props.onConfirm("yes")}
-//           tabIndex={0}
-//           key={0}
-//           autoFocus={true}
-//         >
-//           Yes
-//         </button>,
-//         <button
-//           style={{ minWidth: 70, margin: 5 }}
-//           onClick={() => this.props.onConfirm("no")}
-//           tabIndex={1}
-//           key={1}
-//         >
-//           No
-//         </button>,
-//         <button
-//           style={{ minWidth: 70, margin: 5 }}
-//           onClick={() => this.props.onConfirm("cancel")}
-//           tabIndex={2}
-//           key={2}
-//         >
-//           Cancel
-//         </button>
-//       ];
-//     } else if (type === "Ok") {
-//       buttons = [
-//         <button
-//           style={{ minWidth: 70, margin: 5 }}
-//           onClick={() => this.props.onConfirm("ok")}
-//           tabIndex={0}
-//           key={0}
-//           autoFocus={true}
-//         >
-//           Ok
-//         </button>
-//       ];
-//     }
-//     const body = Array.isArray(text) ? (
-//       text.map((line, index) => <div key={index}>{line}</div>)
-//     ) : (
-//       <div>{text}</div>
-//     );
-//     return (
-//       <div className="backdrop zebulon-modal-backdrop">
-//         <div
-//           className="modal zebulon-modal-confirmation"
-//           style={{ display: "flex", top: 100 }}
-//         >
-//           {body}
-//           <div className="footer" style={{ display: "flex" }}>
-//             {buttons}
-//           </div>
-//         </div>
-//       </div>
-//     );
-//   }
-// }
 // -------------------------------------------
 // miscelaneous
 // -------------------------------------------
@@ -388,8 +318,3 @@ export const isEqual = (v0, v1) => {
   }
   return false;
 };
-
-// -------------------------------------------
-// privileges
-// -------------------------------------------
-const applyPrivileges = ({ filter, editableFunctions }) => {};

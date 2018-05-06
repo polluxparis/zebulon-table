@@ -4,20 +4,21 @@ import { computeMetaPositions } from "./utils/compute.meta";
 import { rollback } from "./utils/utils";
 
 export class TableMenu extends Component {
-    handleClickMenu = (data, item) => {
-        if (data.menu === "column-header-menu") {
+    handleClickMenu = (props, item) => {
+        if (props.menu === "column-header-menu") {
+            const column = props.column;
+            const { data, meta, params, scroll } = this.state;
             if (item.id <= 1) {
-                const meta = this.state.meta;
                 if (!utils.isNullOrUndefined(meta.lockedIndex)) {
                     meta.properties[meta.lockedIndex].locked = false;
                 }
                 if (item.id) {
-                    meta.properties[data.column.index_].locked = true;
+                    meta.properties[column.index_].locked = true;
                 }
                 computeMetaPositions(meta);
                 this.setState({
                     scroll: {
-                        ...this.state.scroll,
+                        ...scroll,
                         columns: {
                             direction: 1,
                             index: 0,
@@ -27,15 +28,17 @@ export class TableMenu extends Component {
                         }
                     }
                 });
+            } else {
+                item.function({ data, meta, params, column });
             }
-        } else if (data.menu === "row-header-menu") {
+        } else if (props.menu === "row-header-menu") {
+            const { row, status } = props;
+            const { data, meta, params } = this.state;
             if (item.id === 0) {
-                rollback(data.status);
+                rollback(status);
                 this.setState({ scroll: this.state.scroll });
             } else if (item.id === 1) {
-                const audits = this.state.meta.row.auditFunction({
-                    row: data.row
-                });
+                const audits = meta.row.auditFunction({ row });
                 const prevScroll = this.state.scroll;
                 const scroll = {
                     rows: {
@@ -55,9 +58,8 @@ export class TableMenu extends Component {
                 };
                 if (utils.isPromise(audits)) {
                     audits.then(audits => {
-                        // if (audits) {
                         this.setState({
-                            auditedRow: data.row,
+                            auditedRow: row,
                             audits: audits || [],
                             scroll,
                             prevScroll
@@ -68,15 +70,17 @@ export class TableMenu extends Component {
                     // if (audits)
                     const scroll = this.state.prevScroll;
                     this.setState({
-                        auditedRow: data.row,
+                        auditedRow: row,
                         audits: audits || [],
                         scroll,
                         prevScroll
                     });
                 }
+            } else {
+                item.function({ data, meta, params, row, status });
             }
-        } else if (data.menu === "top-left-corner-menu") {
-            const { filters, data, updatedRows } = this.state;
+        } else if (props.menu === "top-left-corner-menu") {
+            const { filters, data, meta, params, updatedRows } = this.state;
             let filter = filters.status_;
             if (!filter) {
                 filter = { id: "status_", v: 0 };
@@ -89,7 +93,6 @@ export class TableMenu extends Component {
             }
             if (item.id === 2) {
                 const scroll = this.state.prevScroll;
-                const meta = this.state.meta;
                 computeMetaPositions(meta);
                 this.setState({
                     auditedRow: undefined,
@@ -97,7 +100,7 @@ export class TableMenu extends Component {
                     scroll,
                     prevScroll: undefined
                 });
-            } else {
+            } else if (item.id === 0 || (item.id >= 100 && item.id < 104)) {
                 if (item.id === 0 || filter.v === 0) {
                     delete filters.status_;
                 } else if (item.id >= 100) {
@@ -111,7 +114,28 @@ export class TableMenu extends Component {
                         updatedRows
                     )
                 });
+            } else {
+                item.function({ data, meta, params });
             }
+        } else if (props.menu === "cell-menu") {
+            const { row, column } = props;
+            const { data, meta, params } = this.state;
+
+            item.function({ data, meta, params, row, column });
+        }
+    };
+    getCustomMenu = (menu, menus) => {
+        if (this.customContextualMenu && this.customContextualMenu[menu]) {
+            this.customContextualMenu[menu].forEach((menu, index) =>
+                menus.push({
+                    id: menus.length,
+                    separation: index === 0 && menus.length > 0,
+                    type: menu.type,
+                    caption: menu.caption,
+                    onClick: this.handleClickMenu,
+                    function: menu.function
+                })
+            );
         }
     };
     getMenu = (menu, data) => {
@@ -137,17 +161,6 @@ export class TableMenu extends Component {
                     onClick: this.handleClickMenu
                 });
             }
-            if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
-                this.props.contextualMenu[menu].forEach((menu, index) =>
-                    menus.push({
-                        id: menus.length,
-                        separation: index === 0 && menus.length > 0,
-                        type: menu.type,
-                        caption: menu.caption,
-                        onClick: menu.function
-                    })
-                );
-            }
         } else if (menu === "column-header-menu") {
             menus.push({
                 id: menus.length,
@@ -164,17 +177,6 @@ export class TableMenu extends Component {
                 caption: `Lock columns until ${data.column.caption}`,
                 onClick: this.handleClickMenu
             });
-            if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
-                this.props.contextualMenu[menu].forEach((menu, index) =>
-                    menus.push({
-                        id: menus.length,
-                        separation: index === 0 && menus.length > 0,
-                        type: menu.type,
-                        caption: menu.caption,
-                        onClick: menu.function
-                    })
-                );
-            }
         } else if (menu === "top-left-corner-menu") {
             if (this.state.meta.table.editable) {
                 menus.push({
@@ -253,18 +255,8 @@ export class TableMenu extends Component {
                     onClick: this.handleClickMenu
                 });
             }
-            if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
-                this.props.contextualMenu[menu].forEach((menu, index) =>
-                    menus.push({
-                        id: menus.length,
-                        separation: index === 0 && menus.length > 0,
-                        type: menu.type,
-                        caption: menu.caption,
-                        onClick: menu.function
-                    })
-                );
-            }
         }
+        this.getCustomMenu(menu, menus);
         if (menus.length) {
             return {
                 type: "menu",

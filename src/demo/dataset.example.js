@@ -4,9 +4,14 @@ import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
 import { getRowErrors, getErrors } from "../table/utils/utils";
 import { computeMetaPositions } from "../table/utils/compute.meta";
 import { computeAnalytic } from "../table/utils/compute.data";
-import { errorHandler, get_subscription } from "./dataset.functions";
+import {
+  errorHandler,
+  get_subscription
+  // customMenuFunctions,
+  // navigationKeyHandler
+} from "./dataset.functions";
 import { meta, rollingAverage, totalAmount } from "./dataset.meta";
-// customMenuFunctions;
+// ;
 
 export class MyDataset extends Component {
   constructor(props) {
@@ -17,7 +22,7 @@ export class MyDataset extends Component {
       sorts: {
         // d: { id: "d", direction: "asc", sortOrder: 0 },
         // product_lb: { id: "product_lb", direction: "desc", sortOrder: 1 },
-        id: { id: "id", direction: "asc", sortOrder: 1 }
+        id: { id: "id", direction: "asc", sortOrder: 0 }
       },
       radioDataset: "get_promise",
       dataLength: 0,

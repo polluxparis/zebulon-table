@@ -46,16 +46,16 @@ class ZebulonTableDemo extends Component {
     document.addEventListener("paste", this.handleKeyEvent);
     document.addEventListener("keydown", this.handleKeyEvent);
     window.addEventListener("beforeunload", this.handleKeyEvent);
-    const f = x =>
-      new Promise(resolve => {
-        console.log("promise", x);
-        resolve(x + 1);
-      });
-    f(0)
-      .then(x => f(x))
-      .then(x => f(x))
-      .then(x => f(x));
-    console.log("promise", -1);
+    // const f = x =>
+    //   new Promise(resolve => {
+    //     console.log("promise", x);
+    //     resolve(x + 1);
+    //   });
+    // f(0)
+    //   .then(x => f(x))
+    //   .then(x => f(x))
+    //   .then(x => f(x));
+    // console.log("promise", -1);
 
     // new Promise(resolve => {
     //   console.log("promise", 1);

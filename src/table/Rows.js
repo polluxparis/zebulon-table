@@ -7,10 +7,10 @@ export class Rows extends ScrollableGrid {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   componentDidUpdate() {
-    console.log("row", this.focused, this.props.hasFocus);
-    if (this.focused && this.focused.input) {
+    // console.log("row", this.focused, this.props.hasFocus);
+    if (this.focused && this.focused.input && this.focused.input.ref) {
       // && this.focused.props.dataType === "boolean"
-      this.focused.input.focus();
+      this.focused.input.ref.focus();
       // this.focused = undefined;
       // console.log("row", this.focused);
     }
@@ -76,6 +76,8 @@ export class Rows extends ScrollableGrid {
         onDoubleClick={
           onDoubleClick ? e => onDoubleClick(e, row, column) : () => {}
         }
+        menu="cell-menu"
+        component={component}
         ref={ref => {
           if (focused && hasFocus) {
             this.focused = ref;

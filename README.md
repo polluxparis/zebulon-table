@@ -739,6 +739,7 @@ It's possible to add custom contextual menu on
 * row headers,
 * columns headers,
 * top left corner
+* cells
 ```js
 {
   "row-header-menu": [
@@ -752,14 +753,23 @@ It's possible to add custom contextual menu on
   ],
   "column-header-menu": [
     {
-      code: "totoa",
-      caption: "TotoA",
+      code: "toto1",
+      caption: "Toto1",
       type: "MenuItem",
       function: e => console.log("toto1")
     },
     ...
   ],
   "top-left-corner-menu": [
+    {
+      code: "toto1",
+      caption: "Toto_1",
+      type: "MenuItem",
+      function: e => console.log("toto1")
+    },
+  ...
+  ],
+  "cell-menu": [
     {
       code: "toto1",
       caption: "Toto_1",

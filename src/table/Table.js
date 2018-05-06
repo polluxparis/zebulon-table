@@ -42,6 +42,7 @@ export class Table extends TableFilterSort {
     this.state = {
       data: props.data,
       filteredData,
+      params: props.params,
       meta: props.meta,
       filters: props.filters || {},
       status,
@@ -78,6 +79,16 @@ export class Table extends TableFilterSort {
     this.onTableEnter();
     if (status.loaded) {
       this.bLoaded = true;
+    }
+    if (this.props.contextualMenu) {
+      if (typeof this.props.contextualMenu === "function") {
+        this.customContextualMenu = this.props.contextualMenu(
+          this.state,
+          props
+        );
+      } else {
+        this.customContextualMenu = this.props.contextualMenu;
+      }
     }
     // this.filtersOut = props.filters;
   }
@@ -555,7 +566,7 @@ export class Table extends TableFilterSort {
         boxSizing: "border-box"
       };
     }
-    console.log("table", this.hasFocus, this.changingFilter);
+    // console.log("table", this.hasFocus, this.changingFilter);
     const rows = (
       <Rows
         key="rows"

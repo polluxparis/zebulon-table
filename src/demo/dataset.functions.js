@@ -455,10 +455,6 @@ export const datasetFunctions = {
 			d.setDate(1);
 			return d;
 		},
-		// country: ({ row }) => getCountry(row.country_id),
-		// currency: ({ row }) => getCurrency(row.currency_id),
-		// product: ({ row }) => getProduct(row.product_id),
-		// thirdparty: ({ row }) => getThirdparty(row.thirdparty_id),
 		flag: ({ row }) => {
 			if (
 				!row.country ||
@@ -499,52 +495,62 @@ export const datasetFunctions = {
 	}
 };
 
-export const customMenuFunctions = {
+export const customMenuFunctions = (state, props) => ({
 	"row-header-menu": [
 		{
 			code: "toto1",
-			caption: "Toto1",
+			caption: "Row menu 0",
 			type: "MenuItem",
-			function: e => console.log("toto1")
+			function: e => console.log("Row menu 0", e)
 		},
 		{
 			code: "toto2",
-			caption: "Toto2",
+			caption: "Row menu 1",
 			type: "MenuItem",
-			function: e => console.log("toto2")
+			function: e => console.log("Row menu 1", e)
 		}
 	],
 	"column-header-menu": [
 		{
 			code: "totoa",
-			caption: "TotoA",
+			caption: "Column menu 0",
 			type: "MenuItem",
-			function: e => console.log("toto1")
+			function: e => console.log("Column menu 0", e)
 		},
 		{
 			code: "totob",
-			caption: "TotoB",
+			caption: "Column menu 1",
 			type: "MenuItem",
-			function: e => console.log("toto2")
+			function: e => console.log("Column menu 1", e)
 		}
 	],
 	"top-left-corner-menu": [
 		{
 			code: "toto1",
-			caption: "Toto_1",
+			caption: "Table menu 0",
 			type: "MenuItem",
-			function: e => console.log("toto1")
+			function: e => console.log("Table menu 0", e)
 		},
 		{
 			code: "toto2",
-			caption: "Toto2_",
+			caption: "Table menu 1",
 			type: "MenuItem",
-			function: e => console.log("toto2")
+			function: e => console.log("Table menu 1", e)
+		}
+	],
+	"cell-menu": [
+		{
+			code: "cell0",
+			caption: "Cell menu 0",
+			type: "MenuItem",
+			function: e => console.log("Cell menu 0", e)
+		},
+		{
+			code: "cell1",
+			caption: "Cell menu 1",
+			type: "MenuItem",
+			function: e => console.log("Cell menu 1", e)
 		}
 	]
-};
-const params = {
-	user_: "Pollux",
-	privileges_: { dataset: "editable", actions: { new: "hidden" } },
-	filter_: [{ filterType: "values", id: "country_id", v: [1, 2, 3] }]
-};
+});
+

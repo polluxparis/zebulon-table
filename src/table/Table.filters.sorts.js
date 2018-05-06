@@ -148,7 +148,7 @@ export class TableFilterSort extends TableEvent {
       return this.closeOpenedWindows();
     }
     // column.position + this.rowHeight - this.state.scroll.columns.position;
-    console.log("filtersort", this.hasFocus);
+    // console.log("filtersort", this.hasFocus);
     this.hasFocus = false;
     this.setState({
       openedFilter: column.id,

@@ -324,7 +324,6 @@ export class TableEvent extends TableMenu {
           columns: meta.properties.length - 1
         }
       };
-      const cell = selectedRange.end;
       const rowDirection = Math.sign(
         range.end.rows - (scroll.rows.startIndex || 0)
       );
@@ -452,7 +451,7 @@ export class TableEvent extends TableMenu {
     columnDirection,
     noFocus
   ) => {
-    console.log("scroll", rowIndex, noFocus);
+    // console.log("scroll", rowIndex, noFocus);
     if (rowDirection || columnDirection) {
       this.rows.scrollOnKey(
         { rows: rowIndex, columns: columnIndex },
