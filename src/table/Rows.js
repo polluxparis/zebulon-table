@@ -102,6 +102,7 @@ export class Rows extends ScrollableGrid {
     const cells = [];
     let left = shift,
       index = startIndex;
+    const selectedRange = this.selectedRange();
     while (index < meta.length && left < visibleWidth) {
       const column = meta[index];
       if (!column.hidden) {
@@ -117,7 +118,6 @@ export class Rows extends ScrollableGrid {
           }
         }
         const columnIndex = index;
-        const selectedRange = this.selectedRange();
         const selected = utils.isInRange(
             { columns: index, rows: rowIndex },
             selectedRange.start,

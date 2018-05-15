@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
-import { functions } from "../table/MetaDescriptions";
-import { functionsTable } from "../table/utils/compute.meta";
+// import { functions } from "../table/MetaDescriptions";
+import { utils } from "zebulon-controls";
 import { filtersFunction } from "../table/utils/filters.sorts";
 export const get_thp = ({ params, meta, filters }) => {
 	let data = Object.values(thirdparties);
@@ -563,14 +563,16 @@ export const thirdparties = [
 	return acc;
 }, {});
 export class MyThirdparties extends Component {
-	constructor(props) {
-		super(props);
-		const functionsObject = {
-			...functions,
-			thirdparties: {} //thirdpartiesFunctions
-		};
-		this.state = { functions: functionsTable(functionsObject), status: {} };
-	}
+	// constructor(props) {
+	// 	super(props);
+	// 	const functionsObject = {
+	// 		thirdparties: {} //thirdpartiesFunctions
+	// 	};
+	// 	this.state = {
+	// 		functions: utils.functionsTable(functionsObject),
+	// 		status: {}
+	// 	};
+	// }
 	// componentWillReceiveProps(nextProps) {
 	// 	console.log(nextProps);
 	// }
@@ -596,7 +598,7 @@ export class MyThirdparties extends Component {
 				// filters={filters}
 				// status={this.state.status}
 				// sizes={{ height: 300, width: 500 }}
-				functions={this.state.functions}
+				// functions={this.state.functions}
 			/>,
 			{ ...this.props }
 		);

@@ -928,7 +928,7 @@ export class TableEvent extends TableMenu {
   handleText = (cell, row, column) => {
     let label;
     if (this.state.meta.row.descriptorFunction)
-      label = this.state.meta.row.descriptorFunction(row);
+      label = this.state.meta.row.descriptorFunction({ row });
     const text = {
       top:
         (3 + cell.rows - this.state.scroll.rows.startIndex) * this.rowHeight +

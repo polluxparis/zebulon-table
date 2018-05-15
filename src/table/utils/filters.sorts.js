@@ -1,9 +1,9 @@
 import { utils } from "zebulon-controls";
-import { getFunction } from "./compute.meta";
+// import { utils.getFunction } from "./compute.meta";
 // ----------------------------
 //  filters
 //  ---------------------------
-export const filterFunction = (column, params, data, updatedRows) => {
+export const filterFunction = (column, params, data, updatedRows, utils_) => {
   const facc = row => {
     let f = column.accessorFunction;
     if (column.id === "status_") {
@@ -17,7 +17,9 @@ export const filterFunction = (column, params, data, updatedRows) => {
     }
     if (!f) {
       if (column.accessor) {
-        f = getFunction([], "", "accessor", column.accessor);
+        f = utils.getFunction([], "accessor", column.accessor, utils_);
+      } else if (column.dataType === "date") {
+        f = ({ row, column }) => new Date(row[column.id]);
       } else {
         f = ({ row, column }) => row[column.id];
       }
@@ -30,6 +32,12 @@ export const filterFunction = (column, params, data, updatedRows) => {
       data
     });
   };
+  if (column.dataType === "date") {
+    column.v = new Date(column.v);
+    if (!utils.isNullOrUndefined(column.vTo)) {
+      column.vTo = new Date(column.vTo);
+    }
+  }
   if (column.id === "status_") {
     column.f = row => {
       const vRow = facc(row);
@@ -70,7 +78,7 @@ export const filterFunction = (column, params, data, updatedRows) => {
   }
 };
 // -----------------------------
-export const filtersFunction = (filters, params, data, updatedRows) => {
+export const filtersFunction = (filters, params, data, updatedRows, utils_) => {
   if (!filters) {
     return x => x;
   }
@@ -84,7 +92,7 @@ export const filtersFunction = (filters, params, data, updatedRows) => {
       );
     })
     .map(filter => {
-      filterFunction(filter, params, data, updatedRows);
+      filterFunction(filter, params, data, updatedRows, utils_);
       return filter;
     });
   if (!f.length) {

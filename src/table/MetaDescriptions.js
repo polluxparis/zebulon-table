@@ -5,28 +5,26 @@ import {
 	exportFunctions
 	// aggregations
 } from "./utils/utils";
-import { getFunction } from "./utils/compute.meta";
+// import { getFunction } from "./utils/compute.meta";
 // ({row})=>accessor('qty')({row})*3
 const functionToString = ({ row }) => {
-	if (typeof row.functionJS === "function") {
+	if (row.functionText) {
+		return row.functionText;
+	} else if (typeof row.functionJS === "function") {
 		return String(row.functionJS);
 	}
-	return row.functionJS;
 };
-const stringToFunction = ({ row, status, meta }) => {
+const stringToFunction = ({ row, status, meta, utils_ }) => {
 	let f;
 	const accessor = (accessor, visibility) => {
 		return (
-			getFunction(
-				meta.functions,
-				visibility || "dataset",
-				"accessor",
-				accessor
-			) || (() => {})
+			utils.getFunction(meta.functions, "accessor", accessor, utils_) ||
+			(() => {})
 		);
 	};
 	try {
-		eval("f = " + row.functionJS);
+		// f = new Function("{row,utils}", "return utils.toMonth(row.dea_d);");
+		eval("f = " + row.functionText);
 	} catch (e) {
 		const error = status.errors.functionJS || {};
 		error.JS = e.message;
@@ -34,6 +32,13 @@ const stringToFunction = ({ row, status, meta }) => {
 	}
 	if (typeof f === "function") {
 		row.functionJS = f;
+		// if (!functions[row.visibility]) {
+		// 	functions[row.visibility] = {};
+		// }
+		// if (!functions[row.visibility][row.tp + "s"]) {
+		// 	functions[row.visibility][row.tp + "s"] = {};
+		// }
+		// functions[row.visibility][row.tp + "s"][row.id] = f;
 		if (status.errors.functionJS) {
 			delete status.errors.functionJS.JS;
 		}
@@ -71,9 +76,10 @@ export const onNext = (data, message) => {
 };
 export const onCompleted = message => {};
 export const onError = (e, message) => {};
-export const accessor = accessor => {
-	return () => 4;
-};
+// export const accessor = accessor => {
+// 	return () => 4;
+// };
+const isLocal = ({ row, status }) => (status || {}).new_ || row.isLocal;
 export const functions = {
 	properties: {
 		accessors: {
@@ -130,6 +136,7 @@ export const functions = {
 			isNotDataset: ({ row }) => row.tp !== "Dataset",
 			isAnalytic: ({ row }) => row.tp === "Analytic"
 		},
+		defaults: {},
 		row: () => {},
 		table: () => {},
 		actions: {
@@ -140,10 +147,10 @@ export const functions = {
 	functions: {
 		accessors: {
 			functionToString,
-			functionDescriptor: row => {
+			functionDescriptor: ({ row }) => {
 				let label;
 				if (row.tp === "accessor") {
-					label = "Parameters: (row,params,status,data)";
+					label = "Parameters: ({row,status,data,params,utils})";
 				} else if (row.tp === "editable") {
 					label = "Parameters: ({row,status,data,params})";
 				} else if (row.tp === "select") {
@@ -151,7 +158,7 @@ export const functions = {
 				} else if (row.tp === "validator") {
 					label = "Parameters: ({row,status,data,params})";
 				} else if (row.tp === "format") {
-					label = "Parameters: (value,params,row,status,data)";
+					label = "Parameters: (value,row,status,data,params)";
 				} else if (row.tp === "aggregation") {
 					label = "Parameters: ([values])";
 				} else if (row.tp === "sort") {
@@ -160,7 +167,8 @@ export const functions = {
 					label = "Parameters: (value)";
 				}
 				return `${row.caption || row.id} : ${label}`;
-			}
+			},
+			isLocal
 		},
 		validators: {
 			stringToFunction
@@ -168,12 +176,14 @@ export const functions = {
 		actions: {
 			exportFunctions: ({ data }) =>
 				"functions = " + exportFunctions(data)
-		}
+		},
+		editables: { isLocal }
 	},
 	dimensions: {
 		accessors: {
-			sortAcc: row => (row.sort || {}).keyAccessor,
-			sortFct: row => (row.sort || {}).custom
+			sortAcc: ({ row }) => (row.sort || {}).keyAccessor,
+			sortFct: ({ row }) => (row.sort || {}).custom,
+			isLocal
 		},
 		validators: {
 			sortAcc: ({ row }) =>
@@ -186,44 +196,24 @@ export const functions = {
 					...(row.sort || {}),
 					custom: row.sortFunction
 				})
+		},
+		editables: {
+			isLocal
+		}
+	},
+
+	measures: {
+		accessors: {
+			isLocal
+		},
+		editables: {
+			isLocal
 		}
 	},
 	globals_: {
 		editables: {
 			is_selected: ({ row }) => row.index_ !== undefined,
 			is_new: ({ status }) => status.new_
-		},
-		formats: {
-			decimals: ({ value, column }) =>
-				utils.formatValue(value, null, column.decimals || 2),
-			percentage: ({ value, column }) =>
-				`${utils.formatValue(
-					value * 100,
-					null,
-					column.decimals || 2
-				)}%`,
-			"mm/yyyy": ({ value }) =>
-				utils.isNullOrUndefined(value)
-					? ""
-					: utils.formatValue(value, "mm/yyyy"),
-			time: ({ value }) =>
-				utils.isNullOrUndefined(value)
-					? ""
-					: utils.formatValue(value, "hh:mi:ss"),
-			dateTime: ({ value }) =>
-				utils.isNullOrUndefined(value)
-					? ""
-					: utils.formatValue(value, "dd/mm/yyyy hh:mi:ss")
-		},
-		accessors: {
-			mth: ({ row }) => {
-				if (utils.isNullOrUndefined(row.d)) {
-					return null;
-				}
-				const d = new Date(row.d);
-				d.setDate(1);
-				return d;
-			}
 		},
 		observers: {
 			onNext,
@@ -273,21 +263,15 @@ export const metaDescriptions = (
 ) => {
 	const f = functions;
 	const getFunctions = (type, obj = object) => {
-		return f
-			.filter(
-				f =>
-					f.tp === type &&
-					(f.visibility === "global" || f.visibility === obj)
-			)
-			.reduce((acc, f) => {
-				acc[f.id] = {
-					id: f.id,
-					caption: f.caption || f.id,
-					type: "function",
-					style: { color: "blue" }
-				};
-				return acc;
-			}, {});
+		return f.filter(f => f.tp === type).reduce((acc, f) => {
+			acc[f.id] = {
+				id: f.id,
+				caption: f.caption || f.id,
+				type: "function",
+				style: { color: "blue" }
+			};
+			return acc;
+		}, {});
 	};
 	const getAccessorsAndProperties = obj => () => {
 		const dataAccessors = propertyAccessors;
@@ -441,8 +425,8 @@ export const metaDescriptions = (
 					id: "dataType",
 					caption: "Data type",
 					width: 100,
-					dataType: "isNotDataset",
-					editable: true,
+					dataType: "string",
+					editable: "isNotDataset",
 					filterType: "values",
 					select: [
 						"number",
@@ -658,6 +642,7 @@ export const metaDescriptions = (
 				editable: true,
 				primaryKey: "id",
 				code: "caption",
+				onSave: callbacks.applyFunctions,
 				actions: [
 					{
 						type: "insert",
@@ -668,7 +653,7 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected",
+						enable: "isLocal",
 						key: "f3"
 					},
 					{
@@ -677,6 +662,14 @@ export const metaDescriptions = (
 						enable: "is_selected",
 						key: "f4"
 					},
+					{
+						type: "save",
+						caption: "Apply",
+						enable: true,
+						hidden: !callbacks.applyFunctions,
+						key: "f12"
+					},
+					,
 					{
 						type: "action",
 						caption: "Export functions",
@@ -699,7 +692,7 @@ export const metaDescriptions = (
 					caption: "Code",
 					width: 100,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					mandatory: true,
 					locked: true
 				},
@@ -716,7 +709,7 @@ export const metaDescriptions = (
 					caption: "Visibility",
 					width: 150,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					select: [
 						"",
 						"dataset",
@@ -733,7 +726,7 @@ export const metaDescriptions = (
 					caption: "Type",
 					width: 150,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					filterType: "values",
 					select: [
 						"",
@@ -752,13 +745,28 @@ export const metaDescriptions = (
 					]
 				},
 				{
-					id: "functionJS",
+					id: "isLocal",
+					caption: "Local",
+					accessor: "isLocal",
+					width: 80,
+					dataType: "boolean",
+					default: true
+				},
+				{
+					id: "functionText",
 					caption: "Function",
 					accessor: "functionToString",
 					onQuit: "stringToFunction",
 					width: 500,
 					dataType: "text",
-					editable: true
+					editable: "isLocal"
+				},
+				{
+					id: "functionJS",
+					caption: "Function",
+					// accessor: "functionToString",
+					// onQuit: "stringToFunction",
+					hidden: true
 				}
 			]
 		};
@@ -769,6 +777,7 @@ export const metaDescriptions = (
 				editable: true,
 				primaryKey: "id",
 				code: "caption",
+				onSave: callbacks.applyMeasures,
 				actions: [
 					{
 						type: "insert",
@@ -779,7 +788,7 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected",
+						enable: "isLocal",
 						key: "f3"
 					},
 					{
@@ -789,9 +798,9 @@ export const metaDescriptions = (
 						key: "f4"
 					},
 					{
-						type: "action",
+						type: "save",
 						caption: "Apply",
-						action: callbacks.applyMeasures,
+						// action: callbacks.applyMeasures,
 						enable: true,
 						key: "f12"
 					},
@@ -811,7 +820,7 @@ export const metaDescriptions = (
 					caption: "id",
 					width: 100,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					mandatory: true
 				},
 				{
@@ -826,7 +835,7 @@ export const metaDescriptions = (
 					caption: "Value accessor",
 					width: 150,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					mandatory: true,
 					filterType: "values",
 					select: getAccessorsAndProperties("dataset")
@@ -845,11 +854,19 @@ export const metaDescriptions = (
 					caption: "aggregation",
 					width: 150,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					mandatory: true,
 					default: "sum",
 					filterType: "values",
 					select: getAggregations("dataset")
+				},
+				{
+					id: "isLocal",
+					caption: "Local",
+					accessor: "isLocal",
+					width: 80,
+					dataType: "boolean",
+					default: true
 				}
 			]
 		};
@@ -860,6 +877,7 @@ export const metaDescriptions = (
 				editable: true,
 				primaryKey: "id",
 				code: "caption",
+				onSave: callbacks.applyDimensions,
 				actions: [
 					{
 						type: "insert",
@@ -870,7 +888,7 @@ export const metaDescriptions = (
 					{
 						type: "delete",
 						caption: "Delete",
-						enable: "is_selected",
+						enable: "isLocal",
 						key: "f3"
 					},
 					{
@@ -880,9 +898,9 @@ export const metaDescriptions = (
 						key: "f4"
 					},
 					{
-						type: "action",
+						type: "save",
 						caption: "Apply",
-						action: callbacks.applyDimensions,
+						// action: callbacks.applyDimensions,
 						enable: true,
 						key: "f12"
 					},
@@ -902,7 +920,7 @@ export const metaDescriptions = (
 					caption: "Dimension",
 					width: 100,
 					dataType: "string",
-					editable: true
+					editable: "isLocal"
 				},
 				{
 					id: "caption",
@@ -916,7 +934,7 @@ export const metaDescriptions = (
 					caption: "Key accessor",
 					width: 150,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					filterType: "values",
 					select: getAccessorsAndProperties("dataset")
 				},
@@ -925,7 +943,7 @@ export const metaDescriptions = (
 					caption: "Label accessor",
 					width: 150,
 					dataType: "string",
-					editable: true,
+					editable: "isLocal",
 					select: getAccessorsAndProperties("dataset")
 				},
 				{
@@ -966,6 +984,14 @@ export const metaDescriptions = (
 					editable: true,
 					filterType: "values",
 					select: getFormats("dataset")
+				},
+				{
+					id: "isLocal",
+					caption: "Local",
+					accessor: "isLocal",
+					width: 80,
+					dataType: "boolean",
+					default: true
 				}
 			]
 		};

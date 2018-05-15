@@ -384,12 +384,13 @@ export class MyDataset extends Component {
       </div>
     );
 
-    sizes.height = sizes.height - 215;
+    sizes.height = sizes.height - 245;
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}
         <ZebulonTable
           id="dataset"
+          style={{ border: "solid grey 0.06em" }}
           meta={meta}
           params={params}
           filters={filters}

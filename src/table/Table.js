@@ -39,6 +39,10 @@ export class Table extends TableFilterSort {
     //   );
     // } // a voir serverPagination
     this.sorts(filteredData, props.meta.properties);
+    const columns =
+      props.meta && props.meta.visibleIndexes
+        ? props.meta.visibleIndexes[0]
+        : 0;
     this.state = {
       data: props.data,
       filteredData,
@@ -64,8 +68,8 @@ export class Table extends TableFilterSort {
         }
       },
       selectedRange: {
-        start: { rows: 0, columns: 0 },
-        end: { rows: 0, columns: 0 }
+        start: { rows: 0, columns },
+        end: { rows: 0, columns }
       },
       detail: {},
       text: {},
@@ -178,7 +182,7 @@ export class Table extends TableFilterSort {
     return this.onTableClose();
   }
   componentDidUpdate() {
-    if (this.bLoaded) {
+    if (this.bLoaded && this.state.filteredData.length) {
       const columns = (this.state.meta.visibleIndexes || [0])[0];
       this.selectRange(
         {
@@ -279,9 +283,7 @@ export class Table extends TableFilterSort {
       filteredData = this.state.filteredData;
       filteredDataLength = this.state.filteredDataLength;
     }
-    if (data.length === 0 && meta.properties.length === 0) {
-      return null;
-    }
+
     let actions =
       auditedRow || isModal || meta.properties.length === 0
         ? []
@@ -301,6 +303,8 @@ export class Table extends TableFilterSort {
           </div>
         );
       }
+    } else if (data.length === 0 && meta.properties.length === 0) {
+      return null;
     }
     const noUpdate = !this.isInPage(scroll.rows) || this.noUpdate;
     this.noUpdate = false;
@@ -747,12 +751,12 @@ export class Table extends TableFilterSort {
         id={this.props.id}
         style={{
           width: "max-content",
-          height: "fit-content"
+          height: "fit-content",
+          // border: "solid grey 0.05em",
+          ...this.props.style
         }}
-        // onMouseUp={e => console.log("mouseup", e.target)}
-        // onMouseleave={e => console.log("mouseleave", e.target)}
       >
-        <div style={{ border: "solid grey 0.05em" }}>
+        <div>
           <ContextualMenu
             key="table-menu"
             getMenu={this.getMenu}
@@ -776,12 +780,7 @@ export class Table extends TableFilterSort {
             {lockedHeaders}
             {headers}
           </div>
-          <div
-            style={{
-              // display: "-webkit-box"
-              display: "flex"
-            }}
-          >
+          <div style={{ display: "flex" }}>
             {statusBar}
             {lockedColumns}
             {rows}
@@ -789,7 +788,7 @@ export class Table extends TableFilterSort {
         </div>
         <div style={{ height: actions.length ? 30 : 0, display: "flex" }}>
           {actions}
-        </div>
+        </div>{" "}
       </div>
     );
   }

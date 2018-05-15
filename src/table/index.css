@@ -106,7 +106,8 @@
   border-top: unset;
   border-right: unset;
   box-sizing: border-box;
-  /*z-index: 1;*/
+  text-align: center;
+
   overflow: hidden;
 }
 @keyframes anim-info-updated {

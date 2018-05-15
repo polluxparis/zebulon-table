@@ -1,14 +1,13 @@
 import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
-import { utils, ConfirmationModal } from "zebulon-controls";
+import { utils, ConfirmationModal, accessors } from "zebulon-controls";
 import {
   computeMeta,
   computeMetaFromData,
-  functionsTable,
-  getFunction,
   getSizes
 } from "./utils/compute.meta";
+import { functions } from "./MetaDescriptions";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
 import { rollback, rollbackAll, errorHandler } from "./utils/utils";
@@ -30,7 +29,10 @@ export class ZebulonTable extends Component {
     if (Array.isArray(props.functions)) {
       this.state.functions = props.functions;
     } else {
-      this.state.functions = functionsTable(props.functions);
+      this.state.functions = utils.mergeFunctions(
+        [accessors, functions, props.functions || {}],
+        props.meta.table.object || "dataset"
+      );
     }
     this.sorts = this.state.sorts;
     const { data, status, filters } = this.getData(props);
@@ -83,11 +85,11 @@ export class ZebulonTable extends Component {
     } else if ((meta && props.select) || meta.table.select) {
       data =
         props.select ||
-        getFunction(
+        utils.getFunction(
           this.state.functions,
-          meta.table.object || "dataset",
           "dml",
-          meta.table.select
+          meta.table.select,
+          props.utils
         );
       data = data(message);
     }
@@ -125,6 +127,7 @@ export class ZebulonTable extends Component {
         meta,
         zoom,
         functions,
+        this.props.utils,
         (this.props.params || {}).privileges_
       );
       computeData(data, meta, startIndex);
@@ -308,6 +311,7 @@ export class ZebulonTable extends Component {
             meta,
             this.zoomValue,
             this.props.functions,
+            this.props.utils,
             this.props.params.privileges_
           );
         }
@@ -367,6 +371,7 @@ export class ZebulonTable extends Component {
         this.state.meta,
         this.zoomValue,
         this.state.functions,
+        this.props.utils,
         this.props.params.privileges_
       );
       return;
@@ -764,6 +769,7 @@ export class ZebulonTable extends Component {
         isModal={true}
         functions={this.state.functions}
         updatedRows={updatedRows}
+        utils={this.props.utils}
       />
     );
   };
@@ -781,6 +787,7 @@ export class ZebulonTable extends Component {
       >
         <Table
           id={this.props.id}
+          style={this.props.style}
           status={this.state.status}
           data={this.state.data}
           meta={this.state.meta}
@@ -823,6 +830,7 @@ export class ZebulonTable extends Component {
           onForeignKey={this.onForeignKey}
           isModal={this.props.isModal}
           modal={this.state.confirmationModal || this.state.modalCancel}
+          utils={this.props.utils}
         />
         <ConfirmationModal
           show={this.state.confirmationModal}

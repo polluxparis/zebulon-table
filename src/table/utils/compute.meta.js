@@ -1,41 +1,44 @@
 import { utils } from "zebulon-controls";
-export const getFunction = (functions, object, type, value) => {
-  if (typeof value === "function") {
-    return value;
-  } else if (typeof value === "string") {
-    const indexDot = value.indexOf(".");
-    if (indexDot !== -1) {
-      let v = value;
-      if (value.slice(0, indexDot) === "row") {
-        v = value.slice(indexDot + 1);
-      }
-      const keys = v.split(".");
-      return ({ row }) => {
-        return keys.reduce(
-          (acc, key, index) =>
-            acc[key] === undefined && index < keys.length - 1 ? {} : acc[key],
-          row
-        );
-      };
-    } else {
-      const v =
-        typeof value === "string"
-          ? functions
-              .filter(
-                f =>
-                  f.id === value &&
-                  f.tp === type &&
-                  (f.visibility === "global" || f.visibility === object)
-              )
-              .sort(
-                (f0, f1) =>
-                  (f0.visibility !== object) - (f1.visibility !== object)
-              )
-          : [];
-      return v.length ? v[0].functionJS : undefined;
-    }
-  }
-};
+// export const utils.getFunction = (functions, object, type, value, utils_) => {
+//   if (typeof value === "function") {
+//     return value;
+//   } else if (typeof value === "string") {
+//     //  accessor
+//     const indexDot = value.indexOf(".");
+//     if (indexDot !== -1) {
+//       let v = value;
+//       if (value.slice(0, indexDot) === "row") {
+//         v = value.slice(indexDot + 1);
+//       }
+//       const keys = v.split(".");
+//       return ({ row }) => {
+//         return keys.reduce(
+//           (acc, key, index) =>
+//             acc[key] === undefined && index < keys.length - 1 ? {} : acc[key],
+//           row
+//         );
+//       };
+//     } else {
+//       const v =
+//         typeof value === "string"
+//           ? functions
+//               .filter(
+//                 f =>
+//                   f.id === value &&
+//                   f.tp === type &&
+//                   (f.visibility === "global" || f.visibility === object)
+//               )
+//               .sort(
+//                 (f0, f1) =>
+//                   (f0.visibility !== object) - (f1.visibility !== object)
+//               )
+//           : [];
+//       return v.length
+//         ? message => v[0].functionJS({ ...message, utils: utils_ || utils })
+//         : undefined;
+//     }
+//   }
+// };
 export const getSizes = (meta, rowHeight) => {
   const headersLength =
     1 +
@@ -123,7 +126,7 @@ const grantPrivilege = (object, subObject, target, privileges, type) => {
     }
   }
 };
-export const computeMeta = (meta, zoom = 1, functions, privileges) => {
+export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
   let position = 0;
   // table
   meta.functions = functions;
@@ -131,35 +134,35 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   meta.table.editable = meta.table.editable && !meta.table.checkable;
   grantPrivilege(meta.table.object, null, meta.table, privileges, "table");
   meta.zoom = zoom;
-  meta.table.selectFunction = getFunction(
+  meta.table.selectFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "dml",
-    meta.table.onSave
+    meta.table.onSave,
+    utils_
   );
-  meta.table.onTableChangeFunction = getFunction(
+  meta.table.onTableChangeFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "dml",
-    meta.table.onTableChange
+    meta.table.onTableChange,
+    utils_
   );
-  meta.table.onSaveFunction = getFunction(
+  meta.table.onSaveFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "dml",
-    meta.table.onSave
+    meta.table.onSave,
+    utils_
   );
-  meta.table.onSaveBeforeFunction = getFunction(
+  meta.table.onSaveBeforeFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "dml",
-    meta.table.onSaveBefore
+    meta.table.onSaveBefore,
+    utils_
   );
-  meta.table.onSaveAfterFunction = getFunction(
+  meta.table.onSaveAfterFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "dml",
-    meta.table.onSaveAfter
+    meta.table.onSaveAfter,
+    utils_
   );
   if (!meta.indexPk && !utils.isNullValue(meta.table.primaryKey)) {
     meta.indexPk = {};
@@ -170,29 +173,28 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   if (!meta.indexRowId && !utils.isNullValue(meta.table.rowId)) {
     meta.indexRowId = {};
   }
-  meta.row.descriptorFunction = getFunction(
+  meta.row.descriptorFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "accessor",
-    meta.row.descriptor
+    meta.row.descriptor,
+    utils_
   );
   // row
-  meta.row.onQuitFunction = getFunction(
+  meta.row.onQuitFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "validator",
-    meta.row.onQuist
+    meta.row.onQuit,
+    utils_
   );
-  meta.row.auditFunction = getFunction(
+  meta.row.auditFunction = utils.getFunction(
     functions,
-    meta.table.object,
     "accessor",
-    meta.row.audit
+    meta.row.audit,
+    utils_
   );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
       grantPrivilege(
-        meta.table.object,
         action.id || action.caption,
         action,
         privileges,
@@ -202,47 +204,42 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         action.actionFunction =
           typeof action.action === "function"
             ? action.action
-            : getFunction(
-                functions,
-                meta.table.object,
-                "action",
-                action.action
-              );
+            : utils.getFunction(functions, "action", action.action, utils_);
       }
-      action.enableFunction = getFunction(
+      action.enableFunction = utils.getFunction(
         functions,
-        meta.table.object,
         "editable",
-        action.enable
+        action.enable,
+        utils_
       );
     });
   }
   if (meta.table.subscription) {
-    meta.table.subscription.observableFunction = getFunction(
+    meta.table.subscription.observableFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "dml",
-      meta.table.subscription.observable
+      meta.table.subscription.observable,
+      utils_
     );
     meta.table.subscription.observerFunctions = {
-      onNext: getFunction(
+      onNext: utils.getFunction(
         functions,
-        meta.table.object,
         "observer",
-        (meta.table.subscription.observer || { onNext: "onNext" }).onNext
+        (meta.table.subscription.observer || { onNext: "onNext" }).onNext,
+        utils_
       ),
-      onCompleted: getFunction(
+      onCompleted: utils.getFunction(
         functions,
-        meta.table.object,
         "observer",
         (meta.table.subscription.observer || { onCompleted: "onCompleted" })
-          .onCompleted
+          .onCompleted,
+        utils_
       ),
-      onError: getFunction(
+      onError: utils.getFunction(
         functions,
-        meta.table.object,
         "observer",
-        (meta.table.subscription.observer || { onError: "onError" }).onError
+        (meta.table.subscription.observer || { onError: "onError" }).onError,
+        utils_
       )
     };
   }
@@ -298,29 +295,29 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     } else if (column.editable === undefined) {
       column.editable = true;
     }
-    column.editableFunction = getFunction(
+    column.editableFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "editable",
-      column.editable
+      column.editable,
+      utils_
     );
-    column.formatFunction = getFunction(
+    column.formatFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "format",
-      column.format
+      column.format,
+      utils_
     );
-    column.selectFunction = getFunction(
+    column.selectFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "select",
-      column.select
+      column.select,
+      utils_
     );
-    column.foreignObjectFunction = getFunction(
+    column.foreignObjectFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "foreignObject",
-      column.foreignObject
+      column.foreignObject,
+      utils_
     );
     // select items can be defined as
     // - an array
@@ -331,11 +328,11 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     }
     // column.selectItems = select || [""];
 
-    column.accessorFunction = getFunction(
+    column.accessorFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "accessor",
-      column.accessor
+      column.accessor,
+      utils_
     );
     if (column.dataType === "joined object" && column.select) {
       column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
@@ -374,11 +371,11 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
           col => col.id === column.reference
         );
         if (referencedColumn) {
-          column.primaryKeyAccessorFunction = getFunction(
+          column.primaryKeyAccessorFunction = utils.getFunction(
             functions,
-            meta.table.object,
             "accessor",
-            referencedColumn.accessor
+            referencedColumn.accessor,
+            utils_
           );
           // referencedColumn.accessorFunction;
           column.setForeignKeyAccessorFunction = ({ value, row }) => {
@@ -395,29 +392,29 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         }
       }
     }
-    column.sortAccessorFunction = getFunction(
+    column.sortAccessorFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "accessor",
-      column.sortAccessor || column.accessor
+      column.sortAccessor || column.accessor,
+      utils_
     );
-    column.defaultFunction = getFunction(
+    column.defaultFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "default",
-      column.default
+      column.default,
+      utils_
     );
-    column.onChangeFunction = getFunction(
+    column.onChangeFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "validator",
-      column.onChange
+      column.onChange,
+      utils_
     );
-    column.onQuitFunction = getFunction(
+    column.onQuitFunction = utils.getFunction(
       functions,
-      meta.table.object,
       "validator",
-      column.onQuit
+      column.onQuit,
+      utils_
     );
 
     if (!column.defaultFunction && column.default) {
@@ -448,35 +445,35 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     }
     if (column.aggregation) {
       // a voir
-      column.groupByAccessorFunction = getFunction(
+      column.groupByAccessorFunction = utils.getFunction(
         functions,
-        meta.table.object,
         "accessor",
-        column.groupByAccessor
+        column.groupByAccessor,
+        utils_
       );
-      column.comparisonAccessorFunction = getFunction(
+      column.comparisonAccessorFunction = utils.getFunction(
         functions,
-        meta.table.object,
         "accessor",
-        column.comparisonAccessor
+        column.comparisonAccessor,
+        utils_
       );
-      column.aggregationFunction = getFunction(
+      column.aggregationFunction = utils.getFunction(
         functions,
-        meta.table.object,
         "aggregation",
-        column.aggregation
+        column.aggregation,
+        utils_
       );
-      column.startFunction = getFunction(
+      column.startFunction = utils.getFunction(
         functions,
-        meta.table.object,
         "window",
-        column.windowStart
+        column.windowStart,
+        utils_
       );
-      column.endFunction = getFunction(
+      column.endFunction = utils.getFunction(
         functions,
-        meta.table.object,
         "window",
-        column.windowEnd
+        column.windowEnd,
+        utils_
       );
     }
     if (column.accessor && !column.reference && !column.onQuit) {
@@ -506,6 +503,7 @@ export const computeMetaFromData = (
   meta,
   zoom,
   functions,
+  utils_,
   privileges
 ) => {
   let position = 0;
@@ -552,37 +550,40 @@ export const computeMetaFromData = (
       position += width;
     });
   }
-  computeMeta(meta, zoom, functions, privileges);
+  computeMeta(meta, zoom, functions, utils_, privileges);
 };
 // -----------------------------------------------------------
 // build a table of functions from the initial function object
 // -----------------------------------------------------------
-const functionsByObject = (object, functions) => {
-  const f = functions[object];
-  // const accessor = accessor => {
-  //   return f.accessors[accessor];
-  // };
-  const f_ = [];
-  Object.keys(f).forEach(type => {
-    const tp = type.slice(0, type.length - 1);
-    Object.keys(f[type]).forEach(code =>
-      f_.push({
-        id: code,
-        visibility: object === "globals_" ? "global" : object,
-        caption: code,
-        tp,
-        functionJS: f[type][code]
-      })
-    );
-  });
-  return f_;
-};
-export const functionsTable = functions => {
-  if (functions === undefined) {
-    return [];
-  }
-  return Object.keys(functions).reduce(
-    (acc, object) => acc.concat(functionsByObject(object, functions)),
-    []
-  );
-};
+// const functionsByObject = (object, functions) => {
+//   const f = functions[object];
+//   // const accessor = accessor => {
+//   //   return f.accessors[accessor];
+//   // };
+//   const f_ = [];
+//   Object.keys(f).forEach(type => {
+//     const tp = type.slice(0, type.length - 1);
+//     Object.keys(f[type]).forEach(code => {
+//       const functionJS = f[type][code];
+//       if (functionJS) {
+//         f_.push({
+//           id: code,
+//           visibility: object === "globals_" ? "global" : object,
+//           caption: code,
+//           tp,
+//           functionJS
+//         });
+//       }
+//     });
+//   });
+//   return f_;
+// };
+// export const functionsTable = functions => {
+//   if (functions === undefined) {
+//     return [];
+//   }
+//   return Object.keys(functions).reduce(
+//     (acc, object) => acc.concat(functionsByObject(object, functions)),
+//     []
+//   );
+// };

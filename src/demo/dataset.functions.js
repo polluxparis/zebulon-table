@@ -1,6 +1,6 @@
 import React from "react";
 import { utils } from "zebulon-controls";
-import { computeData, aggregations } from "../table/utils/compute.data";
+import { computeData } from "../table/utils/compute.data";
 import { MyThirdparties } from "./thirdparties";
 import { getRowErrors, getErrors, manageRowError } from "../table/utils/utils";
 import { Observable } from "rx-lite";
@@ -86,21 +86,28 @@ export const computeAudit = (
 	row,
 	nextRow
 ) => {
-	const key = nextRow.rowId_ || row.rowId_;
+	if (status_ === "updated" || status_ === "new" || status_ === "deleted") {
+		const key = nextRow.rowId_ || row.rowId_;
 
-	if (!audits[key]) {
-		audits[key] = [];
+		if (!audits[key]) {
+			audits[key] = [];
+		}
+		let ok = true;
+		const audits_ = audits[key];
+		const audit = { user_, timestamp_, status_, row: {} };
+		if (status_ === "updated") {
+			ok = false;
+			columns.forEach(column => {
+				if (!isEqual(nextRow[column], row[column])) {
+					ok = true;
+					audit.row[column] = row[column];
+				}
+			});
+		}
+		if (ok) {
+			audits_.push(audit);
+		}
 	}
-	const audits_ = audits[key];
-	const audit = { user_, timestamp_, status_, row: {} };
-	if (status_ === "updated") {
-		columns.forEach(column => {
-			if (!isEqual(nextRow[column], row[column])) {
-				audit.row[column] = row[column];
-			}
-		});
-	}
-	audits_.push(audit);
 };
 
 const onSave_ = (updatedRows, user) => {
@@ -340,10 +347,10 @@ export const datasetFunctions = {
 		getColors
 	},
 	formats: {
-		"mm/yyyy": ({ value }) =>
-			utils.isNullOrUndefined(value)
-				? ""
-				: utils.formatValue(value, "mm/yyyy"),
+		// "mm/yyyy": ({ value }) =>
+		// 	utils.isNullOrUndefined(value)
+		// 		? ""
+		// 		: utils.formatValue(value, "mm/yyyy"),
 		"amt_€": ({ value, row }) => {
 			return (
 				<div
@@ -379,44 +386,8 @@ export const datasetFunctions = {
 					</div>
 				</div>
 			);
-		},
-		formatAmt: ({ value, row, params, status, data }) => {
-			const v = utils.formatValue(value, null, 2);
-			if (
-				(value < 3000 && value > 1000) ||
-				utils.isNullOrUndefined(value)
-			) {
-				return v;
-			} else if (value >= 3000) {
-				return (
-					<div
-						style={{
-							color: "green",
-							justifyContent: "space-between",
-							display: "flex"
-						}}
-					>
-						<div>↑</div>
-						<div>{v}</div>
-					</div>
-				);
-			} else if (value <= 1000) {
-				return (
-					<div
-						style={{
-							color: "red",
-							justifyContent: "space-between",
-							display: "flex"
-						}}
-					>
-						<div>↓</div>
-						<div>{v}</div>
-					</div>
-				);
-			}
 		}
 	},
-	aggregations,
 	windows: {
 		since30d: x => {
 			const xx = new Date(x);
@@ -463,15 +434,7 @@ export const datasetFunctions = {
 			) {
 				return null;
 			}
-			return (
-				<img
-					height="100%"
-					width="100%"
-					padding="unset"
-					alt=""
-					src={`//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`}
-				/>
-			);
+			return `//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`;
 		},
 		audit: getAudits
 	},
@@ -553,4 +516,3 @@ export const customMenuFunctions = (state, props) => ({
 		}
 	]
 });
-

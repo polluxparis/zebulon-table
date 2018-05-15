@@ -13,17 +13,8 @@
 	],
 	"author": "Thomas Bres <thomas.bres@pollux.paris>",
 	"main": "lib/index.js",
-	"devDependencies": {
-		"babel-cli": "^6.26.0",
-		"cross-env": "^5.1.4",
-		"postcss-cli": "^5.0.0",
-		"gh-pages": "^1.1.0",
-		"react-resizable": "^1.7.5",
-		"react-scripts": "^1.1.4"
-	},
 	"dependencies": {
-		"classnames": "^2.2.5",
-		"react": "^16.3.2",
+		"babel-cli": "^6.26.0",
 		"zebulon-controls": "file:../controls/zebulon-controls-1.2.5.tgz"
 	},
 	"scripts": {
@@ -41,5 +32,12 @@
 		"presets": [
 			"react-app"
 		]
+	},
+	"devDependencies": {
+		"cross-env": "^5.1.5",
+		"gh-pages": "^1.1.0",
+		"postcss-cli": "^5.0.0",
+		"react-resizable": "^1.7.5",
+		"react-scripts": "^1.1.4"
 	}
 }

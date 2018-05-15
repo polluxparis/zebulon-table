@@ -215,7 +215,8 @@ export const meta = {
       id: "flag",
       caption: "Flag",
       width: 40,
-      accessor: "flag"
+      accessor: "flag",
+      format: "image"
     },
     {
       id: "currency_id",

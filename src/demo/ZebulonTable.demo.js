@@ -13,7 +13,7 @@ class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);
     this.options = [200, 40, 3];
-    const functionsObject = { ...functions, dataset: datasetFunctions };
+    const functions = { dataset: datasetFunctions };
     this.state = {
       data: null,
       sizes: {
@@ -22,7 +22,7 @@ class ZebulonTableDemo extends Component {
         rowHeight: 25
       },
       keyEvent: null,
-      functions: functionsTable(functionsObject),
+      functions,
       updatedRows: {},
       params: {},
       status: {},

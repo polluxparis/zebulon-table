@@ -637,8 +637,8 @@ export class Status extends Component {
             component,
             checkable,
             this.onChange,
-            draggable,
-            isAudit
+            isAudit,
+            draggable
           )
         );
       }
