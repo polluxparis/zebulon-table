@@ -129,7 +129,9 @@ const grantPrivilege = (object, subObject, target, privileges, type) => {
 export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
   let position = 0;
   // table
-  meta.functions = functions;
+  if (!meta.functions) {
+    meta.functions = functions;
+  }
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
   grantPrivilege(meta.table.object, null, meta.table, privileges, "table");

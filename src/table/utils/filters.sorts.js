@@ -122,6 +122,7 @@ export const getFilters = (columns, filters) => {
     ) {
       acc[column.id] = {
         id: column.id,
+        dataType: column.dataType,
         filterType,
         v,
         vTo,

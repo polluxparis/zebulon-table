@@ -47,7 +47,12 @@ export class ZebulonTableAndConfiguration extends Component {
 			props.callbacks,
 			state.functions
 		);
-		computeMeta(state.propertiesMeta, props.sizes.zoom, f, props.utils);
+		computeMeta(
+			state.propertiesMeta,
+			props.sizes.zoom,
+			state.functions,
+			props.utils
+		);
 		state.functionsProperties = f;
 		f = utils.mergeFunctions([accessors, functions], "functions");
 		state.functionsMeta = metaDescriptions(
@@ -55,7 +60,12 @@ export class ZebulonTableAndConfiguration extends Component {
 			props.callbacks,
 			state.functions
 		);
-		computeMeta(state.functionsMeta, props.sizes.zoom, f, props.utils);
+		computeMeta(
+			state.functionsMeta,
+			props.sizes.zoom,
+			state.functions,
+			props.utils
+		);
 		state.functionsFunctions = f;
 		if (this.props.tabs) {
 			this.props.tabs.forEach(tab => {
@@ -69,7 +79,7 @@ export class ZebulonTableAndConfiguration extends Component {
 					state[tab.id],
 					state[`${tab.id}Meta`],
 					props.sizes.zoom,
-					f,
+					state.functions,
 					props.utils
 				);
 				state[`${tab.id}Functions`] = f;

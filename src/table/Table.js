@@ -281,7 +281,7 @@ export class Table extends TableFilterSort {
       filteredDataLength = filteredData.length;
     } else {
       filteredData = this.state.filteredData;
-      filteredDataLength = this.state.filteredDataLength;
+      filteredDataLength = this.state.filteredData.length;
     }
 
     let actions =

@@ -16,14 +16,14 @@ const functionToString = ({ row }) => {
 };
 const stringToFunction = ({ row, status, meta, utils_ }) => {
 	let f;
-	const accessor = (accessor, visibility) => {
-		return (
-			utils.getFunction(meta.functions, "accessor", accessor, utils_) ||
-			(() => {})
-		);
-	};
+	const accessors = meta.functions
+		.filter(f => f.tp === "accessor")
+		.reduce((acc, f) => {
+			acc[f.id] = f.functionJS;
+			return acc;
+		}, {});
+	const accessor = accessor => accessors[accessor];
 	try {
-		// f = new Function("{row,utils}", "return utils.toMonth(row.dea_d);");
 		eval("f = " + row.functionText);
 	} catch (e) {
 		const error = status.errors.functionJS || {};
@@ -83,28 +83,30 @@ const isLocal = ({ row, status }) => (status || {}).new_ || row.isLocal;
 export const functions = {
 	properties: {
 		accessors: {
-			propertyType: ({ row }) => {
-				if (row.tp) {
-					return row.tp;
-				} else if (row.foreignObject) {
-					return typeof row.foreignObject === "string"
-						? row.foreignObject
-						: row.foreignObject.name;
-				} else if (
-					row.primaryKeyAccessor &&
-					row.setForeignKeyAccessor
-				) {
-					if (!row.reference) {
-						return "Joined object";
-					} else {
-						return `${row.reference} key`;
-					}
+			propertyType: ({ row, status, meta }) => {
+				// if (row.tp) {
+				// 	return row.tp;
+				// } else
+				if (row.reference) {
+					return row.reference;
+					// 	return typeof row.foreignObject === "string"
+					// 		? row.foreignObject
+					// 		: row.foreignObject.name;
+					// } else if (
+					// 	row.primaryKeyAccessor &&
+					// 	row.setForeignKeyAccessor
+					// ) {
+					// 	if (!row.reference) {
+					// 		return "Joined object";
+					// 	} else {
+					// 		return `${row.reference} key`;
+					// 	}
 				} else if (row.aggregation) {
-					return "Analytic";
-				} else if (row.accessor) {
-					return "Computed";
+					return "analytic";
+				} else if (row.accessor || (status || {}).new_) {
+					return "computed";
 				} else {
-					return "Dataset";
+					return "dataset";
 				}
 			}
 		},
@@ -417,7 +419,6 @@ export const metaDescriptions = (
 					dataType: "string",
 					editable: false,
 					default: "Computed",
-					// mandatory: true,
 					accessor: "propertyType",
 					filterType: "values"
 				},
