@@ -12,37 +12,62 @@ export class TableFilterSort extends TableEvent {
   // ----------------------------------------
   adjustScrollRows = filteredData => {
     if (this.state) {
-      let { rows, columns } = this.state.scroll;
-      const selectedRange = this.state.selectedRange;
+      const { selectedRange, scroll, meta } = this.state;
+      // let { rows, columns } = scroll;
       if (!filteredData.length) {
         selectedRange.end = {};
         selectedRange.start = {};
         this.hasFocus = false;
         this.bLoaded = undefined;
-      } else if (
-        selectedRange.end.rows === undefined ||
-        selectedRange.end.rows > filteredData.length - 1
-      ) {
-        selectedRange.end = { rows: 0, columns: 0 };
-        selectedRange.start = { rows: 0, columns: 0 };
+      } else if (selectedRange.end.rows === undefined) {
+        const columns = (meta.visibleIndexes || [0])[0];
+        selectedRange.end = { rows: 0, columns };
+        selectedRange.start = { rows: 0, columns };
         this.bLoaded = true;
-      }
-      if (
-        filteredData.length !== this.getFilteredDataLength &&
-        rows.startIndex !== 0 &&
-        rows.index +
-          (rows.direction === 1 ? this.rowsHeight / this.rowHeight : 0) >
+        this.scrollTo(
+          selectedRange.end.rows,
+          1,
+          selectedRange.end.columns,
+          scroll.columns.direction,
+          false,
           filteredData.length
-      ) {
-        rows = {
-          index: 0,
-          direction: 1,
-          startIndex: 0,
-          shift: 0,
-          position: 0
-        };
-        this.setState({ scroll: { rows, columns } });
+        );
+      } else if (selectedRange.end.rows > filteredData.length - 1) {
+        selectedRange.end.rows = filteredData.length - 1;
+        this.scrollTo(
+          selectedRange.end.rows,
+          1,
+          selectedRange.end.columns,
+          scroll.columns.direction,
+          false,
+          filteredData.length
+        );
+      } else {
+        this.scrollTo(
+          selectedRange.end.rows,
+          scroll.rows.direction,
+          selectedRange.end.columns,
+          scroll.columns.direction,
+          false,
+          filteredData.length
+        );
       }
+      // if (
+      //   // filteredData.length !== this.getFilteredDataLength() &&
+      //   rows.startIndex !== 0 &&
+      //   rows.index +
+      //     (rows.direction === 1 ? this.rowsHeight / this.rowHeight : 0) >
+      //     filteredData.length
+      // ) {
+      //   rows = {
+      //     index: 0,
+      //     direction: 1,
+      //     startIndex: 0,
+      //     shift: 0,
+      //     position: 0
+      //   };
+      //   this.setState({ scroll: { rows, columns } });
+      // }
       return filteredData[selectedRange.end.rows];
     }
   };

@@ -82,6 +82,7 @@ export class ZebulonTableAndConfiguration extends Component {
 					state.functions,
 					props.utils
 				);
+				state[`${tab.id}UpdatedRows`] = tab.updatedRows;
 				state[`${tab.id}Functions`] = f;
 			});
 		}
@@ -212,6 +213,30 @@ export class ZebulonTableAndConfiguration extends Component {
 		return true;
 	};
 	initTabs = props => {
+		const {
+			params,
+			utils,
+			contextualMenu,
+			id,
+			navigationKeyHandler
+		} = props;
+		const {
+			selectedTab,
+			data,
+			meta,
+			filters,
+			updatedRows,
+			functions,
+			sizes,
+			status,
+			functionsFunctions,
+			functionUpdatedRows,
+			functionsMeta,
+			functionsProperties,
+			propertiesMeta,
+			propertiesUpdatedRows
+		} = this.state;
+		const menu = contextualMenu || {};
 		const tabs = [
 			{
 				id: "dataset",
@@ -219,23 +244,26 @@ export class ZebulonTableAndConfiguration extends Component {
 				content: (
 					<ZebulonTable
 						key={0}
-						id={`${props.id}-dataset`}
-						visible={this.state.selectedTab === 0}
-						isActive={this.state.selectedTab === 0}
-						data={this.state.data}
-						meta={this.state.meta}
-						filters={this.state.filters}
-						updatedRows={this.state.updatedRows}
-						sizes={this.state.sizes}
-						functions={this.state.functions}
-						params={props.params}
+						id={`${id}-dataset`}
+						visible={selectedTab === 0}
+						isActive={selectedTab === 0}
+						data={data}
+						meta={meta}
+						filters={filters}
+						updatedRows={updatedRows}
+						sizes={sizes}
+						functions={functions}
+						params={params}
 						keyEvent={null}
 						onTableEnter={this.onTableEnter}
 						ref={ref => (this.dataset = ref)}
 						errorHandler={this.errorHandler}
-						navigationKeyHandler={this.props.navigationKeyHandler}
+						navigationKeyHandler={navigationKeyHandler}
 						onGetData={this.onGetData}
-						utils={this.props.utils}
+						utils={utils}
+						contextualMenu={
+							menu.dataset ? menu.dataset(this) : undefined
+						}
 					/>
 				)
 			},
@@ -245,24 +273,28 @@ export class ZebulonTableAndConfiguration extends Component {
 				content: (
 					<ZebulonTable
 						key={1}
-						id={`${props.id}-properties`}
-						visible={this.state.selectedTab === 1}
-						isActive={this.state.selectedTab === 1}
-						data={this.state.meta.properties}
-						meta={this.state.propertiesMeta}
-						updatedRows={this.state.propertiesUpdatedRows}
-						sizes={this.state.sizes}
+						id={`${id}-properties`}
+						visible={selectedTab === 1}
+						isActive={selectedTab === 1}
+						data={meta.properties}
+						meta={propertiesMeta}
+						updatedRows={propertiesUpdatedRows}
+						sizes={sizes}
 						onChange={this.onChangeProperties}
 						onRowNew={this.onRowNew}
 						onTableEnter={this.onTableEnter}
-						functions={this.state.functionsProperties}
-						status={this.state.status}
-						params={props.params}
+						functions={functionsProperties}
+						status={status}
+						params={params}
 						keyEvent={null}
 						ref={ref => (this.properties = ref)}
 						errorHandler={{}}
-						utils={this.props.utils}
-						// navigationKeyHandler={this.props.navigationKeyHandler}
+						utils={utils}
+						contextualMenu={
+							menu.properties ? menu.properties(this) : undefined
+						}
+
+						// navigationKeyHandler={navigationKeyHandler}
 					/>
 				)
 			},
@@ -272,26 +304,29 @@ export class ZebulonTableAndConfiguration extends Component {
 				content: (
 					<ZebulonTable
 						key={2}
-						id={`${props.id}-functions`}
-						visible={this.state.selectedTab === 2}
-						isActive={this.state.selectedTab === 2}
-						data={this.state.functions}
-						meta={this.state.functionsMeta}
-						updatedRows={this.state.functionUpdatedRows}
-						sizes={this.state.sizes}
-						functions={this.state.functionsFunctions}
-						params={props.params}
+						id={`${id}-functions`}
+						visible={selectedTab === 2}
+						isActive={selectedTab === 2}
+						data={functions}
+						meta={functionsMeta}
+						updatedRows={functionUpdatedRows}
+						sizes={sizes}
+						functions={functionsFunctions}
+						params={params}
 						onTableEnter={this.onTableEnter}
 						keyEvent={null}
 						ref={ref => (this.functions = ref)}
 						errorHandler={{}}
-						utils={this.props.utils}
+						utils={utils}
+						contextualMenu={
+							menu.functions ? menu.functions(this) : undefined
+						}
 					/>
 				)
 			}
 		];
-		if (this.props.tabs) {
-			this.props.tabs.forEach((tab, index) => {
+		if (props.tabs) {
+			props.tabs.forEach((tab, index) => {
 				const Content = tab.content ? tab.content : ZebulonTable;
 				tabs.push({
 					id: tab.id,
@@ -299,19 +334,22 @@ export class ZebulonTableAndConfiguration extends Component {
 					content: (
 						<Content
 							key={3 + index}
-							id={`${props.id}-${tab.id}`}
-							visible={this.state.selectedTab === tabs.length}
+							id={`${id}-${tab.id}`}
+							visible={selectedTab === tabs.length}
 							data={this.state[tab.id]}
 							meta={this.state[`${tab.id}Meta`]}
 							updatedRows={this.state[`${tab.id}UpdatedRows`]}
-							sizes={this.state.sizes}
+							sizes={sizes}
 							functions={this.state[`${tab.id}Functions`]}
-							params={props.params}
+							params={params}
 							onTableEnter={this.onTableEnter}
 							keyEvent={null}
 							ref={ref => (this[tab.id] = ref)}
 							errorHandler={{}}
-							utils={this.props.utils}
+							utils={utils}
+							contextualMenu={
+								menu[tab.id] ? menu[tab.id](this) : undefined
+							}
 						/>
 					)
 				});

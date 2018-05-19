@@ -449,15 +449,18 @@ export class TableEvent extends TableMenu {
     rowDirection,
     columnIndex,
     columnDirection,
-    noFocus
+    noFocus,
+    dataLength
   ) => {
     // console.log("scroll", rowIndex, noFocus);
-    if (rowDirection || columnDirection) {
+    if (this.rows && (rowDirection || columnDirection)) {
       this.rows.scrollOnKey(
         { rows: rowIndex, columns: columnIndex },
         null,
         rowDirection,
-        columnDirection
+        columnDirection,
+        false,
+        dataLength
       );
     }
     if (noFocus) {

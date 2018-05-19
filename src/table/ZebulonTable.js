@@ -585,7 +585,6 @@ export class ZebulonTable extends Component {
         );
         if (this.table) {
           const filteredData = this.table.state.filteredData;
-
           if (deleteds.length) {
             deleteds.forEach(index_ => {
               const index = filteredData.findIndex(

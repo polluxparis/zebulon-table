@@ -120,7 +120,6 @@ export class TableMenu extends Component {
         } else if (props.menu === "cell-menu") {
             const { row, column } = props;
             const { data, meta, params } = this.state;
-
             item.function({ data, meta, params, row, column });
         }
     };
@@ -128,7 +127,7 @@ export class TableMenu extends Component {
         if (this.customContextualMenu && this.customContextualMenu[menu]) {
             this.customContextualMenu[menu].forEach((menu, index) =>
                 menus.push({
-                    id: menus.length,
+                    id: 1000000 + menus.length,
                     separation: index === 0 && menus.length > 0,
                     type: menu.type,
                     caption: menu.caption,
