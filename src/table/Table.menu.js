@@ -40,6 +40,16 @@ export class TableMenu extends Component {
             } else if (item.id === 1) {
                 const audits = meta.row.auditFunction({ row });
                 const prevScroll = this.state.scroll;
+                const prevRange = this.state.selectedRange;
+                const columns =
+                    props.meta && props.meta.visibleIndexes
+                        ? props.meta.visibleIndexes[0]
+                        : 0;
+                const selectedRange = {
+                    start: { rows: 0, columns },
+                    end: { rows: 0, columns }
+                };
+
                 const scroll = {
                     rows: {
                         index: 0,
@@ -62,7 +72,9 @@ export class TableMenu extends Component {
                             auditedRow: row,
                             audits: audits || [],
                             scroll,
-                            prevScroll
+                            prevScroll,
+                            selectedRange,
+                            prevRange
                         });
                         // }
                     });
@@ -73,7 +85,9 @@ export class TableMenu extends Component {
                         auditedRow: row,
                         audits: audits || [],
                         scroll,
-                        prevScroll
+                        prevScroll,
+                        selectedRange,
+                        prevRange
                     });
                 }
             } else {
@@ -93,12 +107,15 @@ export class TableMenu extends Component {
             }
             if (item.id === 2) {
                 const scroll = this.state.prevScroll;
+                const selectedRange = this.state.prevRange;
                 computeMetaPositions(meta);
                 this.setState({
                     auditedRow: undefined,
                     audits: undefined,
                     scroll,
-                    prevScroll: undefined
+                    prevScroll: undefined,
+                    selectedRange,
+                    prevRange: undefined
                 });
             } else if (item.id === 0 || (item.id >= 100 && item.id < 104)) {
                 if (item.id === 0 || filter.v === 0) {

@@ -131,7 +131,6 @@ export class ZebulonTableAndConfiguration extends Component {
 					f,
 					nextProps.sizes.zoom
 				);
-
 				this.setState({
 					data: nextProps.data,
 					meta: nextProps.meta,

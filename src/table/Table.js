@@ -77,7 +77,8 @@ export class Table extends TableFilterSort {
       search: false,
       dataStrings: {}
     };
-
+    // this.state.selectedRangeAudit = this.state.selectedRange;
+    // this.state.scrollAudit = this.state.scroll;
     this.rowHeight = this.props.rowHeight;
     this.range = { start: {}, end: {} };
     this.onTableEnter();
@@ -237,7 +238,7 @@ export class Table extends TableFilterSort {
     // console.log("render", scroll, selectedRange);
     let auditStatus;
     if (auditedRow) {
-      selectRange = undefined;
+      // selectRange = undefined;
       headersLength = 2;
       auditStatus = updatedRows[auditedRow.index_] || {};
       meta = {
