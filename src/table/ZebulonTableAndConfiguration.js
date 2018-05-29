@@ -215,7 +215,7 @@ export class ZebulonTableAndConfiguration extends Component {
 		const {
 			params,
 			utils,
-			contextualMenu,
+			configurationMenus,
 			id,
 			navigationKeyHandler
 		} = props;
@@ -235,7 +235,7 @@ export class ZebulonTableAndConfiguration extends Component {
 			propertiesMeta,
 			propertiesUpdatedRows
 		} = this.state;
-		const menu = contextualMenu || {};
+		const menu = configurationMenus || {};
 		const tabs = [
 			{
 				id: "dataset",
