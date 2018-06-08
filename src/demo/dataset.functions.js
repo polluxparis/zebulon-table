@@ -4,7 +4,7 @@ import { computeData } from "../table/utils/compute.data";
 import { MyThirdparties } from "./thirdparties";
 import { getRowErrors, getErrors, manageRowError } from "../table/utils/utils";
 import { Observable } from "rx-lite";
-import { isEqual } from "../table/utils/utils";
+import { isEqual, getUpdatedRows } from "../table/utils/utils";
 import {
 	get_array,
 	get_promise,
@@ -29,14 +29,11 @@ import { meta } from "./dataset.meta";
 const onSaveBefore_ = updatedRows => {
 	const conflicts = [];
 	// if the timestamp on the server side is > timestamp client side => conflict
-	Object.keys(updatedRows).forEach(index_ => {
-		if (index_ !== "nErrors" && index_ !== "nErrorsServer") {
-			const status = updatedRows[index_];
-			const row = status.rowUpdated || status.row;
-			const serverRow = data[dataPk[row.id]];
-			if (serverRow && serverRow.timestamp_ > row.timestamp_) {
-				conflicts.push({ index_, row: { ...serverRow } });
-			}
+	getUpdatedRows(updatedRows).forEach(status => {
+		const row = status.rowUpdated || status.row;
+		const serverRow = data[dataPk[row.id]];
+		if (serverRow && serverRow.timestamp_ > row.timestamp_) {
+			conflicts.push({ index_: row.index_, row: { ...serverRow } });
 		}
 	});
 	if (conflicts.length) {
@@ -114,45 +111,40 @@ const onSave_ = (updatedRows, user) => {
 	//  check unicity of the primary key
 	const pk = {},
 		deleteds = [];
-	Object.keys(updatedRows).forEach(index => {
-		if (index !== "nErrors" && index !== "nErrorsServer") {
-			const status = updatedRows[index];
-			const row = status.rowUpdated || status.row;
-			if (!pk[row.id]) {
-				pk[row.id] = {
-					n: 0,
-					serverIndex_: status.row
-						? dataPk[status.row.id]
-						: undefined,
-					row
-				};
-			}
-			if (status.row && !pk[status.row.id]) {
-				pk[status.row.id] = {
-					n: 0,
-					serverIndex_: dataPk[status.row.id],
-					row
-				};
-			}
-			if (status.deleted_ && !status.new_) {
-				pk[status.row.id].n -= 1;
-				deleteds.push({
-					serverIndex_: pk[status.row.id].serverIndex_,
-					index_: status.row.index_
-				});
-			} else if (
-				status.updated_ &&
-				!status.new_ &&
-				status.row.id !== status.rowUpdated.id
-			) {
-				pk[status.row.id].n -= 1;
-				pk[row.id].n += 1;
-				pk[row.id].row = row;
-			} else if (status.new_ && !status.deleted_) {
-				pk[row.id].n += 1;
-				pk[row.id].serverIndex_ = undefined;
-				pk[row.id].row = row;
-			}
+	getUpdatedRows(updatedRows).forEach(status => {
+		const row = status.rowUpdated || status.row;
+		if (!pk[row.id]) {
+			pk[row.id] = {
+				n: 0,
+				serverIndex_: status.row ? dataPk[status.row.id] : undefined,
+				row
+			};
+		}
+		if (status.row && !pk[status.row.id]) {
+			pk[status.row.id] = {
+				n: 0,
+				serverIndex_: dataPk[status.row.id],
+				row
+			};
+		}
+		if (status.deleted_ && !status.new_) {
+			pk[status.row.id].n -= 1;
+			deleteds.push({
+				serverIndex_: pk[status.row.id].serverIndex_,
+				index_: status.row.index_
+			});
+		} else if (
+			status.updated_ &&
+			!status.new_ &&
+			status.row.id !== status.rowUpdated.id
+		) {
+			pk[status.row.id].n -= 1;
+			pk[row.id].n += 1;
+			pk[row.id].row = row;
+		} else if (status.new_ && !status.deleted_) {
+			pk[row.id].n += 1;
+			pk[row.id].serverIndex_ = undefined;
+			pk[row.id].row = row;
 		}
 	});
 	const keys = Object.keys(pk);
@@ -251,6 +243,7 @@ const onSave = (message, callback) => {
 						{ id: error.id, caption: error.caption },
 						error.type,
 						error.error,
+						error.rowTitle,
 						true
 					);
 					return error.error;

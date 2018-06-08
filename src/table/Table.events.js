@@ -2,7 +2,7 @@ import React from "react";
 import { TableMenu } from "./Table.menu";
 import { utils, constants } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
-import { hasParent } from "./utils/utils";
+import { hasParent, getUpdatedRows } from "./utils/utils";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import {
   manageRowError,
@@ -851,7 +851,7 @@ export class TableEvent extends TableMenu {
       data: this.state.data,
       params: this.props.params
     };
-    if (Object.keys(this.state.updatedRows || {}).length) {
+    if (getUpdatedRows(this.state.updatedRows).length) {
       this.setState({ confirmationModal: true });
       return false;
     } else {

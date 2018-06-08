@@ -4,7 +4,8 @@ import { utils } from "zebulon-controls";
 // -----------------------------------------------------------
 // Error management
 // -----------------------------------------------------------
-export const rollback = status => {
+export const rollback = (updatedRows, index) => {
+  const status = updatedRows[index];
   if (!status.new_) {
     Object.keys(status.rowUpdated).forEach(
       key => (status.rowUpdated[key] = null)
@@ -13,23 +14,28 @@ export const rollback = status => {
       key => (status.rowUpdated[key] = status.row[key])
     );
   }
+  const n = status.errors ? status.errors.n_ || 0 : 0;
   status.deleted_ = false;
   status.updated_ = false;
-  // status.new_ = false;
-  if (!status.new_) {
-    status.errors = {};
+  // if (!status.new_) {
+  status.errors = {};
+  if (updatedRows.nErrors) {
+    updatedRows.nErrors -= n;
   }
+  // }
 };
 export const rollbackAll = (updatedRows, data) => {
-  Object.keys(updatedRows).forEach(index => {
-    const status = updatedRows[index];
+  getUpdatedRows(updatedRows).forEach(status => {
     if (status.new_) {
       data.splice(status.rowUpdated.index_, 1);
-      delete updatedRows[index];
+      delete updatedRows[status.rowUpdated.index_];
     } else if (status.updated_) {
-      rollback(status);
+      rollback(updatedRows, status.row.index_);
     }
   });
+  delete updatedRows.nErrors;
+  delete updatedRows.nErrorsServer;
+  updatedRows.errors = {};
 };
 
 export const getRowStatus = (updatedRows, row) => {
@@ -45,6 +51,17 @@ export const getRowStatus = (updatedRows, row) => {
   }
   return status;
 };
+export const getUpdatedRows = updatedRows =>
+  Object.keys(updatedRows)
+    .filter(
+      key =>
+        !Number.isNaN(Number(key)) &&
+        (updatedRows[key].deleted_ ||
+          updatedRows[key].new_ ||
+          updatedRows[key].updated_) &&
+        !(updatedRows[key].new_ && updatedRows[key].deleted_)
+    )
+    .map(key => updatedRows[key]);
 export const setStatus = (status, type) => {
   status[type] = true;
   status.timeStamp = new Date().getTime();
@@ -56,9 +73,13 @@ export const manageRowError = (
   column,
   type,
   error,
+  rowTitle,
   onServer
 ) => {
   const status = updatedRows[index] || {};
+  if (rowTitle) {
+    status.rowTitle = rowTitle;
+  }
   const existsErrors = !utils.isNullOrUndefined(
     onServer ? status.errorsServer : status.errors
   );
@@ -141,7 +162,17 @@ export const getRowErrors = (status, rowIndex) => {
 };
 export const getErrors = updatedRows => {
   let errors = [];
-  Object.values(updatedRows).forEach(status => {
+  if (updatedRows.errors) {
+    Object.keys(updatedRows.errors).forEach(type => {
+      if (updatedRows.errors[type].length) {
+        errors.push({
+          type,
+          error: updatedRows.errors[type]
+        });
+      }
+    });
+  }
+  getUpdatedRows(updatedRows).forEach(status => {
     if (!status.deleted_ && (status.errors || {}).n_) {
       errors = errors.concat(getRowErrors(status, status.rowUpdated.index_));
     }
@@ -159,10 +190,18 @@ export const errorHandler = {
     const { meta, updatedRows } = message;
     const key = meta.table.lk || meta.table.pk;
     const errors = getErrors(updatedRows).map(error => {
-      const rowUpdated = updatedRows[error.rowIndex].rowUpdated;
-      return `\n${key.caption} ${rowUpdated[key.id]} : ${error.error}`;
+      if (error.rowIndex === undefined) {
+        return `\n${meta.table.caption || meta.table.object} : ${error.error}`;
+      } else {
+        const rowUpdated = updatedRows[error.rowIndex].rowUpdated;
+        let rowTitle = updatedRows[error.rowIndex].rowTitle;
+        if (!rowTitle && key) {
+          rowTitle = `${key.caption} ${rowUpdated[key.id]}`;
+        }
+        return `\n${rowTitle} : ${error.error}`;
+      }
     });
-    if (errors.length > 1) {
+    if (errors.length) {
       message.modalBody = ["Can't save with errors: "].concat(errors);
       return false;
     } else {

@@ -33,9 +33,9 @@ export class TableMenu extends Component {
             }
         } else if (props.menu === "row-header-menu") {
             const { row, status } = props;
-            const { data, meta, params } = this.state;
+            const { data, meta, params, updatedRows } = this.state;
             if (item.id === 0) {
-                rollback(status);
+                rollback(updatedRows, row.index_);
                 this.setState({ scroll: this.state.scroll });
             } else if (item.id === 1) {
                 const audits = meta.row.auditFunction({ row });

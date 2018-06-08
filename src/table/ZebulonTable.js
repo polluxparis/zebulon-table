@@ -1,7 +1,12 @@
 import React, { Component } from "react";
 import { Table } from "./Table";
 import "./index.css";
-import { utils, ConfirmationModal, accessors } from "zebulon-controls";
+import {
+  utils,
+  ConfirmationModal,
+  accessors,
+  constants
+} from "zebulon-controls";
 import {
   computeMeta,
   computeMetaFromData,
@@ -10,7 +15,12 @@ import {
 import { functions } from "./MetaDescriptions";
 import { computeData } from "./utils/compute.data";
 import { getFilters, getSorts } from "./utils/filters.sorts";
-import { rollback, rollbackAll, errorHandler } from "./utils/utils";
+import {
+  rollback,
+  rollbackAll,
+  errorHandler,
+  getUpdatedRows
+} from "./utils/utils";
 export class ZebulonTable extends Component {
   constructor(props) {
     super(props);
@@ -23,17 +33,13 @@ export class ZebulonTable extends Component {
       params: props.params || {},
       sorts: props.sorts || {}
     };
-    this.zoomValue = props.sizes.zoom || 1;
+    props.sizes.zoom = props.sizes.zoom || 1;
     this.keyEvent = false;
     // functions
-    if (Array.isArray(props.functions)) {
-      this.state.functions = props.functions;
-    } else {
-      this.state.functions = utils.mergeFunctions(
-        [accessors, functions, props.functions || {}],
-        props.meta.table.object || "dataset"
-      );
-    }
+    this.state.functions = this.initFunctions(
+      props.functions,
+      props.meta.table.object
+    );
     this.sorts = this.state.sorts;
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
@@ -41,6 +47,16 @@ export class ZebulonTable extends Component {
     this.state.filters = filters;
     this.saveConfirmationAnswer = ok => ok;
   }
+  initFunctions = (functions, object) => {
+    if (Array.isArray(functions)) {
+      return functions;
+    } else {
+      return utils.mergeFunctions(
+        [accessors, functions, functions || {}],
+        object || "dataset"
+      );
+    }
+  };
   setFilters = (filters, columns) => {
     columns.forEach(column => {
       if (filters[column.id]) {
@@ -101,7 +117,7 @@ export class ZebulonTable extends Component {
       this.initData(
         data,
         meta,
-        this.zoomValue,
+        this.state.zoom,
         this.state.functions,
         0,
         filters,
@@ -148,24 +164,16 @@ export class ZebulonTable extends Component {
   resolvePromise = (data, message) => {
     data
       .then(data => {
-        const { meta, functions, filters } = this.state;
+        const { meta, functions, filters, sizes } = this.state;
         const status = { loaded: true, loading: false };
         if (!meta.serverPagination) {
-          this.initData(
-            data,
-            meta,
-            this.zoomValue,
-            functions,
-            0,
-            filters,
-            status
-          );
+          this.initData(data, meta, sizes.zoom, functions, 0, filters, status);
         } else if (meta.properties.length === 0) {
           data({ startIndex: 0 }).then(page => {
             this.initData(
               page.page,
               meta,
-              this.zoomValue,
+              sizes.zoom,
               functions,
               0,
               filters,
@@ -195,7 +203,7 @@ export class ZebulonTable extends Component {
         this.initData(
           x,
           this.state.meta,
-          this.zoomValue,
+          this.state.sizes.zoom,
           this.state.functions,
           this.state.data.length,
           this.state.filters,
@@ -265,13 +273,18 @@ export class ZebulonTable extends Component {
           );
       }
       if (!sizes.width) {
+        const scrollbarSize =
+          tableSizes.headersHeight + data.length * tableSizes.rowHeight >
+          (sizes.maxHeight || 1000)
+            ? constants.ScrollbarSize
+            : 0;
         sizes.width =
           meta.row.width ||
           Math.min(
             sizes.maxWidth || 2000,
             Math.max(
               sizes.minWidth || 100,
-              tableSizes.headersWidth + tableSizes.rowWidth
+              tableSizes.headersWidth + tableSizes.rowWidth + scrollbarSize
             )
           );
       }
@@ -281,14 +294,14 @@ export class ZebulonTable extends Component {
     if (this.props.keyEvent === undefined) {
       document.addEventListener("copy", this.handleCopy);
       document.addEventListener("paste", this.handlePaste);
-      document.addEventListener("keydown", this.handleKeyDown);
+      document.addEventListener("keydown", this.handleKeyEvent);
     }
   }
   componentWillUnmount() {
     if (this.props.keyEvent === undefined) {
       document.removeEventListener("copy", this.handleCopy);
       document.removeEventListener("paste", this.handlePaste);
-      document.removeEventListener("keydown", this.handleKeyDown);
+      document.removeEventListener("keydown", this.handleKeyEvent);
     }
   }
   componentWillReceiveProps(nextProps) {
@@ -303,24 +316,21 @@ export class ZebulonTable extends Component {
       saveConfirmationRequired,
       refresh
     } = nextProps;
-    if (this.state.sizes !== nextProps.sizes) {
-      if (sizes.zoom) {
-        if (this.zoomValue !== sizes.zoom) {
-          this.zoomValue = sizes.zoom;
-          computeMeta(
-            meta,
-            this.zoomValue,
-            this.props.functions,
-            this.props.utils,
-            this.props.params.privileges_
-          );
-        }
-      }
-      this.setState({ sizes: { ...sizes, zoom: this.zoomValue } });
-    }
+
     if (this.props.keyEvent !== keyEvent) {
       this.handleKeyEvent(keyEvent);
     } else {
+      let functions = this.state.functions;
+      if (nextProps.functions !== this.props.functions) {
+        const state = this.state;
+        state.functions = this.initFunctions(
+          nextProps.functions,
+          nextProps.meta.table.object
+        );
+      }
+      if (this.props.sizes !== sizes) {
+        this.setState({ sizes });
+      }
       if (updatedRows && this.props.updatedRows !== updatedRows) {
         this.setState({ updatedRows });
       }
@@ -365,14 +375,15 @@ export class ZebulonTable extends Component {
     const zoom = utils.isZoom(e);
     if (zoom && (this.props.isActive === undefined || this.props.isActive)) {
       e.preventDefault();
-      this.zoomValue *= zoom === 1 ? 1.1 : 1 / 1.1;
-      this.setState({ sizes: { ...this.props.sizes, zoom: this.zoomValue } });
+      const sizes = this.state.sizes;
+      sizes.zoom *= zoom === 1 ? 1.1 : 1 / 1.1;
+      this.setState({ sizes: { ...sizes } });
       computeMeta(
         this.state.meta,
-        this.zoomValue,
+        sizes.zoom,
         this.state.functions,
         this.props.utils,
-        this.props.params.privileges_
+        (this.props.params || {}).privileges_
       );
       return;
     }
@@ -463,7 +474,7 @@ export class ZebulonTable extends Component {
               const row = conflicts[index].server;
               row.index_ = index;
               message.updatedRows[index].row = row;
-              rollback(message.updatedRows[index]);
+              rollback(message.updatedRows, index);
             });
             callback(ok);
           }
@@ -501,11 +512,7 @@ export class ZebulonTable extends Component {
             }
           }
         : callback_;
-    if (
-      Object.values(this.state.updatedRows).find(
-        status => status.new_ || status.deleted_ || status.updated_
-      ) === undefined
-    ) {
+    if (!getUpdatedRows(this.state.updatedRows).length) {
       return callback(true);
     }
     const message = {
@@ -646,15 +653,7 @@ export class ZebulonTable extends Component {
     };
     const saveBefore = ok_ => {
       const updatedRows = message.updatedRows;
-      if (
-        Object.keys(updatedRows).filter(
-          key =>
-            key !== "nErrors" &&
-            key !== "nErrorsServer" &&
-            ((updatedRows[key].new_ || 0) - (updatedRows[key].deleted_ || 0) ||
-              updatedRows[key].updated_)
-        ).length === 0
-      ) {
+      if (!getUpdatedRows(updatedRows).length) {
         return end(true);
       }
       const onSaveBefore =
@@ -775,7 +774,7 @@ export class ZebulonTable extends Component {
 
   render() {
     const style = {
-      fontSize: `${(this.props.isModal ? 1 : this.zoomValue) * 100}%`,
+      fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,
       position: "relative"
     };
     let div = (
@@ -795,10 +794,13 @@ export class ZebulonTable extends Component {
           updatedRows={this.state.updatedRows}
           key={this.props.id}
           visible={this.props.visible === undefined ? true : this.props.visible}
+          // sizes={this.state.sizes}
           width={this.state.sizes.width}
           height={this.state.sizes.height}
           zoom={this.state.sizes.zoom}
-          rowHeight={(this.state.sizes.rowHeight || 25) * (this.zoomValue || 1)}
+          rowHeight={
+            (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
+          }
           isActive={this.props.isActive}
           onActivation={this.props.onActivation}
           ref={ref => (this.table = ref)}

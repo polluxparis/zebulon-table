@@ -5,6 +5,7 @@ import { filtersFunction, sortsFunction } from "../table/utils/filters.sorts";
 // import { computeData } from "../table/utils/compute.data";
 import { utils } from "zebulon-controls";
 import { thirdparties } from "./thirdparties";
+import { getUpdatedRows } from "../table/utils/utils";
 // import { computeAudit } from "./dataset.functions";
 // -------------------------------------------
 // simulation of the different ways to provide
@@ -227,14 +228,14 @@ export const get_pagination_manager = e => {
 	const update = updatedRows => {
 		let timeStamp = lastTimeStamp,
 			updated = false;
-		Object.keys(updatedRows).forEach(key => {
-			if (updatedRows[key].timeStamp > lastTimeStamp) {
-				const row = updatedRows[key].rowUpdated;
-				if (dataIndex[key] === undefined) {
+		getUpdatedRows(updatedRows).forEach(status => {
+			if (status.timeStamp > lastTimeStamp) {
+				const row = status.rowUpdated;
+				if (dataIndex[row.index_] === undefined) {
 					dataIndex[row.index_] = data.length;
 					data.push(row);
 				} else {
-					const previousRow = data[dataIndex[key]];
+					const previousRow = data[dataIndex[row.index_]];
 					Object.keys(row).forEach(key => {
 						if (
 							utils.isDate(previousRow[key]) &&
@@ -247,7 +248,7 @@ export const get_pagination_manager = e => {
 					});
 					// data[dataIndex[key]] = row;
 				}
-				timeStamp = Math.max(timeStamp, updatedRows[key].timeStamp);
+				timeStamp = Math.max(timeStamp, status.timeStamp);
 			}
 		});
 		updated = lastTimeStamp !== timeStamp;

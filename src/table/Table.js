@@ -182,7 +182,7 @@ export class Table extends TableFilterSort {
   componentWillUnmount() {
     return this.onTableClose();
   }
-  componentDidUpdate() {
+  onLoad = () => {
     if (this.bLoaded && this.state.filteredData.length) {
       const columns = (this.state.meta.visibleIndexes || [0])[0];
       this.selectRange(
@@ -198,8 +198,13 @@ export class Table extends TableFilterSort {
       this.hasFocus = true;
       this.bLoaded = null;
     }
+  };
+  componentDidMount() {
+    this.onLoad();
+  }
+  componentDidUpdate() {
+    this.onLoad();
     this.changingFilter = false;
-    // this.hasFocus = true;
   }
   onCheckAll = () => {
     const checked_ = !this.state.checkAll;

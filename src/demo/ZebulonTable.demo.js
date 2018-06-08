@@ -19,7 +19,8 @@ class ZebulonTableDemo extends Component {
       sizes: {
         height: 600,
         width: 1300,
-        rowHeight: 25
+        rowHeight: 25,
+        zoom: 1
       },
       keyEvent: null,
       functions,

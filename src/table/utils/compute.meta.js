@@ -248,6 +248,10 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
 
   // properties
   meta.properties.forEach((column, index) => {
+    if (column.deleted_) {
+      column.hidden = true;
+      column.mandatory = false;
+    }
     grantPrivilege(
       meta.table.object,
       column.id,
@@ -255,6 +259,7 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
       privileges,
       "properties"
     );
+
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
     }
