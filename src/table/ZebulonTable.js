@@ -47,9 +47,9 @@ export class ZebulonTable extends Component {
     this.state.filters = filters;
     this.saveConfirmationAnswer = ok => ok;
   }
-  initFunctions = (functions, object) => {
-    if (Array.isArray(functions)) {
-      return functions;
+  initFunctions = (functions_, object) => {
+    if (Array.isArray(functions_)) {
+      return functions_;
     } else {
       return utils.mergeFunctions(
         [accessors, functions, functions || {}],
@@ -87,7 +87,7 @@ export class ZebulonTable extends Component {
   };
   getData = (props, sorts) => {
     this.observable = null;
-    let { data, meta, params, filters } = props,
+    let { data, meta, params, filters, filteredData } = props,
       status = { loaded: false, loading: true };
     const message = {
       dataObject: meta.table.object,
@@ -137,7 +137,7 @@ export class ZebulonTable extends Component {
     return { data, meta, status, filters, sorts };
   };
   initData = (data, meta, zoom, functions, startIndex, filters, status) => {
-    if (data && data.length) {
+    if (Array.isArray(data)) {
       computeMetaFromData(
         data,
         meta,
@@ -147,6 +147,12 @@ export class ZebulonTable extends Component {
         (this.props.params || {}).privileges_
       );
       computeData(data, meta, startIndex);
+      if (this.props.filteredData && meta.indexPk) {
+        const updatedRows = this.state.updatedRows;
+        Object.values(this.props.filteredData).forEach(
+          data => (updatedRows[meta.indexPk[data.id]] = data)
+        );
+      }
       if (this.props.onGetData) {
         this.props.onGetData({ data, meta, status });
       }

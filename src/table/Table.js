@@ -537,6 +537,7 @@ export class Table extends TableFilterSort {
         ) / actions.length || 0;
       const style = {
         width: actionsWidth,
+        minWidth: 50,
         margin: 2,
         marginTop: 6
         // backgroundColor: "lightgrey"
