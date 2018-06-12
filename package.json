@@ -15,7 +15,7 @@
 	"main": "lib/index.js",
 	"dependencies": {
 		"babel-cli": "^6.26.0",
-		"zebulon-controls": "file:../controls/zebulon-controls-1.2.6.tgz"
+		"zebulon-controls": "^1.2.8"
 	},
 	"scripts": {
 		"start": "react-scripts start",
@@ -35,7 +35,7 @@
 	},
 	"devDependencies": {
 		"cross-env": "^5.1.5",
-		"gh-pages": "^1.1.0",
+		"gh-pages": "^1.2.0",
 		"postcss-cli": "^5.0.0",
 		"react-resizable": "^1.7.5",
 		"react-scripts": "^1.1.4"

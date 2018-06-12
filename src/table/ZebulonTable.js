@@ -52,7 +52,7 @@ export class ZebulonTable extends Component {
       return functions_;
     } else {
       return utils.mergeFunctions(
-        [accessors, functions, functions || {}],
+        [accessors, functions, functions_ || {}],
         object || "dataset"
       );
     }
