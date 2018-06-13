@@ -250,7 +250,7 @@ export class TableEvent extends TableMenu {
       status.deleted_ = false;
     } else {
       if (!status.new_) {
-        rollback(status);
+        rollback(this.state.updatedRows, row.index_);
       }
       setStatus(status, "deleted_");
     }
