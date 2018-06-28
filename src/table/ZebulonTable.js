@@ -7,14 +7,16 @@ import {
   accessors,
   constants
 } from "zebulon-controls";
+import { metaFunctions } from "./MetaDescriptions";
 import {
+  getFilters,
+  getSorts,
+  functions,
+  computeData,
   computeMeta,
   computeMetaFromData,
   getSizes
-} from "./utils/compute.meta";
-import { functions } from "./MetaDescriptions";
-import { computeData } from "./utils/compute.data";
-import { getFilters, getSorts } from "./utils/filters.sorts";
+} from "./utils";
 import {
   rollback,
   rollbackAll,
@@ -35,11 +37,8 @@ export class ZebulonTable extends Component {
     };
     props.sizes.zoom = props.sizes.zoom || 1;
     this.keyEvent = false;
-    // functions
-    this.state.functions = this.initFunctions(
-      props.functions,
-      props.meta.table.object
-    );
+    this.state.functions = props.functions;
+    this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
@@ -47,16 +46,13 @@ export class ZebulonTable extends Component {
     this.state.filters = filters;
     this.saveConfirmationAnswer = ok => ok;
   }
-  initFunctions = (functions_, object) => {
-    if (Array.isArray(functions_)) {
-      return functions_;
-    } else {
-      return utils.mergeFunctions(
-        [accessors, functions, functions_ || {}],
-        object || "dataset"
-      );
-    }
-  };
+  // initFunctions = (functions, object) => {
+  //   // if (Array.isArray(functions_)) {
+  //   //   return functions_;
+  //   // } else {
+  //     functions.mergeFunctionsObjects(    [accessors, metaFunctions]);
+  //   }
+  // };
   setFilters = (filters, columns) => {
     columns.forEach(column => {
       if (filters[column.id]) {
@@ -98,14 +94,16 @@ export class ZebulonTable extends Component {
     };
     if (typeof data === "function") {
       data = data(message);
-    } else if ((meta && props.select) || meta.table.select) {
+    } else if (
+      !Array.isArray(data) &&
+      ((meta && props.select) || meta.table.select)
+    ) {
       data =
         props.select ||
-        utils.getFunction(
-          this.state.functions,
-          "dml",
-          meta.table.select,
-          props.utils
+        this.state.functions.getAccessorFunction(
+          meta.table.object,
+          "dmls",
+          meta.table.select
         );
       data = data(message);
     }
@@ -117,7 +115,7 @@ export class ZebulonTable extends Component {
       this.initData(
         data,
         meta,
-        this.state.zoom,
+        this.state.sizes.zoom,
         this.state.functions,
         0,
         filters,
@@ -143,10 +141,9 @@ export class ZebulonTable extends Component {
         meta,
         zoom,
         functions,
-        this.props.utils,
         (this.props.params || {}).privileges_
       );
-      computeData(data, meta, startIndex);
+      computeData(data, meta, startIndex, meta.table.noDataMutation);
       if (this.props.filteredData && meta.indexPk) {
         const updatedRows = this.state.updatedRows;
         Object.values(this.props.filteredData).forEach(
@@ -326,17 +323,6 @@ export class ZebulonTable extends Component {
     if (this.props.keyEvent !== keyEvent) {
       this.handleKeyEvent(keyEvent);
     } else {
-      let functions = this.state.functions;
-      if (nextProps.functions !== this.props.functions) {
-        const state = this.state;
-        state.functions = this.initFunctions(
-          nextProps.functions,
-          nextProps.meta.table.object
-        );
-      }
-      if (this.props.sizes !== sizes) {
-        this.setState({ sizes });
-      }
       if (updatedRows && this.props.updatedRows !== updatedRows) {
         this.setState({ updatedRows });
       }
@@ -357,6 +343,8 @@ export class ZebulonTable extends Component {
         if (ok) {
           this.setState(this.getData(nextProps));
         }
+      } else if (this.props.sizes !== sizes) {
+        this.setState({ sizes });
       }
     }
     if (saveConfirmationRequired && !this.props.saveConfirmationRequired) {
@@ -388,7 +376,6 @@ export class ZebulonTable extends Component {
         this.state.meta,
         sizes.zoom,
         this.state.functions,
-        this.props.utils,
         (this.props.params || {}).privileges_
       );
       return;
@@ -570,13 +557,28 @@ export class ZebulonTable extends Component {
       if (ok_) {
         const { data, meta, serverData } = message;
         const deleteds = [];
+        // deleteds new rows are not sent to the server
+        Object.keys(message.updatedRows)
+          .filter(
+            key =>
+              !Number.isNaN(Number(key)) &&
+              message.updatedRows[key].new_ &&
+              message.updatedRows[key].deleted_
+          )
+          .forEach(key =>
+            deleteds.push(message.updatedRows[key].rowUpdated.index_)
+          );
+        // retrieve changes made on server
         if (serverData) {
           serverData.forEach(row => {
             if (row.status_ === "deleted") {
               deleteds.push(row.index_);
             } else {
               delete row.status_;
-              data[row.index_] = row;
+
+              Object.keys(row).forEach(
+                key => (data[row.index_][key] = row[key])
+              );
             }
           });
         } else {
@@ -587,10 +589,9 @@ export class ZebulonTable extends Component {
             });
         }
         if (deleteds.length) {
-          deleteds.sort((x, y) => x > y - y > x);
+          deleteds.sort((x, y) => (x > y) - (y > x));
           deleteds.forEach((index_, index) => data.splice(index_ - index, 1));
         }
-        computeData(data, meta, 0);
         // a voir startIndex en mode pagination
         // this.setState({ updatedRows: {} });
         Object.keys(message.updatedRows).forEach(
@@ -614,6 +615,7 @@ export class ZebulonTable extends Component {
           }
           this.table.setState({ filteredDataLength: filteredData.length });
         }
+        computeData(data, meta, 0);
       }
       if (callback) {
         callback(ok_);
@@ -703,6 +705,7 @@ export class ZebulonTable extends Component {
         }}
         filters={filters}
         keyEvent={this.state.keyEvent}
+        functions={this.props.functions}
       />
     );
     this.confirmationModal = true;
@@ -773,7 +776,6 @@ export class ZebulonTable extends Component {
         isModal={true}
         functions={this.state.functions}
         updatedRows={updatedRows}
-        utils={this.props.utils}
       />
     );
   };
@@ -837,7 +839,6 @@ export class ZebulonTable extends Component {
           onForeignKey={this.onForeignKey}
           isModal={this.props.isModal}
           modal={this.state.confirmationModal || this.state.modalCancel}
-          utils={this.props.utils}
         />
         <ConfirmationModal
           show={this.state.confirmationModal}

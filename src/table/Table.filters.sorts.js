@@ -79,8 +79,7 @@ export class TableFilterSort extends TableEvent {
       filters,
       this.props.params,
       data,
-      updatedRows,
-      this.props.utils
+      updatedRows
     );
     const filteredData = data.filter(filter);
     if (this.props.onFilter) {

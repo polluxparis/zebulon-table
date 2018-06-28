@@ -1,19 +1,19 @@
 import React, { Component } from "react";
 import "zebulon-controls/lib/index.css";
 import "../table/index.css";
-import { functions } from "../table/MetaDescriptions";
-import { functionsTable } from "../table/utils/compute.meta";
+// import { functions } from "../table/MetaDescriptions";
+import { functions } from "zebulon-controls";
 import { MyDataset } from "./dataset.example";
+import { datasetFunctions } from "./dataset.functions";
 import { MyDatasetConfiguration } from "./dataset.configuration";
 import { ResizableBox } from "react-resizable";
 // import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
-import { datasetFunctions } from "./dataset.functions";
 class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);
     this.options = [200, 40, 3];
-    const functions = { dataset: datasetFunctions };
+    // const functions = { dataset: datasetFunctions };
     this.state = {
       data: null,
       sizes: {
@@ -23,7 +23,7 @@ class ZebulonTableDemo extends Component {
         zoom: 1
       },
       keyEvent: null,
-      functions,
+      functions: functions.functions(datasetFunctions),
       updatedRows: {},
       params: {},
       status: {},
@@ -38,6 +38,7 @@ class ZebulonTableDemo extends Component {
       filteredDataLength: 0,
       loadedDataLength: 0
     };
+    this.state.functions.setVisibility("dataset");
     // this.state.meta = metaDataset;
     this.text =
       "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
@@ -47,24 +48,6 @@ class ZebulonTableDemo extends Component {
     document.addEventListener("paste", this.handleKeyEvent);
     document.addEventListener("keydown", this.handleKeyEvent);
     window.addEventListener("beforeunload", this.handleKeyEvent);
-    // const f = x =>
-    //   new Promise(resolve => {
-    //     console.log("promise", x);
-    //     resolve(x + 1);
-    //   });
-    // f(0)
-    //   .then(x => f(x))
-    //   .then(x => f(x))
-    //   .then(x => f(x));
-    // console.log("promise", -1);
-
-    // new Promise(resolve => {
-    //   console.log("promise", 1);
-    //   resolve(2);
-    // }).then(x => {
-    //   console.log("promise", x);
-    //   return x;
-    // });
   }
   componentWillUnmount() {
     document.removeEventListener("copy", this.handleKeyEvent);
@@ -129,7 +112,6 @@ class ZebulonTableDemo extends Component {
       );
     }
   };
-
   render() {
     const zoomValue = 1;
     return (

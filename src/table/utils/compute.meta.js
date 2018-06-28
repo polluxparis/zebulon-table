@@ -1,44 +1,5 @@
 import { utils } from "zebulon-controls";
-// export const utils.getFunction = (functions, object, type, value, utils_) => {
-//   if (typeof value === "function") {
-//     return value;
-//   } else if (typeof value === "string") {
-//     //  accessor
-//     const indexDot = value.indexOf(".");
-//     if (indexDot !== -1) {
-//       let v = value;
-//       if (value.slice(0, indexDot) === "row") {
-//         v = value.slice(indexDot + 1);
-//       }
-//       const keys = v.split(".");
-//       return ({ row }) => {
-//         return keys.reduce(
-//           (acc, key, index) =>
-//             acc[key] === undefined && index < keys.length - 1 ? {} : acc[key],
-//           row
-//         );
-//       };
-//     } else {
-//       const v =
-//         typeof value === "string"
-//           ? functions
-//               .filter(
-//                 f =>
-//                   f.id === value &&
-//                   f.tp === type &&
-//                   (f.visibility === "global" || f.visibility === object)
-//               )
-//               .sort(
-//                 (f0, f1) =>
-//                   (f0.visibility !== object) - (f1.visibility !== object)
-//               )
-//           : [];
-//       return v.length
-//         ? message => v[0].functionJS({ ...message, utils: utils_ || utils })
-//         : undefined;
-//     }
-//   }
-// };
+
 export const getSizes = (meta, rowHeight) => {
   const headersLength =
     1 +
@@ -126,45 +87,42 @@ const grantPrivilege = (object, subObject, target, privileges, type) => {
     }
   }
 };
-export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
+export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   let position = 0;
   // table
-  if (!meta.functions) {
-    meta.functions = functions;
-  }
+  // if (!meta.functions) {
+  //   meta.functions = functions;
+  // }
+  const object = meta.table.object;
+  // functions.setVisibility(object);
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
-  grantPrivilege(meta.table.object, null, meta.table, privileges, "table");
+  grantPrivilege(object, null, meta.table, privileges, "table");
   meta.zoom = zoom;
-  meta.table.selectFunction = utils.getFunction(
-    functions,
-    "dml",
-    meta.table.onSave,
-    utils_
+  meta.table.selectFunction = functions.getAccessorFunction(
+    object,
+    "dmls",
+    meta.table.select
   );
-  meta.table.onTableChangeFunction = utils.getFunction(
-    functions,
-    "dml",
-    meta.table.onTableChange,
-    utils_
+  meta.table.onTableChangeFunction = functions.getAccessorFunction(
+    object,
+    "dmls",
+    meta.table.onTableChange
   );
-  meta.table.onSaveFunction = utils.getFunction(
-    functions,
-    "dml",
-    meta.table.onSave,
-    utils_
+  meta.table.onSaveFunction = functions.getAccessorFunction(
+    object,
+    "dmls",
+    meta.table.onSave
   );
-  meta.table.onSaveBeforeFunction = utils.getFunction(
-    functions,
-    "dml",
-    meta.table.onSaveBefore,
-    utils_
+  meta.table.onSaveBeforeFunction = functions.getAccessorFunction(
+    object,
+    "dmls",
+    meta.table.onSaveBefore
   );
-  meta.table.onSaveAfterFunction = utils.getFunction(
-    functions,
-    "dml",
-    meta.table.onSaveAfter,
-    utils_
+  meta.table.onSaveAfterFunction = functions.getAccessorFunction(
+    object,
+    "dmls",
+    meta.table.onSaveAfter
   );
   if (!meta.indexPk && !utils.isNullValue(meta.table.primaryKey)) {
     meta.indexPk = {};
@@ -175,24 +133,21 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
   if (!meta.indexRowId && !utils.isNullValue(meta.table.rowId)) {
     meta.indexRowId = {};
   }
-  meta.row.descriptorFunction = utils.getFunction(
-    functions,
-    "accessor",
-    meta.row.descriptor,
-    utils_
+  meta.row.descriptorFunction = functions.getAccessorFunction(
+    object,
+    "accessors",
+    meta.row.descriptor
   );
   // row
-  meta.row.onQuitFunction = utils.getFunction(
-    functions,
-    "validator",
-    meta.row.onQuit,
-    utils_
+  meta.row.onQuitFunction = functions.getAccessorFunction(
+    object,
+    "validators",
+    meta.row.onQuit
   );
-  meta.row.auditFunction = utils.getFunction(
-    functions,
-    "accessor",
-    meta.row.audit,
-    utils_
+  meta.row.auditFunction = functions.getAccessorFunction(
+    object,
+    "accessors",
+    meta.row.audit
   );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
@@ -206,42 +161,37 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
         action.actionFunction =
           typeof action.action === "function"
             ? action.action
-            : utils.getFunction(functions, "action", action.action, utils_);
+            : functions.getAccessorFunction(object, "action", action.action);
       }
-      action.enableFunction = utils.getFunction(
-        functions,
-        "editable",
-        action.enable,
-        utils_
+      action.enableFunction = functions.getAccessorFunction(
+        object,
+        "editables",
+        action.enable
       );
     });
   }
   if (meta.table.subscription) {
-    meta.table.subscription.observableFunction = utils.getFunction(
-      functions,
-      "dml",
-      meta.table.subscription.observable,
-      utils_
+    meta.table.subscription.observableFunction = functions.getAccessorFunction(
+      object,
+      "dmls",
+      meta.table.subscription.observable
     );
     meta.table.subscription.observerFunctions = {
-      onNext: utils.getFunction(
-        functions,
-        "observer",
-        (meta.table.subscription.observer || { onNext: "onNext" }).onNext,
-        utils_
+      onNext: functions.getAccessorFunction(
+        object,
+        "observers",
+        (meta.table.subscription.observer || { onNext: "onNext" }).onNext
       ),
-      onCompleted: utils.getFunction(
-        functions,
-        "observer",
+      onCompleted: functions.getAccessorFunction(
+        object,
+        "observers",
         (meta.table.subscription.observer || { onCompleted: "onCompleted" })
-          .onCompleted,
-        utils_
+          .onCompleted
       ),
-      onError: utils.getFunction(
-        functions,
-        "observer",
-        (meta.table.subscription.observer || { onError: "onError" }).onError,
-        utils_
+      onError: functions.getAccessorFunction(
+        object,
+        "observers",
+        (meta.table.subscription.observer || { onError: "onError" }).onError
       )
     };
   }
@@ -302,29 +252,25 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
     } else if (column.editable === undefined) {
       column.editable = true;
     }
-    column.editableFunction = utils.getFunction(
-      functions,
-      "editable",
-      column.editable,
-      utils_
+    column.editableFunction = functions.getAccessorFunction(
+      object,
+      "editables",
+      column.editable
     );
-    column.formatFunction = utils.getFunction(
-      functions,
-      "format",
-      column.format,
-      utils_
+    column.formatFunction = functions.getAccessorFunction(
+      object,
+      "formats",
+      column.format
     );
-    column.selectFunction = utils.getFunction(
-      functions,
-      "select",
-      column.select,
-      utils_
+    column.selectFunction = functions.getAccessorFunction(
+      object,
+      "selects",
+      column.select
     );
-    column.foreignObjectFunction = utils.getFunction(
-      functions,
-      "foreignObject",
-      column.foreignObject,
-      utils_
+    column.foreignObjectFunction = functions.getAccessorFunction(
+      object,
+      "foreignObjects",
+      column.foreignObject
     );
     // select items can be defined as
     // - an array
@@ -335,11 +281,10 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
     }
     // column.selectItems = select || [""];
 
-    column.accessorFunction = utils.getFunction(
-      functions,
-      "accessor",
-      column.accessor,
-      utils_
+    column.accessorFunction = functions.getAccessorFunction(
+      object,
+      "accessors",
+      column.accessor
     );
     if (column.dataType === "joined object" && column.select) {
       column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
@@ -378,11 +323,10 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
           col => col.id === column.reference
         );
         if (referencedColumn) {
-          column.primaryKeyAccessorFunction = utils.getFunction(
-            functions,
-            "accessor",
-            referencedColumn.accessor,
-            utils_
+          column.primaryKeyAccessorFunction = functions.getAccessorFunction(
+            object,
+            "accessors",
+            referencedColumn.accessor
           );
           // referencedColumn.accessorFunction;
           column.setForeignKeyAccessorFunction = ({ value, row }) => {
@@ -399,29 +343,25 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
         }
       }
     }
-    column.sortAccessorFunction = utils.getFunction(
-      functions,
-      "accessor",
-      column.sortAccessor || column.accessor,
-      utils_
+    // column.sortAccessorFunction = functions.getAccessorFunction(
+    //   object,
+    //   "accessors",
+    //   column.sortAccessor || column.accessor
+    // );
+    column.defaultFunction = functions.getAccessorFunction(
+      object,
+      "defaults",
+      column.default
     );
-    column.defaultFunction = utils.getFunction(
-      functions,
-      "default",
-      column.default,
-      utils_
+    column.onChangeFunction = functions.getAccessorFunction(
+      object,
+      "validators",
+      column.onChange
     );
-    column.onChangeFunction = utils.getFunction(
-      functions,
-      "validator",
-      column.onChange,
-      utils_
-    );
-    column.onQuitFunction = utils.getFunction(
-      functions,
-      "validator",
-      column.onQuit,
-      utils_
+    column.onQuitFunction = functions.getAccessorFunction(
+      object,
+      "validators",
+      column.onQuit
     );
 
     if (!column.defaultFunction && column.default) {
@@ -450,38 +390,45 @@ export const computeMeta = (meta, zoom = 1, functions, utils_, privileges) => {
         }
       };
     }
-    if (column.aggregation) {
-      // a voir
-      column.groupByAccessorFunction = utils.getFunction(
-        functions,
-        "accessor",
-        column.groupByAccessor,
-        utils_
+    if (column.analytic) {
+      const analytic = functions.getAccessorFunction(
+        meta.table.object,
+        "analytics",
+        column.analytic
       );
-      column.comparisonAccessorFunction = utils.getFunction(
-        functions,
-        "accessor",
-        column.comparisonAccessor,
-        utils_
+      column.groupByAccessorFunction = functions.getAccessorFunction(
+        meta.table.object,
+        "accessors",
+        analytic.groupByAccessor
       );
-      column.aggregationFunction = utils.getFunction(
-        functions,
-        "aggregation",
-        column.aggregation,
-        utils_
+      column.aggregationFunction = functions.getAccessorFunction(
+        meta.table.object,
+        "aggregations",
+        analytic.aggregation
       );
-      column.startFunction = utils.getFunction(
-        functions,
-        "window",
-        column.windowStart,
-        utils_
-      );
-      column.endFunction = utils.getFunction(
-        functions,
-        "window",
-        column.windowEnd,
-        utils_
-      );
+      // window
+      if (analytic.comparisonAccessor) {
+        column.comparisonAccessorFunction = functions.getAccessorFunction(
+          meta.table.object,
+          "accessors",
+          analytic.comparisonAccessor
+        );
+        column.sortAccessorFunction = functions.getAccessorFunction(
+          meta.table.object,
+          "accessors",
+          analytic.sortAccessor
+        );
+        column.startFunction = functions.getAccessorFunction(
+          meta.table.object,
+          "windows",
+          analytic.windowStart
+        );
+        column.endFunction = functions.getAccessorFunction(
+          meta.table.object,
+          "windows",
+          analytic.windowEnd
+        );
+      }
     }
     if (column.accessor && !column.reference && !column.onQuit) {
       column.editable = false;
@@ -510,7 +457,6 @@ export const computeMetaFromData = (
   meta,
   zoom,
   functions,
-  utils_,
   privileges
 ) => {
   let position = 0;
@@ -546,7 +492,7 @@ export const computeMetaFromData = (
           key === "timestamp_" ||
           key === "rowId_",
         position,
-        editable: !!meta.table.editable,
+        editable: !!meta.table.editables,
         index_: index,
         formatFunction: ({ value }) => value,
         selectFunction: undefined,
@@ -557,7 +503,7 @@ export const computeMetaFromData = (
       position += width;
     });
   }
-  computeMeta(meta, zoom, functions, utils_, privileges);
+  computeMeta(meta, zoom, functions, privileges);
 };
 // -----------------------------------------------------------
 // build a table of functions from the initial function object

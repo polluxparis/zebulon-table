@@ -86,12 +86,7 @@ export class TableEvent extends TableMenu {
         e.preventDefault();
         this.handleAction(action);
       }
-      // else if (key === "f11") {
-      //   e.preventDefault();
-      //   this.toggleFilter();
-      // }
     }
-    // const fKey = this.fKeyMap[key];
     // ctrl+F
     if (70 === (e.which || e.keyCode) && e.ctrlKey) {
       this.hasFocus = false;
@@ -305,10 +300,7 @@ export class TableEvent extends TableMenu {
       filteredData.filteredDataLength++;
       filteredData.dataLength++;
     }
-    rows = rows
-      .slice(0, ix)
-      .concat(row)
-      .concat(rows.slice(ix));
+    rows.splice(ix, 0, row);
     if (meta.serverPagination) {
       filteredData.page = rows;
       this.setState({ filteredData });
@@ -796,6 +788,7 @@ export class TableEvent extends TableMenu {
       row,
       meta: this.state.meta,
       data: this.state.data,
+      filteredData: this.state.filteredData,
       params: this.props.params
     };
     if (this.props.onRowNew)

@@ -29,7 +29,7 @@ export class TableMenu extends Component {
                     }
                 });
             } else {
-                item.function({ data, meta, params, column });
+                item.function({ data, meta, params, column, table: this });
             }
         } else if (props.menu === "row-header-menu") {
             const { row, status } = props;
@@ -91,7 +91,14 @@ export class TableMenu extends Component {
                     });
                 }
             } else {
-                item.function({ data, meta, params, row, status });
+                return item.function({
+                    data,
+                    meta,
+                    params,
+                    row,
+                    status,
+                    table: this
+                });
             }
         } else if (props.menu === "top-left-corner-menu") {
             const { filters, data, meta, params, updatedRows } = this.state;
@@ -132,26 +139,28 @@ export class TableMenu extends Component {
                     )
                 });
             } else {
-                item.function({ data, meta, params });
+                item.function({ data, meta, params, table: this });
             }
         } else if (props.menu === "cell-menu") {
             const { row, column } = props;
             const { data, meta, params } = this.state;
-            item.function({ data, meta, params, row, column });
+            item.function({ data, meta, params, row, column, table: this });
         }
     };
     getCustomMenu = (menu, menus) => {
         if (this.customContextualMenu && this.customContextualMenu[menu]) {
-            this.customContextualMenu[menu].forEach((menu, index) =>
-                menus.push({
+            this.customContextualMenu[menu].forEach((menu, index) => {
+                const item = {
                     id: 1000000 + menus.length,
                     separation: index === 0 && menus.length > 0,
                     type: menu.type,
                     caption: menu.caption,
                     onClick: this.handleClickMenu,
-                    function: menu.function
-                })
-            );
+                    function: menu.function,
+                    children: menu.type === "sub-menu" ? [] : undefined
+                };
+                menus.push(item);
+            });
         }
     };
     getMenu = (menu, data) => {

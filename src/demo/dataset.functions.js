@@ -333,121 +333,148 @@ export const errorHandler = {
 	}
 };
 export const datasetFunctions = {
-	selects: {
-		getProducts,
-		getCountries,
-		getCurrencies,
-		getColors
-	},
-	formats: {
-		// "mm/yyyy": ({ value }) =>
-		// 	utils.isNullOrUndefined(value)
-		// 		? ""
-		// 		: utils.formatValue(value, "mm/yyyy"),
-		"amt_€": ({ value, row }) => {
-			return (
-				<div
-					style={{ display: "flex", justifyContent: "space-between" }}
-				>
-					<div>€</div>
-					<div style={{ textAlign: "right" }}>
-						{utils.formatValue(value, null, 2)}
-					</div>
-				</div>
-			);
+	dataset: {
+		selects: {
+			getProducts,
+			getCountries,
+			getCurrencies,
+			getColors
 		},
-		amt_cur: ({ value, row }) => {
-			return (
-				<div
-					style={{ display: "flex", justifyContent: "space-between" }}
-				>
-					<div>{(row.currency || {}).symbol}</div>
-					<div style={{ textAlign: "right" }}>
-						{utils.formatValue(value, null, 2)}
+		formats: {
+			// "mm/yyyy": ({ value }) =>
+			// 	utils.isNullOrUndefined(value)
+			// 		? ""
+			// 		: utils.formatValue(value, "mm/yyyy"),
+			"amt_€": ({ value, row }) => {
+				return (
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between"
+						}}
+					>
+						<div>€</div>
+						<div style={{ textAlign: "right" }}>
+							{utils.formatValue(value, null, 2)}
+						</div>
 					</div>
-				</div>
-			);
-		},
-		price: ({ value }) => {
-			return (
-				<div
-					style={{ display: "flex", justifyContent: "space-between" }}
-				>
-					<div>€</div>
-					<div style={{ textAlign: "right" }}>
-						{utils.formatValue(value, null, 2)}
+				);
+			},
+			amt_cur: ({ value, row }) => {
+				return (
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between"
+						}}
+					>
+						<div>{(row.currency || {}).symbol}</div>
+						<div style={{ textAlign: "right" }}>
+							{utils.formatValue(value, null, 2)}
+						</div>
 					</div>
-				</div>
-			);
-		}
-	},
-	windows: {
-		since30d: x => {
-			const xx = new Date(x);
-			xx.setDate(xx.getDate() - 30);
-			return xx;
-		}
-	},
-	validators: {
-		onChangeCountry: ({ row, column, meta }) => {
-			if (
-				!utils.isNullOrUndefined(row.country_id) &&
-				utils.isNullOrUndefined(row.currency_id)
-			) {
-				row.currency_id = row.country.currency_id;
-				row.currency = meta.properties
-					.find(column => column.id === "currency")
-					.accessorFunction({ row });
+				);
+			},
+			price: ({ value }) => {
+				return (
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between"
+						}}
+					>
+						<div>€</div>
+						<div style={{ textAlign: "right" }}>
+							{utils.formatValue(value, null, 2)}
+						</div>
+					</div>
+				);
 			}
-			return true;
-		}
-	},
-	accessors: {
-		qty: ({ row }) => row.qty / 3,
+		},
+		windows: {
+			since30d: x => {
+				const xx = new Date(x);
+				xx.setDate(xx.getDate() - 30);
+				return xx;
+			}
+		},
+		validators: {
+			onChangeCountry: ({ row, column, meta }) => {
+				if (
+					!utils.isNullOrUndefined(row.country_id) &&
+					utils.isNullOrUndefined(row.currency_id)
+				) {
+					row.currency_id = row.country.currency_id;
+					row.currency = meta.properties
+						.find(column => column.id === "currency")
+						.accessorFunction({ row });
+				}
+				return true;
+			}
+		},
+		accessors: {
+			qty: ({ row }) => row.qty / 3,
 
-		"amt_€": ({ row }) => row.qty * (row.product || {}).price,
-		amt_cur: ({ row }) => {
-			return (
-				row.qty * (row.product || {}).price * (row.currency || {}).rate
-			);
+			"amt_€": ({ row }) => row.qty * (row.product || {}).price,
+			amt_cur: ({ row }) => {
+				return (
+					row.qty *
+					(row.product || {}).price *
+					(row.currency || {}).rate
+				);
+			},
+			mth: ({ row }) => {
+				if (utils.isNullOrUndefined(row.d)) {
+					return null;
+				}
+				const d = new Date(row.d);
+				d.setDate(1);
+				return d;
+			},
+			flag: ({ row }) => {
+				if (
+					!row.country ||
+					row.country.code === "" ||
+					utils.isNullOrUndefined(row.country.code)
+				) {
+					return null;
+				}
+				return `//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`;
+			},
+			audit: getAudits
 		},
-		mth: ({ row }) => {
-			if (utils.isNullOrUndefined(row.d)) {
-				return null;
+		actions: {
+			computeData,
+			toggleFilter: ({ ref }) => ref.toggleFilter()
+		},
+		dmls: {
+			get_array,
+			get_promise,
+			get_observable,
+			get_pagination_manager,
+			get_subscription,
+			onSave,
+			onSaveAfter,
+			onSaveBefore
+			// onTableChange
+		},
+		foreignObjects: {
+			thirdparties: MyThirdparties
+		},
+		analytics: {
+			rolling_avg: {
+				aggregation: "avg",
+				groupByAccessor: "country.id",
+				comparisonAccessor: "row.d",
+				sortAccessor: "row.d",
+				windowStart: "since30d",
+				windowEnd: x => x
+			},
+			total_amt: {
+				aggregation: "sum",
+				groupByAccessor: "country.id"
 			}
-			const d = new Date(row.d);
-			d.setDate(1);
-			return d;
-		},
-		flag: ({ row }) => {
-			if (
-				!row.country ||
-				row.country.code === "" ||
-				utils.isNullOrUndefined(row.country.code)
-			) {
-				return null;
-			}
-			return `//www.drapeauxdespays.fr/data/flags/small/${row.country.code.toLowerCase()}.png`;
-		},
-		audit: getAudits
-	},
-	actions: {
-		computeData,
-		toggleFilter: ({ ref }) => ref.toggleFilter()
-	},
-	dmls: {
-		get_array,
-		get_promise,
-		get_observable,
-		get_pagination_manager,
-		get_subscription,
-		onSave,
-		onSaveAfter,
-		onSaveBefore
-		// onTableChange
-	},
-	foreignObjects: {
-		thirdparties: MyThirdparties
+		}
 	}
 };
 

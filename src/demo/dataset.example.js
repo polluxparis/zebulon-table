@@ -1,9 +1,14 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
 import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
-import { getRowErrors, getErrors } from "../table/utils/utils";
-import { computeMetaPositions } from "../table/utils/compute.meta";
-import { computeAnalytic } from "../table/utils/compute.data";
+
+import {
+  getRowErrors,
+  getErrors,
+  computeMetaPositions,
+  computeAnalytic,
+  functions
+} from "../table/utils";
 import {
   errorHandler,
   get_subscription
@@ -70,7 +75,10 @@ export class MyDataset extends Component {
     if (!totalAmount.hidden) {
       computeAnalytic(this.table.state.data, totalAmount);
     }
-    meta.visibleIndexes = computeMetaPositions(meta, this.table.zoomValue);
+    meta.visibleIndexes = computeMetaPositions(
+      meta,
+      this.table.state.sizes.zoom
+    );
     this.setState({
       totalAmount: !this.state.totalAmount,
       status: this.state.status
@@ -83,7 +91,10 @@ export class MyDataset extends Component {
     if (!rollingAverage.hidden) {
       computeAnalytic(this.table.state.data, rollingAverage);
     }
-    meta.visibleIndexes = computeMetaPositions(meta, this.table.zoomValue);
+    meta.visibleIndexes = computeMetaPositions(
+      meta,
+      this.table.state.sizes.zoom
+    );
     this.setState({
       rollingAverage: !this.state.rollingAverage,
       status: this.state.status

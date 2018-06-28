@@ -15,7 +15,7 @@
 	"main": "lib/index.js",
 	"dependencies": {
 		"babel-cli": "^6.26.0",
-		"zebulon-controls": "^1.2.8"
+		"zebulon-controls": "file:../controls/zebulon-controls-1.2.8.tgz"
 	},
 	"scripts": {
 		"start": "react-scripts start",

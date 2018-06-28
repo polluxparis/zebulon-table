@@ -16,7 +16,7 @@ export const cellData = (row, column, status, data, params, focused) => {
         })
       : column.editable);
   //  dont use accessor for analytics computed data
-  let value = column.aggregation
+  let value = column.analytic
     ? row[column.id]
     : column.accessorFunction
       ? column.accessorFunction({ column, row, params, status, data })
@@ -45,11 +45,13 @@ export const cellData = (row, column, status, data, params, focused) => {
   }
   return { editable, select, value };
 };
-export const computeRows = (data, meta, startIndex) => {
+export const computeRows = (data, meta, startIndex = 0, noDataMutation) => {
   let foreignObjects = [];
   foreignObjects = meta.properties.filter(
     column =>
-      column.dataType === "joined object" && column.accessor !== undefined
+      column.dataType === "joined object" &&
+      column.accessor !== undefined &&
+      column.select !== undefined
   );
   const { pk, lk, rwd } = meta.table;
 
@@ -69,7 +71,7 @@ export const computeRows = (data, meta, startIndex) => {
     foreignObjects.forEach(
       column => (row[column.id] = column.accessorFunction({ row }))
     );
-    if (meta.table.noDataMutation) {
+    if (noDataMutation) {
       data[index] = { ...row };
     }
   });
@@ -77,7 +79,7 @@ export const computeRows = (data, meta, startIndex) => {
 export const computeAnalytics = (data, meta) => {
   const columns = meta.properties.filter(
     column =>
-      column.aggregation &&
+      (column.aggregation || column.analytic) &&
       typeof column.accessorFunction === "function" &&
       !column.hidden
   );
@@ -85,52 +87,52 @@ export const computeAnalytics = (data, meta) => {
     computeAnalytic(data, column);
   });
 };
-export const computeData = (data, meta, startIndex) => {
-  computeRows(data, meta, startIndex);
+export const computeData = (data, meta, startIndex, noDataMutation) => {
+  computeRows(data, meta, startIndex, noDataMutation);
   computeAnalytics(data, meta);
 };
 // ----------------------------
 //  aggregations
 //  ---------------------------
-export const aggregations = {
-  count: values => values.length,
-  sum: values => values.reduce((sum, value) => (sum += value), null),
-  min: values =>
-    values.reduce(
-      (min, value) => (min = min === null || value < min ? value : min),
-      null
-    ),
-  max: values =>
-    values.reduce(
-      (max, value) => (max = max === null || value > max ? value : max),
-      null
-    ),
-  avg: values =>
-    values.length === 0 ? null : aggregations.sum(values) / values.length,
-  weighted_avg: values => {
-    const wavg = values.reduce(
-      (wavg, value) => {
-        wavg.v0 += value.v0;
-        wavg.v1 += value.v1;
-        return wavg;
-      },
-      { v0: null, v1: null }
-    );
-    return wavg.v0 === 0 && wavg.v1 === 0 ? null : wavg.v0 / wavg.v1;
-  },
-  delta: values => {
-    const delta = values.reduce(
-      (delta, value) => {
-        delta.v0 += value.v0;
-        delta.v1 += value.v1;
-        return delta;
-      },
-      { v0: null, v1: null }
-    );
-    return delta.v0 - delta.v1;
-  },
-  prod: values => values.reduce((prod, value) => (prod *= value), null)
-};
+// export const aggregations = {
+//   count: values => values.length,
+//   sum: values => values.reduce((sum, value) => (sum += value), null),
+//   min: values =>
+//     values.reduce(
+//       (min, value) => (min = min === null || value < min ? value : min),
+//       null
+//     ),
+//   max: values =>
+//     values.reduce(
+//       (max, value) => (max = max === null || value > max ? value : max),
+//       null
+//     ),
+//   avg: values =>
+//     values.length === 0 ? null : aggregations.sum(values) / values.length,
+//   weighted_avg: values => {
+//     const wavg = values.reduce(
+//       (wavg, value) => {
+//         wavg.v0 += value.v0;
+//         wavg.v1 += value.v1;
+//         return wavg;
+//       },
+//       { v0: null, v1: null }
+//     );
+//     return wavg.v0 === 0 && wavg.v1 === 0 ? null : wavg.v0 / wavg.v1;
+//   },
+//   delta: values => {
+//     const delta = values.reduce(
+//       (delta, value) => {
+//         delta.v0 += value.v0;
+//         delta.v1 += value.v1;
+//         return delta;
+//       },
+//       { v0: null, v1: null }
+//     );
+//     return delta.v0 - delta.v1;
+//   },
+//   prod: values => values.reduce((prod, value) => (prod *= value), null)
+// };
 // -------------------------------------
 // compute new description
 // -------------------------------------
@@ -151,59 +153,55 @@ export const computeAnalytic = (data, column) => {
   let d = data.concat([]);
   let groups = [[]];
   // sort;
-  let sortAccessor =
-    column.sortAccessorFunction || (({ row }) => row[column.sortAccessor]);
-  let groupByAccessor =
-    column.groupByAccessorFunction ||
-    (({ row }) => row[column.groupByAccessor]);
   const accessor = row => {
     let acc = [];
-    if (groupByAccessor) {
-      acc = acc.concat(groupByAccessor({ row }));
+    if (column.groupByAccessorFunction) {
+      acc = acc.concat(column.groupByAccessorFunction({ row }));
     }
-    if (sortAccessor) {
-      acc = acc.concat(sortAccessor({ row }));
+    if (column.sortAccessorFunction) {
+      acc = acc.concat(column.sortAccessorFunction({ row }));
     }
     return acc;
   };
-  if (sortAccessor || groupByAccessor) {
+  if (column.sortAccessorFunction || column.groupByAccessorFunction) {
     d.sort(sortFunction(accessor));
   }
   // group by and window interval
   let values = [];
   d.forEach((row, index) => {
-    row._index = groups[groups.length - 1].length;
+    // row._index = groups[groups.length - 1].length;
     row._window = {
       value: (column.accessorFunction || (({ row }) => row[column.accessor]))({
         row
       }),
-      groupBy: JSON.stringify(groupByAccessor({ row }))
+      groupBy: column.groupByAccessorFunction
+        ? JSON.stringify(column.groupByAccessorFunction({ row }))
+        : null
     };
-    if (column.comparisonAccessor) {
-      row._window.ref = (column.comparisonAccessorFunction ||
-        (row => row[column.comparisonAccessor]))({ row });
-      if (column.windowStart) {
+    if (column.comparisonAccessorFunction) {
+      row._window.ref = column.comparisonAccessorFunction({ row });
+      if (column.startFunction) {
         row._window.start = column.startFunction(row._window.ref);
       }
-      if (column.windowEnd) {
+      if (column.endFunction) {
         row._window.end = column.endFunction(row._window.ref);
       }
     }
     if (index > 0 && row._window.groupBy !== d[index - 1]._window.groupBy) {
-      if (!column.comparisonAccessor) {
+      if (!column.comparisonAccessorFunction) {
         const value = column.aggregationFunction(values);
         groups[groups.length - 1].forEach(row => (row[column.id] = value));
         values = [];
       }
       groups.push([]);
     }
-    if (!column.comparisonAccessor) {
+    if (!column.comparisonAccessorFunction) {
       values.push(row._window.value);
     }
     groups[groups.length - 1].push(row);
   });
   // computation
-  if (column.comparisonAccessor) {
+  if (column.comparisonAccessorFunction) {
     groups.forEach(group =>
       group.forEach((row, index) => {
         let i = index - 1,
@@ -228,9 +226,24 @@ export const computeAnalytic = (data, column) => {
         row[column.id] = column.aggregationFunction(values);
       })
     );
+  } else {
+    const value = column.aggregationFunction(values);
+    groups[groups.length - 1].forEach(row => (row[column.id] = value));
   }
-
   return data;
+};
+export const groupBy = (data, groupByFunction) => {
+  let d = data.concat([]);
+  const groups = [[]];
+  const map = {};
+  d.forEach((row, index) => {
+    const groupBy = groupByFunction({ row });
+    if (!map[groupBy]) {
+      map[groupBy] = [];
+    }
+    map[groupBy].push(row);
+  });
+  return groups;
 };
 export const computeAudit = (rowUpdated, row, meta, audits) => {
   const rows = [];
@@ -250,7 +263,6 @@ export const computeAudit = (rowUpdated, row, meta, audits) => {
       });
       nextRow = { ...nextRow, ...audit.row };
     });
-    // rows.push(nextRow);
     const foreignObjects = meta.properties.filter(
       column => column.dataType === "joined object"
     );
@@ -286,7 +298,6 @@ const stringValue = (property, row) => {
 };
 export const computeRowSearch = (data, properties, dataStrings) => {
   const strings = [];
-  // console.log("computeRowSearch", new Date());
   data.forEach((row, index) => {
     if (!dataStrings[row.index_]) {
       let rowStrings = [];
@@ -300,11 +311,9 @@ export const computeRowSearch = (data, properties, dataStrings) => {
     }
     strings.push(dataStrings[row.index_]);
   });
-  // console.log("computeRowSearch2", new Date());
   return strings;
 };
 export const rowSearch = (dataStrings, exp) => {
-  // const v_ = v.toUpperCase();
   const indexes = [];
   dataStrings.forEach((rowString, index) => {
     if (exp.test(rowString)) {
@@ -320,7 +329,6 @@ export const cellSearch = (
   propertyStart = 0,
   direction = 1
 ) => {
-  // const v_ = v.toUpperCase();
   let i = propertyStart;
   while (
     properties.length > i &&
@@ -329,13 +337,5 @@ export const cellSearch = (
   ) {
     i += direction;
   }
-  // const
-  // const v_ = v.toUpperCase();
-  // const indexes = [];
-  // Object.values(dataStrings).forEach((rowString, index) => {
-  //   if (rowString.indexOf(v_) !== -1) {
-  //     indexes.push(index);
-  //   }
-  // });
   return properties.length > i && i >= 0 ? i : null;
 };

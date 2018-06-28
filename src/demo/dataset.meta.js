@@ -4,15 +4,17 @@ export const rollingAverage = {
   width: 140,
   dataType: "number",
   editable: false,
-  aggregation: "avg",
-  groupByAccessor: "country.id",
-  accessor: "amt_€",
-  comparisonAccessor: "row.d",
-  sortAccessor: "row.d",
-  windowStart: "since30d",
-  windowEnd: x => x,
   hidden: true,
-  format: "amt_€"
+  format: "amt_€",
+  accessor: "amt_€",
+  analytic: {
+    aggregation: "avg",
+    groupByAccessor: "country.id",
+    comparisonAccessor: "row.d",
+    sortAccessor: "row.d",
+    windowStart: "since30d",
+    windowEnd: x => x
+  }
 };
 export const totalAmount = {
   id: "total_amt",
@@ -21,27 +23,24 @@ export const totalAmount = {
   dataType: "number",
   editable: false,
   hidden: true,
-  aggregation: "sum",
-  groupByAccessor: "country.id",
+  format: "amt_€",
   accessor: "amt_€",
-  format: "amt_€"
+  analytic: {
+    aggregation: "sum",
+    groupByAccessor: "country.id"
+  }
 };
 export const meta = {
   table: {
     object: "dataset",
     editable: true,
     select: "get_array",
-    // primaryKey: "id",
     rowId: "rowId_",
     onSave: "onSave",
     onSaveAfter: "onSaveAfter",
     onSaveBefore: "onSaveBefore",
     onTableChange: "onTableChange",
-    // caption: "Dataset",
     statusDraggable: true,
-    // subscription: {
-    //   observable: "get_subscription"
-    // },
     noFilter: false,
     noStatus: false,
     noOrder: false,

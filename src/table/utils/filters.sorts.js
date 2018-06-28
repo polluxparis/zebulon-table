@@ -1,9 +1,9 @@
 import { utils } from "zebulon-controls";
-// import { utils.getFunction } from "./compute.meta";
+import { getFunction } from "./compute.meta";
 // ----------------------------
 //  filters
 //  ---------------------------
-export const filterFunction = (column, params, data, updatedRows, utils_) => {
+export const filterFunction = (column, params, data, updatedRows) => {
   const facc = row => {
     let f = column.accessorFunction;
     if (column.id === "status_") {
@@ -16,9 +16,7 @@ export const filterFunction = (column, params, data, updatedRows, utils_) => {
       );
     }
     if (!f) {
-      if (column.accessor) {
-        f = utils.getFunction([], "accessor", column.accessor, utils_);
-      } else if (column.dataType === "date") {
+      if (column.dataType === "date") {
         f = ({ row, column }) => new Date(row[column.id]);
       } else {
         f = ({ row, column }) => row[column.id];
@@ -78,7 +76,7 @@ export const filterFunction = (column, params, data, updatedRows, utils_) => {
   }
 };
 // -----------------------------
-export const filtersFunction = (filters, params, data, updatedRows, utils_) => {
+export const filtersFunction = (filters, params, data, updatedRows) => {
   if (!filters) {
     return x => x;
   }
@@ -92,7 +90,7 @@ export const filtersFunction = (filters, params, data, updatedRows, utils_) => {
       );
     })
     .map(filter => {
-      filterFunction(filter, params, data, updatedRows, utils_);
+      filterFunction(filter, params, data, updatedRows);
       return filter;
     });
   if (!f.length) {
@@ -143,9 +141,6 @@ export const sortsFunction = sorts => {
       if (acc === 0) {
         const a = accessor({ row: rowA }),
           b = accessor({ row: rowB });
-        // if (sort.id !== "d") {
-        //   console.log("sort", a, b);
-        // }
         acc = ((a > b) - (b > a)) * (sort.direction === "asc" ? 1 : -1);
       }
       return acc;
@@ -156,22 +151,23 @@ export const getSorts = columns => {
   const sorts = columns
     .filter(column => column.sort !== undefined)
     .map(column => {
-      let nullValue = "";
+      let fNullValue = x => utils.nullValue(x, "");
       if (column.dataType === "number" || column.dataType === "boolean") {
-        nullValue = null;
+        fNullValue = x => utils.nullValue(x, -Infinity);
       } else if (column.dataType === "date") {
-        nullValue = new Date(null);
+        fNullValue = x => utils.nullValue(x, new Date(null));
       }
+      // else if (column.dataType === "string") {
+      //   nullValue = "";
+      // }
       return {
         id: column.id,
         sortOrder: column.sortOrder,
         direction: column.sort,
         accessor:
-          column.sortAccessorFunction ||
-          column.accessorFunction ||
-          (({ row }) => {
-            return utils.nullValue(row[column.id], nullValue);
-          })
+          column.sortAccessorFunction || column.accessorFunction
+            ? message => fNullValue(column.accessorFunction(message))
+            : ({ row }) => fNullValue(row[column.id])
       };
     });
   sorts.sort(
