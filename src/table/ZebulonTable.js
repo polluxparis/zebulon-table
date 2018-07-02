@@ -5,13 +5,13 @@ import {
   utils,
   ConfirmationModal,
   accessors,
-  constants
+  constants,
+  functions
 } from "zebulon-controls";
 import { metaFunctions } from "./MetaDescriptions";
 import {
   getFilters,
   getSorts,
-  functions,
   computeData,
   computeMeta,
   computeMetaFromData,
@@ -37,7 +37,7 @@ export class ZebulonTable extends Component {
     };
     props.sizes.zoom = props.sizes.zoom || 1;
     this.keyEvent = false;
-    this.state.functions = props.functions;
+    this.state.functions = props.functions || functions.functions([]);
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
     const { data, status, filters } = this.getData(props);

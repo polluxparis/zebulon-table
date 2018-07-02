@@ -20,7 +20,7 @@ export class ZebulonTableAndConfiguration extends Component {
 		super(props);
 		let f = props.functions;
 		f.mergeFunctionsObjects([accessors, metaFunctions]);
-		let meta = props.meta;
+		const meta = props.meta;
 		this.initMeta(
 			props.meta,
 			props.callbacks,
@@ -59,6 +59,7 @@ export class ZebulonTableAndConfiguration extends Component {
 			state.functions,
 			state.callbacks
 		);
+		meta.table.actions = this.metaDescriptions.dataset.table.actions;
 		state.propertiesMeta = this.metaDescriptions.properties;
 		computeMeta(state.propertiesMeta, props.sizes.zoom, state.functions);
 		state.functionsProperties = f;
@@ -111,7 +112,12 @@ export class ZebulonTableAndConfiguration extends Component {
 	};
 	initMeta = (meta_, callbacks, data, functions, zoom) => {
 		if (!meta_.table) {
-			const meta = metaDescriptions(functions, callbacks).dataset;
+			const meta = metaDescriptions(
+				"dataset",
+				undefined,
+				functions,
+				callbacks
+			).dataset;
 			meta_.table = meta.table;
 			meta_.row = meta.row;
 			meta_.properties = meta.properties;

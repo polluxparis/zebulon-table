@@ -1,54 +1,11 @@
 import React from "react";
 import { utils } from "zebulon-controls";
-import {
-	buildObject,
-	exportFunctions
-	// aggregations
-} from "./utils/utils";
-// import { getFunction } from "./utils/compute.meta";
-// ({row})=>accessor('qty')({row})*3
-// const functionToString = ({ row }) => {
-// 	if (row.functionText) {
-// 		return row.functionText;
-// 	} else if (typeof row.functionJS === "function") {
-// 		return String(row.functionJS);
-// 	}
-// };
+import { buildObject, exportFunctions } from "./utils/utils";
+
 const stringToFunction = (row, functions) => {
 	row.functionJS = functions.evalProtectedFunction(row.functionText);
 	return true;
 };
-// 	let f;
-// 	const accessors = meta.functions
-// 		.filter(f => f.tp === "accessor")
-// 		.reduce((acc, f) => {
-// 			acc[f.id] = f.functionJS;
-// 			return acc;
-// 		}, {});
-// 	const accessor = accessor => accessors[accessor];
-// 	const functionText =
-// 		"message => {try{ return (" +
-// 		row.functionText +
-// 		')(message)} catch (e){return "local function error"}}';
-// 	try {
-// 		eval("f = " + row.functionText);
-// 	} catch (e) {
-// 		const error = status.errors.functionJS || {};
-// 		error.JS = e.message;
-// 		status.errors.functionJS = error;
-// 	}
-// 	if (typeof f === "function") {
-// 		row.functionJS = f;
-// 		if (status.errors.functionJS) {
-// 			delete status.errors.functionJS.JS;
-// 		}
-// 	} else {
-// 		const error = status.errors.functionJS || {};
-// 		error.JS = "function not evaluated";
-// 		status.errors.functionJS = error;
-// 	}
-// 	return true;
-// };
 export const onNext = (data, message) => {
 	const indexedColumn =
 		message.meta.table.rowId || message.meta.table.primaryKey;
@@ -76,10 +33,17 @@ export const onNext = (data, message) => {
 };
 export const onCompleted = message => {};
 export const onError = (e, message) => {};
-// export const accessor = accessor => {
-// 	return () => 4;
-// };
 const isLocal = ({ row, status }) => (status || {}).new_ || row.isLocal;
+const inherited = (value, inheritedValue, canInherit) => {
+	if (
+		canInherit &&
+		utils.isNullValue(value) &&
+		!utils.isNullValue(inheritedValue)
+	) {
+		return <div style={{ color: "blue" }}>{inheritedValue}</div>;
+	}
+	return value;
+};
 export const metaFunctions = {
 	properties: {
 		accessors: {
@@ -133,7 +97,6 @@ export const metaFunctions = {
 	},
 	functions: {
 		accessors: {
-			// functionToString,
 			functionDescriptor: ({ row }) => {
 				let label;
 				if (row.tp === "accessor") {
@@ -188,7 +151,6 @@ export const metaFunctions = {
 			isLocal
 		}
 	},
-
 	measures: {
 		accessors: {
 			isLocal
@@ -206,6 +168,9 @@ export const metaFunctions = {
 			onNext,
 			onCompleted,
 			onError
+		},
+		validators: {
+			overwrite: x => true
 		}
 	}
 };
@@ -242,7 +207,6 @@ let propertyAccessors = {};
 
 export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 	const getFunctions = type => {
-		// const f = functions.getFunctionsArray("dataset", type);
 		return functions
 			.getFunctionsArray(object, type, source)
 			.reduce((acc, f) => {
@@ -258,7 +222,6 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 	const getAccessorsAndProperties = () => {
 		const dataAccessors = propertyAccessors;
 		const accessors = getFunctions("accessors");
-		// console.log("getAccessorsAndProperties", accessors, dataAccessors);
 		return {
 			...dataAccessors,
 			...accessors
@@ -270,7 +233,6 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 	const getWindowFunctions = () => getFunctions("windows");
 	const getSelects = () => getFunctions("selects");
 	const getValidators = () => getFunctions("validators");
-	// const getEditables =  () => getFunctions("editable");
 	const getDefaults = () => getFunctions("defaults");
 	const getAnalytics = () => getFunctions("analytics");
 	const getForeignObjects = () => getFunctions("foreignObjects");
@@ -364,32 +326,9 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 						enable: true,
 						key: "f12"
 					}
-					// ,
-					// {
-					// 	type: "detail",
-					// 	caption: "Analytic",
-					// 	enable: "isAnalytic",
-					// 	content: Property
-					// }
-					// {
-					// 	type: "action",
-					// 	caption: "Apply",
-					// 	action: callbacks.applyMeta,
-					// 	enable: true
-					// }
-					// ,
-					// {
-					// 	type: "action",
-					// 	caption: "Export configuration",
-					// 	action: "exportMeta",
-					// 	enable: true
-					// }
 				]
 			},
-			row: {
-				// validator: "propertyValidator",
-				// detail: "propertyDetail"
-			},
+			row: {},
 			properties: [
 				{
 					id: "id",
@@ -553,7 +492,7 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 					format: "isArrayOrFunction"
 				},
 				{
-					id: "onCellQuit",
+					id: "onQuit",
 					caption: "On cell quit",
 					width: 100,
 					dataType: "string",
@@ -762,13 +701,18 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 					select: getAccessorsAndProperties
 				},
 				{
-					id: "format",
+					id: "localFormat",
 					caption: "format",
 					width: 150,
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getFormats
+					select: getFormats,
+					accessor: ({ row }) =>
+						utils.nullValue(row.localFormat, row.format),
+					onQuit: "overwrite",
+					format: ({ value, row }) =>
+						inherited(row.localFormat, row.format)
 				},
 				{
 					id: "aggregation",
@@ -859,12 +803,24 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 					select: getAccessorsAndProperties
 				},
 				{
-					id: "labelAccessor",
+					id: "localLabelAccessor",
 					caption: "Label accessor",
 					width: 150,
 					dataType: "string",
 					editable: "isLocal",
-					select: getAccessorsAndProperties
+					select: getAccessorsAndProperties,
+					accessor: ({ row }) =>
+						utils.nullValue(
+							row.localLabelAccessor,
+							row.labelAccessor
+						),
+					onQuit: "overwrite",
+					format: ({ value, row }) =>
+						inherited(
+							row.localLabelAccessor,
+							row.labelAccessor,
+							!row.isLocal
+						)
 				},
 				{
 					id: "sort",
@@ -875,35 +831,73 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 					editable: true
 				},
 				{
-					id: "sortAccessor",
-					accessor: "sortAcc",
-					onQuit: "sortAcc",
+					id: "localSortAccessor",
 					caption: "Sort accessor",
 					width: 150,
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getAccessorsAndProperties
+					select: getAccessorsAndProperties,
+					accessor: ({ row }) =>
+						utils.nullValue(
+							row.sort.localKeyAccessor,
+							row.sort.keyAccessor
+						),
+					onQuit: ({ row }) => {
+						if (!row.sort) {
+							row.sort = {};
+						}
+						row.sort.localKeyAccessor = row.localSortAccessor;
+						return true;
+					},
+					format: ({ row }) =>
+						inherited(
+							row.sort.localKeyAccessor,
+							row.sort.keyAccessor,
+							!row.isLocal
+						)
 				},
 				{
-					id: "sortFunction",
-					accessor: "sortFct",
-					onQuit: "sortFct",
+					id: "localSortFunctionAccessor",
 					caption: "Sort function",
 					width: 150,
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getSorts
+					select: getSorts,
+					accessor: ({ row }) =>
+						utils.nullValue(
+							row.sort.localOrderFunctionAccessor,
+							row.sort.orderFunctionAccessor
+						),
+					onQuit: ({ row }) => {
+						if (!row.sort) {
+							row.sort = {};
+						}
+						row.sort.localOrderFunctionAccessor =
+							row.localSortFunctionAccessor;
+						return true;
+					},
+					format: ({ value, row }) =>
+						inherited(
+							row.sort.localOrderFunctionAccessor,
+							row.sort.orderFunctionAccessor,
+							!row.isLocal
+						)
 				},
 				{
-					id: "format",
+					id: "localFormat",
 					caption: "format",
 					width: 150,
 					dataType: "string",
 					editable: true,
 					filterType: "values",
-					select: getFormats
+					select: getFormats,
+					accessor: ({ row }) =>
+						utils.nullValue(row.localFormat, row.format),
+					onQuit: "overwrite",
+					format: ({ value, row }) =>
+						inherited(row.localFormat, row.format, !row.isLocal)
 				},
 				{
 					id: "isLocal",
