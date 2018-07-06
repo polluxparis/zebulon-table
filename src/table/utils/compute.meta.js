@@ -161,7 +161,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         action.actionFunction =
           typeof action.action === "function"
             ? action.action
-            : functions.getAccessorFunction(object, "action", action.action);
+            : functions.getAccessorFunction(object, "actions", action.action);
       }
       action.enableFunction = functions.getAccessorFunction(
         object,

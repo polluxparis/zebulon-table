@@ -617,6 +617,7 @@ export class TableEvent extends TableMenu {
     delete dataStrings[row.index_];
     const status = getRowStatus(updatedRows, row);
     setStatus(status, "updated_");
+    column.items = undefined;
     const message = {
       value,
       previousValue: this.previousValue,

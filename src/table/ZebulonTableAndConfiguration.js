@@ -20,6 +20,12 @@ export class ZebulonTableAndConfiguration extends Component {
 		super(props);
 		let f = props.functions;
 		f.mergeFunctionsObjects([accessors, metaFunctions]);
+		f.composeFunction(
+			"dataset",
+			"actions",
+			"exportMeta",
+			f.getFunctionsObject()
+		);
 		const meta = props.meta;
 		this.initMeta(
 			props.meta,

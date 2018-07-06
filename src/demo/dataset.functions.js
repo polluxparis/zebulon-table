@@ -14,7 +14,7 @@ import {
 	getCurrencies,
 	getProducts,
 	getColors,
-	data,
+	serverData,
 	audits,
 	dataPk
 } from "./datasources";
@@ -29,9 +29,11 @@ import { meta } from "./dataset.meta";
 const onSaveBefore_ = updatedRows => {
 	const conflicts = [];
 	// if the timestamp on the server side is > timestamp client side => conflict
+	console.log("savebefore", serverData.length);
 	getUpdatedRows(updatedRows).forEach(status => {
+		// const d = data;
 		const row = status.rowUpdated || status.row;
-		const serverRow = data[dataPk[row.id]];
+		const serverRow = serverData[row.rowId_];
 		if (serverRow && serverRow.timestamp_ > row.timestamp_) {
 			conflicts.push({ index_: row.index_, row: { ...serverRow } });
 		}
@@ -116,21 +118,21 @@ const onSave_ = (updatedRows, user) => {
 		if (!pk[row.id]) {
 			pk[row.id] = {
 				n: 0,
-				serverIndex_: status.row ? dataPk[status.row.id] : undefined,
+				// serverIndex_: status.row ? dataPk[status.row.id] : undefined,
 				row
 			};
 		}
 		if (status.row && !pk[status.row.id]) {
 			pk[status.row.id] = {
 				n: 0,
-				serverIndex_: dataPk[status.row.id],
+				// serverIndex_: dataPk[status.row.id],
 				row
 			};
 		}
 		if (status.deleted_ && !status.new_) {
 			pk[status.row.id].n -= 1;
 			deleteds.push({
-				serverIndex_: pk[status.row.id].serverIndex_,
+				rowId_: status.row.rowId_,
 				index_: status.row.index_
 			});
 		} else if (
@@ -178,22 +180,22 @@ const onSave_ = (updatedRows, user) => {
 			const index_ = pKey.row.index_;
 			delete pKey.row.index_;
 			pKey.row.timestamp_ = timestamp;
-			if (utils.isNullOrUndefined(pKey.serverIndex_)) {
-				pKey.row.rowId_ = data.length;
-				dataPk[key] = data.length;
+			if (utils.isNullOrUndefined(pKey.row.rowId_)) {
+				pKey.row.rowId_ = serverData.length;
+				dataPk[key] = pKey.row.rowId_;
 				computeAudit(user, timestamp, "new", columns, {}, pKey.row);
-				data.push(pKey.row);
+				serverData.push(pKey.row);
 			} else {
-				dataPk[key] = pKey.serverIndex_;
+				dataPk[key] = pKey.row.rowId_;
 				computeAudit(
 					user,
 					timestamp,
 					"updated",
 					columns,
-					data[pKey.serverIndex_],
+					serverData[pKey.row.rowId_],
 					pKey.row
 				);
-				data[pKey.serverIndex_] = pKey.row;
+				serverData[pKey.row.rowId_] = pKey.row;
 			}
 			rows.push({
 				index_,
@@ -210,11 +212,11 @@ const onSave_ = (updatedRows, user) => {
 			timestamp,
 			"deleted",
 			columns,
-			data[deleted.serverIndex_],
+			serverData[deleted.rowId_],
 			{}
 		);
-		data[deleted.serverIndex_].deleted_ = true;
-		data[deleted.serverIndex_].timestamp_ = timestamp;
+		serverData[deleted.rowId_].deleted_ = true;
+		serverData[deleted.rowId_].timestamp_ = timestamp;
 		rows.push({
 			index_: deleted.index_,
 			rowId_: deleted.rowId_,
@@ -280,8 +282,8 @@ export const get_subscription = ({ params, meta, filters, sorts }) => {
 	const timestamp = new Date().getTime();
 	const data2 = [[], [], []];
 	for (let i = 0; i < 12; i++) {
-		const row = data[i];
-		const row0 = { ...data[i] };
+		const row = serverData[i];
+		const row0 = { ...serverData[i] };
 		row.timestamp_ = timestamp;
 		row.qty = Math.floor(2000 * Math.random());
 		computeAudit("Zébulon", timestamp, "updated", columns, row0, row);

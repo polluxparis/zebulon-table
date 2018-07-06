@@ -7,16 +7,10 @@ export class Rows extends ScrollableGrid {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   componentDidUpdate() {
-    // console.log("row", this.focused, this.props.hasFocus);
-    if (this.focused && this.focused.input && this.focused.input.ref) {
-      // && this.focused.props.dataType === "boolean"
-      this.focused.input.ref.focus();
-      // this.focused = undefined;
-      // console.log("row", this.focused);
+    if (this.focused) {
+      this.focused.focus();
+      this.focused = undefined;
     }
-    //  else if (this.focused) {
-    //   this.focused.focus();
-    // }
     this.noOver = false;
   }
   cell = (
@@ -78,8 +72,8 @@ export class Rows extends ScrollableGrid {
         }
         menu="cell-menu"
         component={component}
-        ref={ref => {
-          if (focused && hasFocus) {
+        setRef={ref => {
+          if (focused && hasFocus && editable) {
             this.focused = ref;
           }
         }}

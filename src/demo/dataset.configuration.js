@@ -1,17 +1,28 @@
 import React, { Component } from "react";
 import { ZebulonTableAndConfiguration } from "../table/ZebulonTableAndConfiguration";
 import { meta } from "./dataset.meta";
-import { getMockDataset } from "./datasources";
+import { get_array } from "./datasources";
 // customMenuFunctions;
 
 export class MyDatasetConfiguration extends Component {
   constructor(props) {
     super(props);
     const metaDataset = { ...meta };
+    metaDataset.table = { ...metaDataset.table };
+    metaDataset.table.actions = [
+      ...metaDataset.table.actions,
+      {
+        type: "action",
+        caption: "Export Meta",
+        enable: true,
+        hidden: true,
+        action: "exportMeta"
+      }
+    ];
     metaDataset.properties = [];
     metaDataset.lockedIndex = null;
     metaDataset.lockedWidth = null;
-    const data = getMockDataset(25000).data;
+    const data = get_array({ noJoins: true });
     const status = {};
     this.state = {
       status,

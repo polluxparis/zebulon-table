@@ -52,22 +52,6 @@ export class TableFilterSort extends TableEvent {
           filteredData.length
         );
       }
-      // if (
-      //   // filteredData.length !== this.getFilteredDataLength() &&
-      //   rows.startIndex !== 0 &&
-      //   rows.index +
-      //     (rows.direction === 1 ? this.rowsHeight / this.rowHeight : 0) >
-      //     filteredData.length
-      // ) {
-      //   rows = {
-      //     index: 0,
-      //     direction: 1,
-      //     startIndex: 0,
-      //     shift: 0,
-      //     position: 0
-      //   };
-      //   this.setState({ scroll: { rows, columns } });
-      // }
       return filteredData[selectedRange.end.rows];
     }
   };
@@ -142,7 +126,6 @@ export class TableFilterSort extends TableEvent {
     } else {
       column.items = [];
       filter = column;
-      // ????
     }
     return filter;
   };

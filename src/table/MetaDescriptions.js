@@ -1,6 +1,7 @@
 import React from "react";
 import { utils } from "zebulon-controls";
-import { buildObject, exportFunctions } from "./utils/utils";
+import { buildObject, buildFunctionsObject } from "./utils/utils";
+import { datasetFunctions } from "../demo/dataset.functions";
 
 const stringToFunction = (row, functions) => {
 	row.functionJS = functions.evalProtectedFunction(row.functionText);
@@ -45,6 +46,45 @@ const inherited = (value, inheritedValue, canInherit) => {
 	return value;
 };
 export const metaFunctions = {
+	dataset: {
+		actions: {
+			exportMeta: functionsObject => {
+				return ({ meta }) => {
+					// const excludes = {
+					// 	serverPagination: true,
+					// 	zoom: true,
+					// 	indexRowId: true,
+					// 	computedWidth: true,
+					// 	rwd: true,
+					// 	tp: true,
+					// 	visibleIndexes: true,
+					// 	statusDraggable: true,
+					// 	visibleIndex_: true,
+					// 	index_: true,
+					// 	position: true
+					// };
+					const r = buildFunctionsObject(meta, functionsObject, [
+						{
+							path: "../demo/dataset.functions",
+							object: datasetFunctions
+						}
+					]);
+					// const r =
+					// 	"userMeta = {meta : " +
+					// 	JSON.stringify(buildObject(meta, excludes)) +
+					// 	"," +
+					// 	functions;
+					// functions
+					// 	.slice(1, functions.length - 1)
+					// 	.replace(/\\"/g, '"') +
+					// ";";
+					console.log(meta, r);
+					utils.exportFile(r, "meta.txt", "text");
+					return r;
+				};
+			}
+		}
+	},
 	properties: {
 		accessors: {
 			propertyType: ({ row, status, meta }) => {
@@ -89,11 +129,7 @@ export const metaFunctions = {
 		},
 		defaults: {},
 		row: () => {},
-		table: () => {},
-		actions: {
-			exportMeta: ({ meta }) =>
-				"meta = " + JSON.stringify(buildObject(meta))
-		}
+		table: () => {}
 	},
 	functions: {
 		accessors: {
@@ -125,7 +161,7 @@ export const metaFunctions = {
 		},
 		actions: {
 			exportFunctions: ({ data }) =>
-				"functions = " + exportFunctions(data)
+				"functions = " + buildFunctionsObject(data)
 		},
 		editables: { isLocal }
 	},
@@ -280,6 +316,12 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 						hidden: true,
 						action: "toggleFilter",
 						key: "f11"
+					},
+					{
+						type: "action",
+						caption: "Export Meta",
+						enable: true,
+						action: "exportMeta"
 					}
 				]
 			},
@@ -536,7 +578,6 @@ export const metaDescriptions = (object, source, functions, callbacks = {}) => {
 						hidden: !callbacks.applyFunctions,
 						key: "f12"
 					},
-					,
 					{
 						type: "action",
 						caption: "Export functions",
