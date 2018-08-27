@@ -49,9 +49,9 @@ export const computeRows = (data, meta, startIndex = 0, noDataMutation) => {
   let foreignObjects = [];
   foreignObjects = meta.properties.filter(
     column =>
-      column.dataType === "joined object" &&
       column.accessor !== undefined &&
-      column.select !== undefined
+      ((column.dataType === "joined object" && column.select !== undefined) ||
+        (column.dataType === "joined object" && column.hidden))
   );
   const { pk, lk, rwd } = meta.table;
 
