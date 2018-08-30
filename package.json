@@ -4,12 +4,15 @@
 	"homepage": "http://polluxparis.github.io/zebulon-table",
 	"license": "MIT",
 	"description": "React editable table",
-	"tags": ["table", "grid", "editable", "react", "javascript"],
+	"tags": [
+		"table",
+		"grid",
+		"editable",
+		"react",
+		"javascript"
+	],
 	"author": "Thomas Bres <thomas.bres@pollux.paris>",
 	"main": "lib/index.js",
-	"dependencies": {
-		"zebulon-controls": "file:../controls/zebulon-controls-1.2.9.tgz"
-	},
 	"scripts": {
 		"start": "react-scripts start",
 		"build": "react-scripts build",
@@ -18,13 +21,13 @@
 		"predeploy": "npm run build",
 		"deploy": "gh-pages -d build",
 		"compile": "npm run compile:js &&npm run compile:css",
-		"compile:js":
-			"rimraf lib && cross-env NODE_ENV=production babel src/table -d lib --presets react-app --ignore test.js",
-		"compile:css":
-			"rimraf lib/index.css && postcss --use autoprefixer --use cssnano -o lib/index.css src/table/index.css"
+		"compile:js": "rimraf lib && cross-env NODE_ENV=production babel src/table -d lib --presets react-app --ignore test.js",
+		"compile:css": "rimraf lib/index.css && postcss --use autoprefixer --use cssnano -o lib/index.css src/table/index.css"
 	},
 	"babel": {
-		"presets": ["react-app"]
+		"presets": [
+			"react-app"
+		]
 	},
 	"devDependencies": {
 		"babel-cli": "^6.26.0",
@@ -32,6 +35,10 @@
 		"gh-pages": "^1.2.0",
 		"postcss-cli": "^5.0.0",
 		"react-resizable": "^1.7.5",
-		"react-scripts": "^1.1.5"
+		"react-scripts": "^1.1.5",
+		"rimraf": "^2.6.2"
+	},
+	"dependencies": {
+		"zebulon-controls": "^1.2.9"
 	}
 }

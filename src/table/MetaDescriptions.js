@@ -1,7 +1,7 @@
 import React from "react";
 import { utils } from "zebulon-controls";
 import { buildObject, buildFunctionsObject } from "./utils/utils";
-import { datasetFunctions } from "../demo/dataset.functions";
+// import { datasetFunctions } from "../demo/dataset.functions";
 
 const stringToFunction = (row, functions) => {
 	row.functionJS = functions.evalProtectedFunction(row.functionText);
@@ -49,7 +49,7 @@ export const metaFunctions = {
 	dataset: {
 		actions: {
 			exportMeta: functionsObject => {
-				return ({ meta }) => {
+				return ({ meta, datasetFunctions }) => {
 					// const excludes = {
 					// 	serverPagination: true,
 					// 	zoom: true,
