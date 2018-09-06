@@ -281,7 +281,7 @@ export class Table extends TableFilterSort {
         auditStatus.updated_ && !auditStatus.new_
           ? auditStatus.rowUpdated
           : undefined;
-      filteredData = computeAudit(rowUpdated, row, meta, audits);
+      filteredData = computeAudit(rowUpdated, audits);
       auditedRow = filteredData[0];
       filteredData.splice(0, 1);
       filteredDataLength = filteredData.length;

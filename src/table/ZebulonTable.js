@@ -423,7 +423,7 @@ export class ZebulonTable extends Component {
   // ----------------------------------------
   // comunication with server
   // ----------------------------------------
-  errorHandler = (message, action, callback) => {
+  errorHandler = (message, action, callback, callbackReDo) => {
     let handler = (this.props.errorHandler || errorHandler)[action];
     if (
       (action === "onTableQuit" && !(message.updatedRows || {}).nErrors) ||
@@ -469,7 +469,7 @@ export class ZebulonTable extends Component {
               message.updatedRows[index].row = row;
               rollback(message.updatedRows, index);
             });
-            callback(ok);
+            (action === "onSave" && callbackReDo ? callbackReDo : callback)(ok);
           }
         };
         this.confirmationModal = true;
@@ -638,7 +638,8 @@ export class ZebulonTable extends Component {
       }
     };
     const errorSave = ok_ => {
-      const ok = ok_ && this.errorHandler(message, "onSave", saveAfter);
+      const ok =
+        ok_ && this.errorHandler(message, "onSave", saveAfter, saveBefore);
       if (ok !== undefined) {
         saveAfter(ok);
       }

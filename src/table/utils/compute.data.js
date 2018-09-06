@@ -245,40 +245,54 @@ export const groupBy = (data, groupByFunction) => {
   });
   return groups;
 };
-export const computeAudit = (rowUpdated, row, meta, audits) => {
+// export const computeAudit = (rowUpdated, row, meta, audits) => {
+//   const rows = [];
+//   if (rowUpdated) {
+//     rows.push(rowUpdated);
+//   }
+//   if (audits && audits.length) {
+//     const audits_ = [...audits].reverse();
+//     let nextRow = row;
+//     audits_.forEach(audit => {
+//       const { user_, timestamp_, status_ } = audit;
+//       rows.push({
+//         ...nextRow,
+//         user_,
+//         time_: new Date(timestamp_),
+//         status_
+//       });
+//       nextRow = { ...nextRow, ...audit.row };
+//     });
+//     const foreignObjects = meta.properties.filter(
+//       column => column.dataType === "joined object"
+//     );
+//     if (foreignObjects.length) {
+//       rows.forEach(row => {
+//         foreignObjects.forEach(
+//           column => (row[column.id] = column.accessorFunction({ row }))
+//         );
+//       });
+//     }
+//   } else if (!rowUpdated) {
+//     rows.push(row);
+//   }
+//   return rows;
+// };
+export const computeAudit = (rowUpdated, audits) => {
   const rows = [];
   if (rowUpdated) {
     rows.push(rowUpdated);
   }
   if (audits && audits.length) {
-    const audits_ = [...audits].reverse();
-    let nextRow = row;
-    audits_.forEach(audit => {
-      const { user_, timestamp_, status_ } = audit;
-      rows.push({
-        ...nextRow,
-        user_,
-        time_: new Date(timestamp_),
-        status_
-      });
-      nextRow = { ...nextRow, ...audit.row };
-    });
-    const foreignObjects = meta.properties.filter(
-      column => column.dataType === "joined object"
-    );
-    if (foreignObjects.length) {
-      rows.forEach(row => {
-        foreignObjects.forEach(
-          column => (row[column.id] = column.accessorFunction({ row }))
-        );
-      });
-    }
-  } else if (!rowUpdated) {
-    rows.push(row);
+    const audits_ = audits.map(audit => ({
+      ...audit,
+      time_: new Date(audit.timestamp_)
+    }));
+    audits_.reverse();
+    rows.push(...audits_);
   }
   return rows;
 };
-
 export const getRegExp = v =>
   new RegExp(v.replace(" ", `[${String.fromCharCode(32, 160)}]`), "i");
 const stringValue = (property, row) => {
