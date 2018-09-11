@@ -228,6 +228,7 @@ export class Table extends TableFilterSort {
       } = this.state,
       filteredData,
       filteredDataLength;
+    this.meta = meta;
     let { selectRange, onScroll } = this;
     let headersLength =
       1 +
@@ -248,7 +249,7 @@ export class Table extends TableFilterSort {
       auditStatus = updatedRows[auditedRow.index_] || {};
       meta = {
         ...meta,
-        table: { ...meta.table, editable: false },
+        table: { ...meta.table, editable: false, noOrder: true },
         properties: [
           {
             id: "user_",
@@ -262,7 +263,7 @@ export class Table extends TableFilterSort {
             format: "time",
             formatFunction: ({ value }) =>
               utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
-            width: 130
+            width: 150
           },
           {
             id: "status_",
@@ -273,9 +274,10 @@ export class Table extends TableFilterSort {
           ...meta.properties
         ]
       };
+      this.meta = meta;
       computeMetaPositions(meta, this.props.zoom); // A voir zoom
       meta.lockedIndex = 2;
-      meta.lockedWidth = 280 * this.props.zoom;
+      meta.lockedWidth = 300 * this.props.zoom;
       const row = auditStatus.row || auditStatus.rowUpdated || auditedRow;
       const rowUpdated =
         auditStatus.updated_ && !auditStatus.new_
@@ -289,7 +291,7 @@ export class Table extends TableFilterSort {
       filteredData = this.state.filteredData;
       filteredDataLength = this.state.filteredData.length;
     }
-
+    //  actions
     let actions =
       auditedRow || isModal || meta.properties.length === 0
         ? []

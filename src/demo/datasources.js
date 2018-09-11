@@ -52,7 +52,9 @@ export const currencies = [
 	acc[currency.id] = currency;
 	return acc;
 }, {});
-export const getCurrencies = () => currencies;
+export const getCurrencies = () => {
+	return new Promise(resolve => resolve(currencies));
+};
 
 export const shapes = [
 	"square",
@@ -81,7 +83,9 @@ export const colors = [
 	"grey",
 	"black"
 ];
-export const getColors = () => colors;
+export const getColors = () => {
+	return new Promise(resolve => resolve(colors));
+};
 
 export const products = {};
 for (let i = 0; i < 200; i++) {
@@ -96,7 +100,9 @@ for (let i = 0; i < 200; i++) {
 		currency_sym: "€"
 	};
 }
-export const getProducts = () => products;
+export const getProducts = () => {
+	return new Promise(resolve => resolve(products));
+};
 
 const users = ["Margote", "Pollux", "Zébulon", "Azalée"];
 export const getMockDataset = nRow => {

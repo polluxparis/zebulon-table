@@ -609,7 +609,7 @@ export class TableEvent extends TableMenu {
   // -------------------------------
   //  Cell events
   //  -------------------------------
-  onChange = (value, row, column) => {
+  onChange = ({ value, row, column }) => {
     this.updated = true;
     this.rowUpdated = true;
     this.tableUpdated = true;
@@ -661,18 +661,23 @@ export class TableEvent extends TableMenu {
     const foreignObjectQuit = ok_ => {
       const { column, row } = message;
       const value = row[column.id];
-      if (!(column.reference && column.foreignObjectFunction)) {
+      if (!column.foreignObjectFunction) {
         return cellQuit(ok_);
       }
       if (utils.isNullValue(value)) {
-        row[column.reference] = undefined;
+        // row[column.reference] = undefined;
         return cellQuit(ok_);
       }
       let element = document.activeElement;
-      let col = column.accessor.replace("row.", "");
-      col = col.replace(column.reference + ".", "");
+      // let col = column.accessor.replace("row.", "");
+      // col = col.replace(column.reference + ".", "");
+      const col = column.foreignColumn || "cd";
       const filters = {
-        [col]: { id: col, filterType: "starts", v: value }
+        [col]: {
+          id: col,
+          filterType: "starts",
+          v: value
+        }
       };
       const callback = (ok, data) => {
         if (!ok) {
@@ -680,6 +685,8 @@ export class TableEvent extends TableMenu {
           element = document.getElementById(
             `cell: ${this.props.id}-${row.index_}-${column.index_}`
           ).children[0];
+        } else if (column.onChangeFunction) {
+          column.onChangeFunction({ value: data, row });
         } else {
           row[column.reference] = data;
         }

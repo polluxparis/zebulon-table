@@ -40,11 +40,14 @@ export class ZebulonTable extends Component {
     this.state.functions = props.functions || functions.functions([]);
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
+    // if (props.meta.properties) {
+    //   computeMeta(this.state.meta, this.state.sizes.zoom, this.state.functions);
+    // }
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
-    this.saveConfirmationAnswer = ok => ok;
+    this.saveonfirmationAnswer = ok => ok;
   }
   // initFunctions = (functions, object) => {
   //   // if (Array.isArray(functions_)) {
@@ -143,6 +146,22 @@ export class ZebulonTable extends Component {
         functions,
         (this.props.params || {}).privileges_
       );
+      Promise.all(meta.promises).then(values => {
+        console.log(values);
+        this.initData2(
+          data,
+          meta,
+          zoom,
+          functions,
+          startIndex,
+          filters,
+          status
+        );
+      });
+    }
+  };
+  initData2 = (data, meta, zoom, functions, startIndex, filters, status) => {
+    if (Array.isArray(data)) {
       computeData(data, meta, startIndex, meta.table.noDataMutation);
       if (this.props.filteredData && meta.indexPk) {
         const updatedRows = this.state.updatedRows;
@@ -163,30 +182,31 @@ export class ZebulonTable extends Component {
       this.setSorts(this.sorts, meta.properties);
       this.sorts = null;
     }
+    this.setState({ data, status });
   };
   resolvePromise = (data, message) => {
     data
       .then(data => {
         const { meta, functions, filters, sizes } = this.state;
         const status = { loaded: true, loading: false };
-        if (!meta.serverPagination) {
-          this.initData(data, meta, sizes.zoom, functions, 0, filters, status);
-        } else if (meta.properties.length === 0) {
-          data({ startIndex: 0 }).then(page => {
-            this.initData(
-              page.page,
-              meta,
-              sizes.zoom,
-              functions,
-              0,
-              filters,
-              status
-            );
-          });
-          this.setState({ data, status });
-          return data;
-        }
-        this.setState({ data, status });
+        // if (!meta.serverPagination) {
+        this.initData(data, meta, sizes.zoom, functions, 0, filters, status);
+        // } else if (meta.properties.length === 0) {
+        //   data({ startIndex: 0 }).then(page => {
+        //     this.initData(
+        //       page.page,
+        //       meta,
+        //       sizes.zoom,
+        //       functions,
+        //       0,
+        //       filters,
+        //       status
+        //     );
+        //   });
+        //   this.setState({ data, status });
+        //   return data;
+        // }
+        // this.setState({ data, status });
         this.subscribe(message, meta.table.subscription);
         return data;
       })

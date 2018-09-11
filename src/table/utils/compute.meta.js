@@ -94,6 +94,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   //   meta.functions = functions;
   // }
   const object = meta.table.object;
+  meta.promises = [];
   // functions.setVisibility(object);
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
@@ -152,6 +153,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
       grantPrivilege(
+        meta.table.object,
         action.id || action.caption,
         action,
         privileges,
@@ -276,29 +278,31 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     // - an array
     // - an object {id:caption...}
     // - an object {items:[select items],filter:[function to filter items with parameters as row,data...
-    if (Array.isArray(column.select)) {
-      column.selectItems = column.select;
-    }
-    // column.selectItems = select || [""];
-
+    // if (Array.isArray(column.select)) {
     column.accessorFunction = functions.getAccessorFunction(
       object,
       "accessors",
       column.accessor
     );
+    column.selectItems = column.select;
+    if (column.selectFunction) {
+      if (typeof column.selectFunction === "function") {
+        column.selectItems = column.selectFunction({ meta });
+      } else {
+        column.selectItems = column.selectFunction;
+      }
+      //  promises must be resolved before compute data
+      if (utils.isPromise(column.selectItems)) {
+        column.selectItems.then(data => {
+          column.selectItems = data;
+          return data;
+        });
+        meta.promises.push(column.selectItems);
+      }
+    }
     if (column.dataType === "joined object" && column.select) {
       column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
-      // column.primaryKeyAccessorFunction=({row})=>
-      if (
-        column.selectFunction &&
-        typeof column.selectFunction === "function"
-      ) {
-        column.selectItems = column.selectFunction();
-      } else if (column.selectFunction) {
-        column.selectItems = column.selectFunction;
-      } else {
-        column.selectItems = column.select;
-      }
+
       const f = column.accessorFunction;
       column.setForeignKeyAccessorFunction = message => {
         const { value, row } = message;
@@ -337,7 +341,16 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
             column.editable
           ) {
             column.select = " ";
-            column.selectItems = referencedColumn.selectItems;
+            if (utils.isPromise(referencedColumn.selectItems)) {
+              referencedColumn.selectItems.then(data => {
+                column.selectItems = data;
+                referencedColumn.selectItems = data;
+                return data;
+              });
+              meta.promises.push(referencedColumn.selectItems);
+            } else {
+              column.selectItems = referencedColumn.selectItems;
+            }
             column.mandatory = column.mandatory || referencedColumn.mandatory;
           }
         }
@@ -430,7 +443,12 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         );
       }
     }
-    if (column.accessor && !column.reference && !column.onQuit) {
+    if (
+      column.accessor &&
+      !column.reference &&
+      !column.onQuit &&
+      !column.onChange
+    ) {
       column.editable = false;
     }
   });

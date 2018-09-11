@@ -85,34 +85,32 @@ export class TableFilterSort extends TableEvent {
       if (!filter || !filter.items) {
         const items = {};
         this.props.data.forEach(row => {
-          const id = (column.accessorFunction ||
-            (({ row }) => row[column.id]))({
-            row,
-            column,
-            status: updatedRows[row.index_],
-            params: this.props.params,
-            data: data
-          }); // a voir status
-          const label =
-            column.selectItems &&
-            !column.reference &&
-            !Array.isArray(column.selectItems) &&
-            typeof column.selectItems === "object"
-              ? (column.selectItems[id] || {}).caption
-              : id;
+          let id = (column.accessorFunction || (({ row }) => row[column.id]))({
+              row,
+              column,
+              status: updatedRows[row.index_],
+              params: this.props.params,
+              data: data
+            }),
+            label = id; // a voir status
+          if (typeof (id || undefined) === "object") {
+            label = id.caption;
+            id = id.value;
+          } else {
+            label = (column.formatFunction ||
+              (({ value }) =>
+                utils.formatValue(value, null, column.decimals)))({
+              value: label,
+              column,
+              row,
+              params: this.props.params,
+              status: updatedRows[row.index_],
+              data: data
+            });
+          }
           items[id] = {
             id,
-            label:
-              (column.formatFunction ||
-                (({ value }) =>
-                  utils.formatValue(value, null, column.decimals)))({
-                value: label,
-                column,
-                row,
-                params: this.props.params,
-                status: updatedRows[row.index_],
-                data: data
-              }) || id
+            label
           };
         });
         column.items = Object.values(items);
@@ -163,22 +161,22 @@ export class TableFilterSort extends TableEvent {
       filters: { ...this.state.filters, [column.id]: filter }
     });
   };
-  onChangeFilter = (e, row, column, filterTo) => {
+  onChangeFilter = ({ value, row, column, filterTo }) => {
     const ok = this.props.onTableChange("filter", ok => {
       if (ok) {
-        this.onChangeFilter_(e, row, column, filterTo);
+        this.onChangeFilter_(value.value, row, column, filterTo);
       }
     });
     if (ok) {
-      this.onChangeFilter_(e, row, column, filterTo);
+      this.onChangeFilter_(value.value, row, column, filterTo);
     }
   };
-  onChangeFilter_ = (e, row, column, filterTo) => {
+  onChangeFilter_ = (value, row, column, filterTo) => {
     const { selectedRange, filters, meta, data, updatedRows } = this.state;
     // const ok = this.selectRange(selectedRange, undefined, this.row, "quit");
     // return false;
     this.closeOpenedWindows();
-    const v = e;
+    const v = value;
     if (v === undefined) {
       return;
     }
@@ -263,7 +261,7 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onSort = (column, doubleClick) => {
-    if (!this.state.meta.table.noOrder) {
+    if (!this.meta.table.noOrder) {
       const ok = this.props.onTableChange("sort", ok => {
         if (ok) {
           this.onSort_(column, doubleClick);
@@ -275,7 +273,8 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onSort_ = (column, doubleClick) => {
-    const { filteredData, meta } = this.state;
+    const { filteredData } = this.state;
+    const meta = this.meta;
     this.closeOpenedWindows();
     if (this.selectRange(this.range, undefined, this.row, "quit") === false) {
       return false;
