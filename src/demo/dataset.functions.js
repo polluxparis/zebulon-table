@@ -466,7 +466,7 @@ export const datasetFunctions = {
 		analytics: {
 			rolling_avg: {
 				aggregation: "avg",
-				groupByAccessor: "country.id",
+				groupByAccessor: "row.country.id",
 				comparisonAccessor: "row.d",
 				sortAccessor: "row.d",
 				windowStart: "since30d",
@@ -474,7 +474,7 @@ export const datasetFunctions = {
 			},
 			total_amt: {
 				aggregation: "sum",
-				groupByAccessor: "country.id"
+				groupByAccessor: "row.country.id"
 			}
 		}
 	}

@@ -1,12 +1,16 @@
 import React, { Component } from "react";
+import { ZebulonTableMenu } from "./ZebulonTable.menu";
 import { Table } from "./Table";
+import { computeMetaPositions } from "./utils/compute.meta";
+
 import "./index.css";
 import {
   utils,
   ConfirmationModal,
   accessors,
   constants,
-  functions
+  functions,
+  ContextualMenu
 } from "zebulon-controls";
 import { metaFunctions } from "./MetaDescriptions";
 import {
@@ -23,7 +27,7 @@ import {
   errorHandler,
   getUpdatedRows
 } from "./utils/utils";
-export class ZebulonTable extends Component {
+export class ZebulonTable extends ZebulonTableMenu {
   constructor(props) {
     super(props);
     this.state = {
@@ -40,22 +44,12 @@ export class ZebulonTable extends Component {
     this.state.functions = props.functions || functions.functions([]);
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
-    // if (props.meta.properties) {
-    //   computeMeta(this.state.meta, this.state.sizes.zoom, this.state.functions);
-    // }
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
     this.state.status = status;
     this.state.filters = filters;
     this.saveonfirmationAnswer = ok => ok;
   }
-  // initFunctions = (functions, object) => {
-  //   // if (Array.isArray(functions_)) {
-  //   //   return functions_;
-  //   // } else {
-  //     functions.mergeFunctionsObjects(    [accessors, metaFunctions]);
-  //   }
-  // };
   setFilters = (filters, columns) => {
     columns.forEach(column => {
       if (filters[column.id]) {
@@ -173,7 +167,7 @@ export class ZebulonTable extends Component {
         this.props.onGetData({ data, meta, status });
       }
     }
-    this.initSizes(meta, data);
+    this.initSizes(meta, data, this.state.sizes);
     if (filters && meta.properties.length !== 0) {
       this.setFilters(filters, meta.properties);
     }
@@ -185,37 +179,36 @@ export class ZebulonTable extends Component {
     this.setState({ data, status });
   };
   resolvePromise = (data, message) => {
-    data
-      .then(data => {
-        const { meta, functions, filters, sizes } = this.state;
-        const status = { loaded: true, loading: false };
-        // if (!meta.serverPagination) {
-        this.initData(data, meta, sizes.zoom, functions, 0, filters, status);
-        // } else if (meta.properties.length === 0) {
-        //   data({ startIndex: 0 }).then(page => {
-        //     this.initData(
-        //       page.page,
-        //       meta,
-        //       sizes.zoom,
-        //       functions,
-        //       0,
-        //       filters,
-        //       status
-        //     );
-        //   });
-        //   this.setState({ data, status });
-        //   return data;
-        // }
-        // this.setState({ data, status });
-        this.subscribe(message, meta.table.subscription);
-        return data;
-      })
-      .catch(error =>
-        this.setState({
-          data: [],
-          status: { loaded: false, loading: false, error }
-        })
-      );
+    data.then(data => {
+      const { meta, functions, filters, sizes } = this.state;
+      const status = { loaded: true, loading: false };
+      // if (!meta.serverPagination) {
+      this.initData(data, meta, sizes.zoom, functions, 0, filters, status);
+      // } else if (meta.properties.length === 0) {
+      //   data({ startIndex: 0 }).then(page => {
+      //     this.initData(
+      //       page.page,
+      //       meta,
+      //       sizes.zoom,
+      //       functions,
+      //       0,
+      //       filters,
+      //       status
+      //     );
+      //   });
+      //   this.setState({ data, status });
+      //   return data;
+      // }
+      // this.setState({ data, status });
+      this.subscribe(message, meta.table.subscription);
+      return data;
+    });
+    // .catch(error =>
+    //   this.setState({
+    //     data: [],
+    //     status: { loaded: false, loading: false, error }
+    //   })
+    // );
   };
   subscribeObservable = (observable, message) => {
     this.observable = observable;
@@ -248,8 +241,6 @@ export class ZebulonTable extends Component {
       () => {
         this.setState({ status: { loaded: true, loading: false } });
         this.subscribe(message, this.state.meta.table.subscription);
-        // console.log("end");
-        // this.observable.unsubscribe();
       }
     );
   };
@@ -274,16 +265,17 @@ export class ZebulonTable extends Component {
       );
     }
   };
-  initSizes = (meta, data) => {
-    const { sizes } = this.state;
+  initSizes = (meta, data, sizes) => {
+    // const { sizes } = this.state;
+    if (sizes.auto) {
+      sizes.height = null;
+      sizes.width = null;
+    }
     if (!sizes.height || !sizes.width) {
       const tableSizes = getSizes(
         meta,
         sizes.rowHeight || meta.row.height || 25
       );
-      // if (this.props.isModal) {
-      //   tableSizes.headersHeight += 30;
-      // }
       if (!sizes.height && data) {
         sizes.height =
           meta.table.height ||
@@ -806,27 +798,102 @@ export class ZebulonTable extends Component {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,
       position: "relative"
     };
+    let {
+      data,
+      meta,
+      filters,
+      updatedRows,
+      sizes,
+      status,
+      auditedRow
+    } = this.state;
+    if (auditedRow) {
+      meta = {
+        ...meta,
+        table: {
+          ...meta.table,
+          editable: false,
+          noOrder: true,
+          actions: [],
+          caption: `${meta.table.caption || meta.table.object} (audit :${meta
+            .row.descriptorFunction
+            ? meta.row.descriptorFunction({ row: auditedRow })
+            : auditedRow.index_})`
+        },
+        properties: [
+          {
+            id: "user_",
+            caption: "User",
+            width: 80
+          },
+          {
+            id: "timestamp_",
+            caption: "Time",
+            dataType: "date",
+            format: "time",
+            formatFunction: ({ value }) =>
+              utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
+            width: 150,
+            sort: "desc"
+          },
+          {
+            id: "status_",
+            caption: "Status",
+            dataType: "string",
+            width: 70,
+            locked: true
+          },
+          ...meta.properties.map(property => ({
+            ...property,
+            locked: false,
+            v: undefined
+          }))
+        ]
+      };
+
+      // meta.lockedIndex = 2;
+      // meta.lockedWidth = 300 * this.state.sizes.zoom;
+      data = this.state.audits;
+      filters = {};
+      updatedRows = {};
+      computeMetaPositions(meta, this.state.sizes.zoom);
+      meta.lockedIndex = 2;
+      meta.lockedWidth = 300 * this.state.sizes.zoom;
+      sizes = { ...sizes };
+      this.initSizes(meta, data, sizes);
+    }
+    // else {
+    // computeMetaPositions(meta, this.state.sizes.zoom);
+    // }
+
     let div = (
       <div
         style={style}
         className="zebulon-table"
         id={`zebulon-table-${this.props.id}`}
       >
+        <ContextualMenu
+          key="table-menu"
+          getMenu={this.getMenu}
+          component={`zebulon-table-${this.props.id}`}
+          id="table-menu"
+          ref={ref => (this.contextualMenu = ref)}
+        />
         <Table
           id={this.props.id}
           style={this.props.style}
-          status={this.state.status}
-          data={this.state.data}
-          meta={this.state.meta}
+          status={status}
+          data={data}
+          meta={meta}
           params={this.props.params}
-          filters={this.state.filters}
-          updatedRows={this.state.updatedRows}
+          filters={filters}
+          updatedRows={updatedRows}
           key={this.props.id}
           visible={this.props.visible === undefined ? true : this.props.visible}
           // sizes={this.state.sizes}
-          width={this.state.sizes.width}
-          height={this.state.sizes.height}
-          zoom={this.state.sizes.zoom}
+          width={sizes.width}
+          height={sizes.height}
+          zoom={sizes.zoom}
           rowHeight={
             (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
           }
@@ -855,7 +922,7 @@ export class ZebulonTable extends Component {
           callbacks={this.props.callbacks}
           errorHandler={this.errorHandler}
           navigationKeyHandler={this.props.navigationKeyHandler}
-          contextualMenu={this.props.contextualMenu}
+          contextualMenu={this.contextualMenu} // {this.props.contextualMenu}
           callbackForeignKey={this.props.callbackForeignKey}
           onForeignKey={this.onForeignKey}
           isModal={this.props.isModal}

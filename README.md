@@ -660,7 +660,7 @@ For that you'll have to define
     rollingAvg:{
       ...
       aggregation: "avg",
-      groupByAccessor: "country.id",
+      groupByAccessor: "row.country.id",
       accessor: "amt_€",
       comparisonAccessor: "row.d",
       sortAccessor: "row.d",

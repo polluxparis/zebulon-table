@@ -22,13 +22,17 @@ export const filterFunction = (column, params, data, updatedRows) => {
         f = ({ row, column }) => row[column.id];
       }
     }
-    return f({
+    const v = f({
       row,
       column,
       params,
       status: (updatedRows || {})[row.index_],
       data
     });
+    if (column.select && typeof v === "object" && !utils.isDate(v)) {
+      return v.value;
+    }
+    return v;
   };
   if (column.dataType === "date") {
     column.v = new Date(column.v);

@@ -1,5 +1,4 @@
 import React from "react";
-import { TableMenu } from "./Table.menu";
 import { utils, constants } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
 import { hasParent, getUpdatedRows } from "./utils/utils";
@@ -10,7 +9,7 @@ import {
   getRowStatus,
   setStatus
 } from "./utils/utils";
-
+import { TableMenu } from "./Table.menu";
 export class TableEvent extends TableMenu {
   // ------------------------------------
   // Navigation
@@ -34,8 +33,8 @@ export class TableEvent extends TableMenu {
     if (!keepSearch && this.state.search !== undefined) {
       this.setState({ search: undefined });
     }
-    if (this.contextualMenu) {
-      this.contextualMenu.close();
+    if (this.props.contextualMenu) {
+      this.props.contextualMenu.close();
     }
   };
   fKeyMap = {

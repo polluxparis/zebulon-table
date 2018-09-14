@@ -35,6 +35,7 @@ export const countries = [
 	{ id: 11, code: "CH", label: "Switzerland", currency_id: 6, vat: 0.1 }
 ].reduce((acc, country) => {
 	country.pk_ = country.id;
+	country.caption = country.code;
 	acc[country.id] = country;
 	return acc;
 }, {});
@@ -49,6 +50,7 @@ export const currencies = [
 	{ id: 6, code: "CHF", label: "Swiss franc", symbol: "Fr.", rate: 1.15 }
 ].reduce((acc, currency) => {
 	currency.pk_ = currency.id;
+	currency.caption = currency.code;
 	acc[currency.id] = currency;
 	return acc;
 }, {});
@@ -93,6 +95,7 @@ for (let i = 0; i < 200; i++) {
 		pk_: i,
 		id: i,
 		label: `Product ${i}`,
+		caption: `Product ${i}`,
 		shape: shapes[Math.ceil(Math.random() * (shapes.length - 1.001))],
 		size: sizes[Math.ceil(Math.random() * (sizes.length - 1.001))],
 		price: 100 * Math.random() + 50,

@@ -4,13 +4,8 @@ import { TableFilterSort } from "./Table.filters.sorts";
 import { Rows } from "./Rows";
 import { Search } from "./Search";
 
-import {
-  utils,
-  Filter,
-  ContextualMenu,
-  ContextualMenuClient
-} from "zebulon-controls";
-import { computeData, computeAudit } from "./utils/compute.data";
+import { utils, Filter, ContextualMenuClient } from "zebulon-controls";
+import { computeData } from "./utils/compute.data";
 import { computeMetaPositions } from "./utils/compute.meta";
 
 // import { utils } from "zebulon-controls";
@@ -95,17 +90,15 @@ export class Table extends TableFilterSort {
         this.customContextualMenu = this.props.contextualMenu;
       }
     }
-    // this.filtersOut = props.filters;
   }
-  // componentDidMount() {
-  //   this.selectRange(this.state.selectedRange, undefined, undefined, "enter");
-  // }
+
   componentWillReceiveProps(nextProps) {
     if (
       nextProps.data !== this.props.data ||
       nextProps.meta !== this.props.meta ||
       nextProps.status !== this.props.status ||
-      nextProps.updatedRows !== this.props.updatedRows
+      nextProps.updatedRows !== this.props.updatedRows ||
+      nextProps.filters !== this.props.filters
     ) {
       // const filteredData = this.filters(nextProps.data, nextProps.filters);
       let filteredData = [];
@@ -126,7 +119,7 @@ export class Table extends TableFilterSort {
       //     });
       //   }
       // } else {
-      filteredData = this.filters(nextProps.data, this.state.filters);
+      filteredData = this.filters(nextProps.data, nextProps.filters);
       this.sorts(filteredData, nextProps.meta.properties);
       // }
 
@@ -134,6 +127,7 @@ export class Table extends TableFilterSort {
         data: nextProps.data || [],
         filteredData,
         filteredDataLength: filteredData.length,
+        filters: nextProps.filters || {},
         meta: nextProps.meta,
         status,
         updatedRows: nextProps.updatedRows,
@@ -176,6 +170,7 @@ export class Table extends TableFilterSort {
     //   this.onTableQuit();
     // }
   }
+
   shouldComponentUpdate(nextProps, nextState) {
     return !nextProps.modal;
   }
@@ -228,7 +223,6 @@ export class Table extends TableFilterSort {
       } = this.state,
       filteredData,
       filteredDataLength;
-    this.meta = meta;
     let { selectRange, onScroll } = this;
     let headersLength =
       1 +
@@ -242,55 +236,55 @@ export class Table extends TableFilterSort {
     // audit
     // -----------------------------
     // console.log("render", scroll, selectedRange);
-    let auditStatus;
-    if (auditedRow) {
-      // selectRange = undefined;
-      headersLength = 2;
-      auditStatus = updatedRows[auditedRow.index_] || {};
-      meta = {
-        ...meta,
-        table: { ...meta.table, editable: false, noOrder: true },
-        properties: [
-          {
-            id: "user_",
-            caption: "User",
-            width: 80
-          },
-          {
-            id: "time_",
-            caption: "Time",
-            dataType: "date",
-            format: "time",
-            formatFunction: ({ value }) =>
-              utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
-            width: 150
-          },
-          {
-            id: "status_",
-            caption: "Status",
-            dataType: "string",
-            width: 70
-          },
-          ...meta.properties
-        ]
-      };
-      this.meta = meta;
-      computeMetaPositions(meta, this.props.zoom); // A voir zoom
-      meta.lockedIndex = 2;
-      meta.lockedWidth = 300 * this.props.zoom;
-      const row = auditStatus.row || auditStatus.rowUpdated || auditedRow;
-      const rowUpdated =
-        auditStatus.updated_ && !auditStatus.new_
-          ? auditStatus.rowUpdated
-          : undefined;
-      filteredData = computeAudit(rowUpdated, audits);
-      auditedRow = filteredData[0];
-      filteredData.splice(0, 1);
-      filteredDataLength = filteredData.length;
-    } else {
-      filteredData = this.state.filteredData;
-      filteredDataLength = this.state.filteredData.length;
-    }
+    // let auditStatus;
+    // if (auditedRow) {
+    //   // selectRange = undefined;
+    //   headersLength = 2;
+    //   auditStatus = updatedRows[auditedRow.index_] || {};
+    //   meta = {
+    //     ...meta,
+    //     table: { ...meta.table, editable: false, noOrder: true },
+    //     properties: [
+    //       {
+    //         id: "user_",
+    //         caption: "User",
+    //         width: 80
+    //       },
+    //       {
+    //         id: "time_",
+    //         caption: "Time",
+    //         dataType: "date",
+    //         format: "time",
+    //         formatFunction: ({ value }) =>
+    //           utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
+    //         width: 150
+    //       },
+    //       {
+    //         id: "status_",
+    //         caption: "Status",
+    //         dataType: "string",
+    //         width: 70
+    //       },
+    //       ...meta.properties
+    //     ]
+    //   };
+    //   computeMetaPositions(meta, this.props.zoom); // A voir zoom
+    //   meta.lockedIndex = 2;
+    //   meta.lockedWidth = 300 * this.props.zoom;
+    //   const row = auditStatus.row || auditStatus.rowUpdated || auditedRow;
+    //   const rowUpdated =
+    //     auditStatus.updated_ && !auditStatus.new_
+    //       ? auditStatus.rowUpdated
+    //       : undefined;
+    //   filteredData = computeAudit(rowUpdated, audits);
+    //   auditedRow = filteredData[0];
+    //   filteredData.splice(0, 1);
+    //   filteredDataLength = filteredData.length;
+    // } else {
+
+    filteredData = this.state.filteredData;
+    filteredDataLength = this.state.filteredData.length;
+    // }
     //  actions
     let actions =
       auditedRow || isModal || meta.properties.length === 0
@@ -502,7 +496,7 @@ export class Table extends TableFilterSort {
           meta={meta}
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
-          component={this.props.id}
+          component={`zebulon-table-${this.props.id}`}
           checkable={meta.table.checkable}
           onDoubleClick={this.onDoubleClick}
           draggable={meta.table.statusDraggable}
@@ -608,7 +602,7 @@ export class Table extends TableFilterSort {
         noUpdate={noUpdate}
         style={style}
         onDoubleClick={this.onDoubleClick}
-        component={this.props.id}
+        component={`zebulon-table-${this.props.id}`}
       />
     );
     let lockedColumns = null;
@@ -636,7 +630,7 @@ export class Table extends TableFilterSort {
           noVerticalScrollbar={true}
           onDoubleClick={this.onDoubleClick}
           locked={locked}
-          component={this.props.id}
+          component={`zebulon-table-${this.props.id}`}
         />
       );
     }
@@ -658,9 +652,9 @@ export class Table extends TableFilterSort {
         openFilter={this.openFilter}
         onChange={this.onChangeFilter}
         style={style}
-        component={this.props.id}
-        auditedRow={auditedRow}
-        auditStatus={auditStatus}
+        component={`zebulon-table-${this.props.id}`}
+        // auditedRow={auditedRow}
+        // auditStatus={{}}
         isActive={this.props.isActive}
         onActivation={this.props.onActivation}
         changingFilter={this.changingFilter}
@@ -672,7 +666,7 @@ export class Table extends TableFilterSort {
         <Headers
           onSort={this.onSort}
           meta={meta}
-          data={auditedRow ? data : null}
+          data={data}
           height={this.rowHeight * headersLength}
           width={meta.lockedWidth}
           scroll={scroll.columns}
@@ -681,9 +675,9 @@ export class Table extends TableFilterSort {
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           locked={true}
-          component={this.props.id}
-          auditedRow={auditedRow}
-          auditStatus={auditStatus}
+          component={`zebulon-table-${this.props.id}`}
+          // auditedRow={auditedRow}
+          // auditStatus={{}}
           isActive={this.props.isActive}
           onActivation={this.props.onActivation}
           changingFilter={this.changingFilter}
@@ -724,7 +718,7 @@ export class Table extends TableFilterSort {
           key={"header-status"}
           id={"header-status"}
           menu="top-left-corner-menu"
-          component={this.props.id}
+          component={`zebulon-table-${this.props.id}`}
         >
           {statusBarHeader}
         </ContextualMenuClient>
@@ -766,13 +760,6 @@ export class Table extends TableFilterSort {
         }}
       >
         <div>
-          <ContextualMenu
-            key="table-menu"
-            getMenu={this.getMenu}
-            component={this.props.id}
-            id="table-menu"
-            ref={ref => (this.contextualMenu = ref)}
-          />
           {detail}
           {this.filter}
           {this.text}

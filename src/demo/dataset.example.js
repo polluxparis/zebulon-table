@@ -46,16 +46,20 @@ export class MyDataset extends Component {
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
   }
-
+  componentWillReceiveProps(nextProps) {
+    const a = 1;
+    console.log("ex", this.props);
+    console.log("ex", nextProps);
+  }
   getLengths = ({ data, filteredData }) => {
-    if (Array.isArray(data)) {
-      this.setState({
-        dataLength: data.length,
-        filteredDataLength: filteredData.length,
-        loadedDataLength: data.length,
-        pageStartIndex: undefined
-      });
-    }
+    // if (Array.isArray(data)) {
+    //   this.setState({
+    //     dataLength: data.length,
+    //     filteredDataLength: filteredData.length,
+    //     loadedDataLength: data.length,
+    //     pageStartIndex: undefined
+    //   });
+    // }
   };
   getPageLengths = ({
     pageLength,
@@ -223,6 +227,7 @@ export class MyDataset extends Component {
       status: { loading: true }
     });
   };
+  // Object.keys(this.previousState).map(key=>({key, ok:this.previousState[key]===this.state[key]}))
   render() {
     const { keyEvent, functions } = this.props;
     const {
@@ -242,9 +247,10 @@ export class MyDataset extends Component {
     let header = null,
       footer = null;
     const sizes = { ...this.props.sizes };
-
+    console.log("ex render", this.props, this.state);
     meta.serverPagination = radioDataset === "get_pagination_manager";
     meta.table.select = radioDataset;
+    this.previousState = this.state;
     header = (
       <div>
         <div

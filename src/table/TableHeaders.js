@@ -510,7 +510,7 @@ export const statusCell = (
       />
     );
   }
-  const id = `status: ${component}-${isAudit ? index : row.index_}-`;
+  const id = `status: ${component}-${index}-`;
   return (
     <ContextualMenuClient
       id={id}

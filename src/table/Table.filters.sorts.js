@@ -35,8 +35,8 @@ export class TableFilterSort extends TableEvent {
       } else if (selectedRange.end.rows > filteredData.length - 1) {
         selectedRange.end.rows = filteredData.length - 1;
         this.scrollTo(
-          selectedRange.end.rows,
-          1,
+          0,
+          -1,
           selectedRange.end.columns,
           scroll.columns.direction,
           false,
@@ -81,50 +81,57 @@ export class TableFilterSort extends TableEvent {
   //
   getFilterItems = (filter, column) => {
     const { meta, data, updatedRows } = this.state;
-    if (!meta.serverPagination) {
-      if (!filter || !filter.items) {
-        const items = {};
-        this.props.data.forEach(row => {
-          let id = (column.accessorFunction || (({ row }) => row[column.id]))({
-              row,
-              column,
-              status: updatedRows[row.index_],
-              params: this.props.params,
-              data: data
-            }),
-            label = id; // a voir status
-          if (typeof (id || undefined) === "object") {
-            label = id.caption;
-            id = id.value;
-          } else {
-            label = (column.formatFunction ||
-              (({ value }) =>
-                utils.formatValue(value, null, column.decimals)))({
-              value: label,
-              column,
-              row,
-              params: this.props.params,
-              status: updatedRows[row.index_],
-              data: data
-            });
-          }
-          items[id] = {
-            id,
-            label
-          };
-        });
-        column.items = Object.values(items);
-        column.items.sort((itemA, itemB) => {
-          return utils.isNullValue(itemA.label)
-            ? -1
-            : (itemA.label > itemB.label) - (itemA.label < itemB.label);
-        });
-        filter = column;
-      }
-    } else {
-      column.items = [];
+    // if (!meta.serverPagination) {
+    if (!filter || !filter.items) {
+      const items = {};
+      this.props.data.forEach(row => {
+        let id = (column.accessorFunction || (({ row }) => row[column.id]))({
+            row,
+            column,
+            status: updatedRows[row.index_],
+            params: this.props.params,
+            data: data
+          }),
+          label = id,
+          sort = id,
+          nvl = ""; // a voir status
+        if (typeof (id || undefined) === "object") {
+          label = id.caption;
+          sort = id.caption;
+          id = id.value;
+        } else {
+          label = (column.formatFunction ||
+            (({ value }) => utils.formatValue(value, null, column.decimals)))({
+            value: label,
+            column,
+            row,
+            params: this.props.params,
+            status: updatedRows[row.index_],
+            data: data
+          });
+        }
+        if (column.dataType === "date") {
+          nvl = new Date(null);
+        } else if (column.dataType === "number") {
+          nvl = -Infinity;
+        }
+        items[id] = {
+          id,
+          label,
+          sort: sort || nvl
+        };
+      });
+      column.items = Object.values(items);
+      column.items.sort((itemA, itemB) => {
+        return (itemA.sort > itemB.sort) - (itemA.sort < itemB.sort);
+      });
       filter = column;
+      // }
     }
+    // else {
+    //   column.items = [];
+    //   filter = column;
+    // }
     return filter;
   };
   openFilter = (e, column) => {
@@ -188,7 +195,7 @@ export class TableFilterSort extends TableEvent {
         column.v = v;
       }
       filters[column.id] = column;
-      this.changingFilter = true;
+      // this.changingFilter = true;
       const filteredData = this.filters(data, filters, true, updatedRows);
       // if (!meta.serverPagination) {
       this.sorts(filteredData, meta.properties);
@@ -261,7 +268,7 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onSort = (column, doubleClick) => {
-    if (!this.meta.table.noOrder) {
+    if (!this.state.meta.table.noOrder) {
       const ok = this.props.onTableChange("sort", ok => {
         if (ok) {
           this.onSort_(column, doubleClick);
@@ -273,8 +280,7 @@ export class TableFilterSort extends TableEvent {
     }
   };
   onSort_ = (column, doubleClick) => {
-    const { filteredData } = this.state;
-    const meta = this.meta;
+    const { filteredData, meta } = this.state;
     this.closeOpenedWindows();
     if (this.selectRange(this.range, undefined, this.row, "quit") === false) {
       return false;

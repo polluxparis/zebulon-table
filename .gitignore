@@ -16,5 +16,5 @@ lib
 npm-debug.log
 .vscode
 .chrome
-grid.sublime-workspace
+table.sublime-*
 zebulon-table-*
