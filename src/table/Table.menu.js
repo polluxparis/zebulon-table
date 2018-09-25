@@ -40,10 +40,10 @@ export class TableMenu extends Component {
             } else if (item.id === 1) {
                 const prevScroll = this.state.scroll;
                 const prevRange = this.state.selectedRange;
-                 this.setState({
-                    prevScroll,
-                    prevRange
-                });
+                //  this.setState({
+                //     prevScroll,
+                //     prevRange
+                // });
                 // const columns =
                 //     props.meta && props.meta.visibleIndexes
                 //         ? props.meta.visibleIndexes[0]
@@ -72,6 +72,12 @@ export class TableMenu extends Component {
                         position: 0
                     }
                 };
+                this.setState({
+                    scroll,
+                    prevScroll,
+                    selectedRange,
+                    prevRange
+                });
             } else {
                 return item.function({
                     data,

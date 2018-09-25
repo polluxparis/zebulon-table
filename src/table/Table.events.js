@@ -1,9 +1,10 @@
 import React from "react";
 import { utils, constants } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
-import { hasParent, getUpdatedRows } from "./utils/utils";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import {
+  hasParent,
+  getUpdatedRows,
   manageRowError,
   rollback,
   getRowStatus,
@@ -664,7 +665,9 @@ export class TableEvent extends TableMenu {
         return cellQuit(ok_);
       }
       if (utils.isNullValue(value)) {
-        // row[column.reference] = undefined;
+        if (column.onChangeFunction) {
+          column.onChangeFunction({ value: { id: null, cd: null }, row });
+        }
         return cellQuit(ok_);
       }
       let element = document.activeElement;
@@ -781,7 +784,7 @@ export class TableEvent extends TableMenu {
   onRowEnter = row => {
     const message = {
       row,
-      status: this.state.updatedRows[row.index_],
+      status: getRowStatus(this.state.updatedRows, row),
       meta: this.state.meta,
       data: this.state.data,
       params: this.props.params

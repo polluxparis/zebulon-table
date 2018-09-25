@@ -594,7 +594,7 @@ export class Table extends TableFilterSort {
         selectRange={selectRange}
         onChange={this.onChange}
         onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
-        hasFocus={this.hasFocus}
+        hasFocus={this.hasFocus && this.props.isActive !== false}
         updatedRows={updatedRows}
         params={params}
         navigationKeyHandler={this.props.navigationKeyHandler}
@@ -623,7 +623,7 @@ export class Table extends TableFilterSort {
           selectRange={selectRange}
           onChange={this.onChange}
           onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
-          hasFocus={this.hasFocus}
+          hasFocus={this.hasFocus && this.props.isActive !== false}
           updatedRows={updatedRows}
           params={params}
           noUpdate={noUpdate}

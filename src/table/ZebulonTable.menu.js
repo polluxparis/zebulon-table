@@ -18,6 +18,12 @@ export class ZebulonTableMenu extends Component {
                     audits: audits || [],
                     status: { loaded: true, loading: false }
                 });
+                if (this.props.onRowEnter) {
+                    this.props.onRowEnter({
+                        audited: true,
+                        row: (audits || [])[0]
+                    });
+                }
             });
         } else {
             this.setState({
@@ -25,6 +31,12 @@ export class ZebulonTableMenu extends Component {
                 audits: audits || [],
                 status: { loaded: true, loading: false }
             });
+            if (this.props.onRowEnter) {
+                this.props.onRowEnter({
+                    audited: true,
+                    row: (audits || [])[0]
+                });
+            }
         }
         this.table.handleClickMenu(props, item);
     };
@@ -33,6 +45,14 @@ export class ZebulonTableMenu extends Component {
             auditedRow: undefined,
             audits: undefined
         });
+        if (this.props.linkedObjects) {
+            this.props.linkedObjects.forEach(object =>
+                object.setState({
+                    auditedRow: undefined,
+                    audits: undefined
+                })
+            );
+        }
         this.table.handleClickMenu(props, item);
     };
     handleClickMenu = (props, item) => {

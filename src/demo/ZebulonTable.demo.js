@@ -47,13 +47,13 @@ class ZebulonTableDemo extends Component {
     document.addEventListener("copy", this.handleKeyEvent);
     document.addEventListener("paste", this.handleKeyEvent);
     document.addEventListener("keydown", this.handleKeyEvent);
-    window.addEventListener("beforeunload", this.handleKeyEvent);
+    // window.addEventListener("beforeunload", this.handleKeyEvent);
   }
   componentWillUnmount() {
     document.removeEventListener("copy", this.handleKeyEvent);
     document.removeEventListener("paste", this.handleKeyEvent);
     document.removeEventListener("keydown", this.handleKeyEvent);
-    window.removeEventListener("beforeunload", this.handleKeyEvent);
+    // window.removeEventListener("beforeunload", this.handleKeyEvent);
   }
   onResize = (e, data) => {
     this.setState({
