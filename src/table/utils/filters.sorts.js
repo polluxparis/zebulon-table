@@ -15,6 +15,7 @@ export const filterFunction = (column, params, data, updatedRows) => {
         8 * ((status.errors || { n_: 0 }).n_ > 0)
       );
     }
+
     if (!f) {
       if (column.dataType === "date") {
         f = ({ row, column }) => new Date(row[column.id]);
@@ -98,10 +99,13 @@ export const filtersFunction = (filters, params, data, updatedRows) => {
       return filter;
     });
   if (!f.length) {
-    return x => x;
+    return row => !((updatedRows || {})[row.index_] || {}).hidden_;
   }
   return row => {
-    return f.reduce((acc, filter) => acc && filter.f(row), true);
+    return (
+      !((updatedRows || {})[row.index_] || {}).hidden_ &&
+      f.reduce((acc, filter) => acc && filter.f(row), true)
+    );
   };
 };
 // -----------------------------

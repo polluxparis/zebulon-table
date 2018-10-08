@@ -6,7 +6,9 @@ import { metaFunctions } from "../MetaDescriptions";
 // Error management
 // -----------------------------------------------------------
 export const rollback = (updatedRows, index) => {
-  const status = updatedRows[index];
+  rollbackStatus(updatedRows, updatedRows[index]);
+};
+export const rollbackStatus = (updatedRows, status) => {
   if (!status.new_) {
     Object.keys(status.rowUpdated).forEach(
       key => (status.rowUpdated[key] = null)
@@ -14,6 +16,8 @@ export const rollback = (updatedRows, index) => {
     Object.keys(status.row).forEach(
       key => (status.rowUpdated[key] = status.row[key])
     );
+  } else {
+    status.hidden_ = true;
   }
   const n = status.errors ? status.errors.n_ || 0 : 0;
   status.deleted_ = false;
@@ -24,6 +28,22 @@ export const rollback = (updatedRows, index) => {
     updatedRows.nErrors -= n;
   }
   // }
+};
+export const rollbackFiltered = (updatedRows, filters) => {
+  const linkFilters = Object.values(filters).filter(filter => filter.link);
+  const filtersFunction = status =>
+    linkFilters.length
+      ? linkFilters.reduce(
+          (acc, filter) =>
+            acc &&
+            (status.row || status.rowUpdated) &&
+            (status.row || status.rowUpdated)[filter.id] === filter.v,
+          true
+        )
+      : true;
+  Object.values(updatedRows)
+    .filter(filtersFunction)
+    .forEach(status => rollbackStatus(updatedRows, status));
 };
 export const rollbackAll = (updatedRows, data) => {
   getUpdatedRows(updatedRows).forEach(status => {

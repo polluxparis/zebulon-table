@@ -46,7 +46,9 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-odd": rowIndex % 2 === 1,
       "zebulon-table-cell-selected": selected,
       "zebulon-table-cell-focused": focused,
-      "zebulon-table-cell-editable": editable && focused
+      "zebulon-table-cell-editable": editable && focused,
+      "zebulon-table-cell-select": editable && focused && column.select,
+      "zebulon-table-cell-checkbox": column.dataType === "boolean"
     });
     const id = `cell: ${component}-${row.index_}-${column.index_}`;
     return (
@@ -121,7 +123,7 @@ export class Rows extends ScrollableGrid {
             selectedRange.end.rows === rowIndex &&
             selectedRange.end.columns === index,
           onMouseDown = e => {
-            e.preventDefault();
+            // e.preventDefault();
             this.selectCell(
               { rows: rowIndex, columns: columnIndex },
               e.shiftKey
@@ -129,12 +131,12 @@ export class Rows extends ScrollableGrid {
           },
           onMouseOver = e => {
             if ((e.buttons & 1) === 1 && !this.noOver) {
-              e.preventDefault();
+              // e.preventDefault();
               this.selectCell({ rows: rowIndex, columns: columnIndex }, true);
             }
           },
           onMouseUp = e => {
-            e.preventDefault();
+            // e.preventDefault();
             this.mouseDown = false;
           };
         cells.push(
@@ -197,7 +199,8 @@ export class Rows extends ScrollableGrid {
       width,
       updatedRows,
       hasFocus,
-      component
+      component,
+      locked
     } = this.props;
     let i = 0,
       index = this.props.scroll.rows.startIndex,
@@ -250,7 +253,12 @@ export class Rows extends ScrollableGrid {
       height: "inherit"
     };
     return (
-      <div id="content" style={style} onWheel={this.onWheel}>
+      <div
+        id="content"
+        style={style}
+        onWheel={this.onWheel}
+        className={locked ? "zebulon-locked-columns" : ""}
+      >
         {items}
       </div>
     );

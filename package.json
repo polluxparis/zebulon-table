@@ -39,6 +39,6 @@
 		"rimraf": "^2.6.2"
 	},
 	"dependencies": {
-		"zebulon-controls": "^1.2.11"
+		"zebulon-controls": "^1.2.23"
 	}
 }

@@ -313,6 +313,11 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         return column.selectItems[v];
       };
     }
+    column.onChangeFunction = functions.getAccessorFunction(
+      object,
+      "validators",
+      column.onChange
+    );
     // reference to an object
     if (column.accessor && typeof column.accessor === "string") {
       let accessor = column.accessor;
@@ -352,6 +357,13 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
               column.selectItems = referencedColumn.selectItems;
             }
             column.mandatory = column.mandatory || referencedColumn.mandatory;
+            const f = column.onChangeFunction || (x => true);
+            column.onChangeFunction = ({ value, row, column }) => {
+              row[column.reference] = column.selectItems[value.value];
+              row[column.id] = column.accessorFunction({ column, row });
+              column.setForeignKeyAccessorFunction({ value: value.value, row });
+              return f({ value, row, column });
+            };
           }
         }
       }
@@ -366,11 +378,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       "defaults",
       column.default
     );
-    column.onChangeFunction = functions.getAccessorFunction(
-      object,
-      "validators",
-      column.onChange
-    );
+
     column.onQuitFunction = functions.getAccessorFunction(
       object,
       "validators",

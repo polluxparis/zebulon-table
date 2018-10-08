@@ -32,10 +32,8 @@ const filter = (
     else if (column.dataType === "date" || column.dataType === "boolean")
       textAlign = "center";
   }
-  const focused =
-    (focusedId || document.activeElement || {}.id) ===
-    String(column.index_ + 1000 * filterTo);
   const id = `filter${filterTo ? "To" : ""}: ${component}--${column.index_}`;
+  const focused = (document.activeElement || {}).id === id;
   let value = column.v,
     div;
   if (column.filterType === "values" && column.v) {
@@ -69,6 +67,16 @@ const filter = (
     } else if (column.filterType === "values") {
       value = "";
     }
+    // {
+    //           position: "absolute",
+    //           left:position,
+    //           width: Math.min(
+    //             false ? column.computedWidth + shift : column.computedWidth,
+    //             visibleWidth - left
+    //           ),
+    //           height: rowHeight,
+    //           textAlign
+    //         }
     div = (
       <Input
         column={column}
@@ -76,7 +84,6 @@ const filter = (
         key={id}
         className={className}
         style={{
-          // position: "absolute",
           height,
           width,
           textAlign
@@ -303,7 +310,7 @@ export class Headers extends Component {
       height,
       onChange,
       openFilter,
-      focusedId,
+      // focusedId,
       headersLength,
       locked,
       auditedRow,
@@ -384,7 +391,7 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  focusedId,
+                  // focusedId,
                   component
                 )
               );
@@ -414,7 +421,7 @@ export class Headers extends Component {
                     column.filterType === "between",
                     onChange,
                     openFilter,
-                    focusedId,
+                    // focusedId,
                     component
                   )
                 );
@@ -433,7 +440,13 @@ export class Headers extends Component {
           div = (
             <div
               key={column.id || `undefined ${column.index_}`}
-              style={{ display: "block", width: columnWidth, height }}
+              style={{
+                position: "absolute",
+                left: position,
+                display: "block",
+                width: columnWidth,
+                height
+              }}
             >
               {div}
             </div>
@@ -459,8 +472,9 @@ export class Headers extends Component {
         <div
           id="tutut"
           key={-2 - locked}
+          className={locked ? "zebulon-locked-headers" : ""}
           // id={type + filterTo ? "To" : ""}
-          style={{ ...this.props.style, ...style }}
+          style={{ ...this.props.style, ...style, position: "relative" }}
         >
           {cells}
         </div>
@@ -515,6 +529,7 @@ export const statusCell = (
     <ContextualMenuClient
       id={id}
       key={id}
+      index={index}
       className={className}
       style={style}
       onClick={e => onClick(index, e.shiftKey)}

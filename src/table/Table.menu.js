@@ -32,26 +32,20 @@ export class TableMenu extends Component {
                 item.function({ data, meta, params, column, table: this });
             }
         } else if (props.menu === "row-header-menu") {
-            const { row, status } = props;
+            const { row, status, index } = props;
             const { data, meta, params, updatedRows } = this.state;
             if (item.id === 0) {
-                rollback(updatedRows, row.index_);
+                // this.rollback(updatedRows, row.index_);
                 this.setState({ scroll: this.state.scroll });
             } else if (item.id === 1) {
                 const prevScroll = this.state.scroll;
-                const prevRange = this.state.selectedRange;
-                //  this.setState({
-                //     prevScroll,
-                //     prevRange
-                // });
-                // const columns =
-                //     props.meta && props.meta.visibleIndexes
-                //         ? props.meta.visibleIndexes[0]
-                //         : 0;
-                // const selectedRange = {
-                //     start: { rows: 0, columns },
-                //     end: { rows: 0, columns }
-                // };
+                const selectedRow = {
+                    rows: index,
+                    columns: (this.state.meta.visibleIndexes || [0])[0]
+                };
+                const rows = index;
+                // const startRowIndex = extension ? this.props.selectedIndex : index;
+                const prevRange = { end: selectedRow, start: selectedRow };
                 const selectedRange = {
                     start: { rows: 0, columns: 0 },
                     end: { rows: 0, columns: 0 }

@@ -37,10 +37,22 @@ export const cellData = (row, column, status, data, params, focused) => {
     if (
       !utils.isPromise(select) &&
       !Array.isArray(select) &&
-      typeof select === "object" &&
+      utils.isObject(select) &&
       !column.accessorFunction
     ) {
       select = Object.values(select);
+    }
+    if (column.primaryKeyAccessorFunction) {
+      value = {
+        value: column.primaryKeyAccessorFunction({
+          column,
+          row,
+          params,
+          status,
+          data
+        }),
+        caption: value
+      };
     }
   }
   return { editable, select, value };

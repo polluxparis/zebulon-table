@@ -80,16 +80,16 @@ export class Table extends TableFilterSort {
     if (status.loaded) {
       this.bLoaded = true;
     }
-    if (this.props.contextualMenu) {
-      if (typeof this.props.contextualMenu === "function") {
-        this.customContextualMenu = this.props.contextualMenu(
-          this.state,
-          props
-        );
-      } else {
-        this.customContextualMenu = this.props.contextualMenu;
-      }
-    }
+    // if (this.props.contextualMenu) {
+    //   if (typeof this.props.contextualMenu === "function") {
+    //     this.customContextualMenu = this.props.contextualMenu(
+    //       this.state,
+    //       props
+    //     );
+    //   } else {
+    //     this.customContextualMenu = this.props.contextualMenu;
+    //   }
+    // }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -119,7 +119,12 @@ export class Table extends TableFilterSort {
       //     });
       //   }
       // } else {
-      filteredData = this.filters(nextProps.data, nextProps.filters);
+      filteredData = this.filters(
+        nextProps.data,
+        nextProps.filters,
+        undefined,
+        nextProps.updatedRows
+      );
       this.sorts(filteredData, nextProps.meta.properties);
       // }
 
@@ -169,6 +174,9 @@ export class Table extends TableFilterSort {
     // else if (!nextProps.visible && this.props.visible) {
     //   this.onTableQuit();
     // }
+    if (!nextProps.isActive && this.props.isActive) {
+      this.closeOpenedWindows();
+    }
   }
 
   shouldComponentUpdate(nextProps, nextState) {
@@ -210,7 +218,7 @@ export class Table extends TableFilterSort {
     this.setState({ checkAll: checked_, updatedRows: this.state.updatedRows });
   };
   render() {
-    const { height, width, isModal, visible, params } = this.props;
+    const { height, width, isModal, visible, params, id } = this.props;
     let {
         status,
         meta,
@@ -232,55 +240,7 @@ export class Table extends TableFilterSort {
             column => column.filterType === "between" && !column.hidden
           ) !==
             -1));
-    // -----------------------------
-    // audit
-    // -----------------------------
-    // console.log("render", scroll, selectedRange);
-    // let auditStatus;
-    // if (auditedRow) {
-    //   // selectRange = undefined;
-    //   headersLength = 2;
-    //   auditStatus = updatedRows[auditedRow.index_] || {};
-    //   meta = {
-    //     ...meta,
-    //     table: { ...meta.table, editable: false, noOrder: true },
-    //     properties: [
-    //       {
-    //         id: "user_",
-    //         caption: "User",
-    //         width: 80
-    //       },
-    //       {
-    //         id: "time_",
-    //         caption: "Time",
-    //         dataType: "date",
-    //         format: "time",
-    //         formatFunction: ({ value }) =>
-    //           utils.formatValue(value, "dd/mm/yyyy hh:mi:ss"),
-    //         width: 150
-    //       },
-    //       {
-    //         id: "status_",
-    //         caption: "Status",
-    //         dataType: "string",
-    //         width: 70
-    //       },
-    //       ...meta.properties
-    //     ]
-    //   };
-    //   computeMetaPositions(meta, this.props.zoom); // A voir zoom
-    //   meta.lockedIndex = 2;
-    //   meta.lockedWidth = 300 * this.props.zoom;
-    //   const row = auditStatus.row || auditStatus.rowUpdated || auditedRow;
-    //   const rowUpdated =
-    //     auditStatus.updated_ && !auditStatus.new_
-    //       ? auditStatus.rowUpdated
-    //       : undefined;
-    //   filteredData = computeAudit(rowUpdated, audits);
-    //   auditedRow = filteredData[0];
-    //   filteredData.splice(0, 1);
-    //   filteredDataLength = filteredData.length;
-    // } else {
+    let key;
 
     filteredData = this.state.filteredData;
     filteredDataLength = this.state.filteredData.length;
@@ -319,8 +279,11 @@ export class Table extends TableFilterSort {
       const { top, left, items, v, caption, computedWidth } = filters[
         openedFilter
       ];
+      key = `filter-${id}`;
       this.filter = (
         <Filter
+          id={key}
+          key={key}
           items={items}
           title={caption}
           filter={v}
@@ -347,8 +310,11 @@ export class Table extends TableFilterSort {
     // ------------------------
     const { top, left, v, editable, label } = this.state.text;
     if (top !== undefined) {
+      key = `textarea-${id}`;
       this.text = (
         <div
+          id={key}
+          key={key}
           style={{
             position: "absolute",
             border: "solid 0.1em rgba(0, 0, 0, 0.5)",
@@ -420,9 +386,11 @@ export class Table extends TableFilterSort {
           })}
         </ul>
       );
+      key = `tooltip-${id}`;
       toolTip = (
         <div
-          key={"tool-tip"}
+          id={key}
+          key={key}
           className="zebulon-tool-tip"
           style={{ top: toolTip.top, left: toolTip.left, position: "absolute" }}
         >
@@ -442,8 +410,11 @@ export class Table extends TableFilterSort {
 
     if (this.state.search) {
       const { filteredData, meta, dataStrings, scroll } = this.state;
+      key = `search-${id}`;
       const content = (
         <Search
+          id={key}
+          key={key}
           filteredData={filteredData}
           meta={meta}
           dataStrings={dataStrings}
@@ -465,7 +436,8 @@ export class Table extends TableFilterSort {
       );
       search = (
         <div
-          key={"tool-tip"}
+          id={key}
+          key={key}
           className="zebulon-tool-tip"
           style={{ top: 0, left: 0, position: "absolute" }}
         >
@@ -481,9 +453,11 @@ export class Table extends TableFilterSort {
     if (meta.table.noStatus) {
       statusBar = null;
     } else {
+      key = `statusbar-${id}`;
       statusBar = (
         <Status
-          key="statusBar"
+          id={key}
+          key={key}
           data={filteredData}
           status={status}
           dataLength={filteredDataLength}
@@ -496,7 +470,7 @@ export class Table extends TableFilterSort {
           meta={meta}
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
-          component={`zebulon-table-${this.props.id}`}
+          component={`zebulon-table-${id}`}
           checkable={meta.table.checkable}
           onDoubleClick={this.onDoubleClick}
           draggable={meta.table.statusDraggable}
@@ -535,7 +509,8 @@ export class Table extends TableFilterSort {
         width: actionsWidth,
         minWidth: 50,
         margin: 2,
-        marginTop: 6
+        marginTop: 3,
+        height: 22
         // backgroundColor: "lightgrey"
       };
       const className = enable
@@ -550,12 +525,15 @@ export class Table extends TableFilterSort {
           onClick: e => this.handleAction(action, e)
         });
       }
+      key = `action-${id}-${index}`;
       return (
         <button
-          key={index}
+          id={key}
+          key={key}
           disabled={!enable}
           className={className}
           style={style}
+          draggable={false}
           onClick={e => {
             return this.handleAction(action, e);
           }}
@@ -564,19 +542,17 @@ export class Table extends TableFilterSort {
         </button>
       );
     });
-    let style = {};
+    // -----------------------------
+    //   rows
+    // -----------------------------
+    // let style = {};
     const locked =
       !utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth;
-    if (locked) {
-      style = {
-        borderLeft: "solid 0.05em rgba(0, 0, 0, .5)",
-        boxSizing: "border-box"
-      };
-    }
-    // console.log("table", this.hasFocus, this.changingFilter);
+    key = `rows-${id}`;
     const rows = (
       <Rows
-        key="rows"
+        id={key}
+        key={key}
         meta={meta}
         data={filteredData}
         status={status}
@@ -593,23 +569,25 @@ export class Table extends TableFilterSort {
         selectedRange={selectedRange}
         selectRange={selectRange}
         onChange={this.onChange}
-        onFocus={(e, row, column) => this.closeOpenedWindows(true, column)}
+        onFocus={this.onFocus}
         hasFocus={this.hasFocus && this.props.isActive !== false}
         updatedRows={updatedRows}
         params={params}
         navigationKeyHandler={this.props.navigationKeyHandler}
         ref={ref => (this.rows = ref)}
         noUpdate={noUpdate}
-        style={style}
+        // style={style}
         onDoubleClick={this.onDoubleClick}
-        component={`zebulon-table-${this.props.id}`}
+        component={`zebulon-table-${id}`}
       />
     );
     let lockedColumns = null;
     if (locked) {
+      key = `locked-columns-${id}`;
       lockedColumns = (
         <Rows
-          key="lockedColumns"
+          id={key}
+          key={key}
           meta={meta}
           data={filteredData}
           status={status}
@@ -630,13 +608,18 @@ export class Table extends TableFilterSort {
           noVerticalScrollbar={true}
           onDoubleClick={this.onDoubleClick}
           locked={locked}
-          component={`zebulon-table-${this.props.id}`}
+          component={`zebulon-table-${id}`}
         />
       );
     }
-
+    // -----------------------------
+    //   headers
+    // -----------------------------
+    key = `headers-${id}`;
     const headers = (
       <Headers
+        id={key}
+        key={key}
         onSort={this.onSort}
         meta={meta}
         data={data}
@@ -651,8 +634,8 @@ export class Table extends TableFilterSort {
         onMetaChange={this.onMetaChange}
         openFilter={this.openFilter}
         onChange={this.onChangeFilter}
-        style={style}
-        component={`zebulon-table-${this.props.id}`}
+        // style={style}
+        component={`zebulon-table-${id}`}
         // auditedRow={auditedRow}
         // auditStatus={{}}
         isActive={this.props.isActive}
@@ -662,8 +645,11 @@ export class Table extends TableFilterSort {
     );
     let lockedHeaders = null;
     if (!utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth) {
+      key = `locked-headers-${id}`;
       lockedHeaders = (
         <Headers
+          id={key}
+          key={key}
           onSort={this.onSort}
           meta={meta}
           data={data}
@@ -675,7 +661,7 @@ export class Table extends TableFilterSort {
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           locked={true}
-          component={`zebulon-table-${this.props.id}`}
+          component={`zebulon-table-${id}`}
           // auditedRow={auditedRow}
           // auditStatus={{}}
           isActive={this.props.isActive}
@@ -684,6 +670,9 @@ export class Table extends TableFilterSort {
         />
       );
     }
+    // -----------------------------
+    //   status bar
+    // -----------------------------
     let statusBarHeader = [];
     if (statusBar !== null) {
       for (let i = 0; i < headersLength; i++) {
@@ -697,9 +686,11 @@ export class Table extends TableFilterSort {
             />
           );
         }
+        key = `status-bar-headers-${id}-${i}`;
         statusBarHeader.push(
           <div
-            key={`status-${i}`}
+            id={key}
+            key={key}
             className="zebulon-table-corner"
             style={{
               width: this.rowHeight,
@@ -713,12 +704,13 @@ export class Table extends TableFilterSort {
           </div>
         );
       }
+      key = `header-status-${id}`;
       statusBarHeader = (
         <ContextualMenuClient
-          key={"header-status"}
-          id={"header-status"}
+          id={key}
+          key={key}
           menu="top-left-corner-menu"
-          component={`zebulon-table-${this.props.id}`}
+          component={`zebulon-table-${id}`}
         >
           {statusBarHeader}
         </ContextualMenuClient>
@@ -726,13 +718,16 @@ export class Table extends TableFilterSort {
     } else {
       statusBarHeader = null;
     }
-    // statusBar !== null ? <div style={{ display: "block" }}>{1}</div> : null;
-    // {filterHeaders}
+    // -----------------------------
+    //   title
+    // -----------------------------
     let title = null;
     if (meta.table.caption) {
+      key = `title-${id}`;
       title = (
-        <div
-          key="title"
+        <ContextualMenuClient
+          id={key}
+          key={key}
           className="zebulon-table-title"
           style={{
             fontWeight: "bold",
@@ -743,48 +738,60 @@ export class Table extends TableFilterSort {
             width,
             boxSizing: "border-box"
           }}
+          menu="title-menu"
+          component={`zebulon-table-${id}`}
+          onClick={this.props.onActivation}
         >
-          {meta.table.caption}
-        </div>
+          {this.props.caption || meta.table.caption}
+        </ContextualMenuClient>
       );
     }
     // const className = "zebulon-table";
     return (
       <div
-        id={this.props.id}
+        id={id}
+        // style={{
+        //   width: "max-content",
+        //   height: "fit-content",
+        //   ...this.props.style
+        // }}
         style={{
-          width: "max-content",
-          height: "fit-content",
-          // border: "solid grey 0.05em",
+          width,
+          height,
           ...this.props.style
         }}
       >
-        <div>
+        <div
+          id={"table"}
+          style={{
+            width,
+            height,
+            display: "inline-grid"
+          }}
+        >
           {detail}
           {this.filter}
           {this.text}
           {toolTip}
           {search}
           {title}
-          <div
-            style={{
-              // display: "-webkit-box"
-              display: "flex"
-            }}
-          >
+          <div id={"columns"} style={{ display: "inline-flex" }}>
             {statusBarHeader}
             {lockedHeaders}
             {headers}
           </div>
-          <div style={{ display: "flex" }}>
+          <div id={"rows"} style={{ display: "inline-flex" }}>
             {statusBar}
             {lockedColumns}
             {rows}
           </div>
+          <div
+            id={"actions"}
+            style={{ height: actions.length ? 30 : 0, display: "flex" }}
+          >
+            {actions}
+          </div>
         </div>
-        <div style={{ height: actions.length ? 30 : 0, display: "flex" }}>
-          {actions}
-        </div>{" "}
       </div>
     );
   }

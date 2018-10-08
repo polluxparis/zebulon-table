@@ -1,7 +1,7 @@
 import { Component } from "react";
 import { utils } from "zebulon-controls";
 import { computeMetaPositions } from "./utils/compute.meta";
-import { rollback } from "./utils/utils";
+// import { rollback } from "./utils/utils";
 
 export class ZebulonTableMenu extends Component {
     handleAudit = (props, item) => {
@@ -60,167 +60,35 @@ export class ZebulonTableMenu extends Component {
         console.log("zebtable", this.state);
         return true;
     };
-    //     if (props.menu === "column-header-menu") {
-    //         const column = props.column;
-    //         const { data, meta, params, scroll } = this.state;
-    //         if (item.id <= 1) {
-    //             if (!utils.isNullOrUndefined(meta.lockedIndex)) {
-    //                 meta.properties[meta.lockedIndex].locked = false;
-    //             }
-    //             if (item.id) {
-    //                 meta.properties[column.index_].locked = true;
-    //             }
-    //             computeMetaPositions(meta);
-    //             this.setState({
-    //                 scroll: {
-    //                     ...scroll,
-    //                     columns: {
-    //                         direction: 1,
-    //                         index: 0,
-    //                         position: 0,
-    //                         shift: 0,
-    //                         startIndex: 0
-    //                     }
-    //                 }
-    //             });
-    //         } else {
-    //             item.function({ data, meta, params, column, table: this });
-    //         }
-    //     } else if (props.menu === "row-header-menu") {
-    //         const { row, status } = props;
-    //         const { data, meta, params, updatedRows } = this.state;
-    //         if (item.id === 0) {
-    //             rollback(updatedRows, row.index_);
-    //             this.setState({ scroll: this.state.scroll });
-    //         } else if (item.id === 1) {
-    //             const audits = meta.row.auditFunction({ row });
-    //             const prevScroll = this.state.scroll;
-    //             const prevRange = this.state.selectedRange;
-    //             const columns =
-    //                 props.meta && props.meta.visibleIndexes
-    //                     ? props.meta.visibleIndexes[0]
-    //                     : 0;
-    //             const selectedRange = {
-    //                 start: { rows: 0, columns },
-    //                 end: { rows: 0, columns }
-    //             };
+    handleRollback = (props, item) => {
+        this.rollback(this.state.updatedRows, props.row.index_);
+        this.table.handleClickMenu(props, item);
+    };
 
-    //             const scroll = {
-    //                 rows: {
-    //                     index: 0,
-    //                     direction: 1,
-    //                     startIndex: 0,
-    //                     shift: 0,
-    //                     position: 0
-    //                 },
-    //                 columns: {
-    //                     index: 0,
-    //                     direction: 1,
-    //                     startIndex: 0,
-    //                     shift: 0,
-    //                     position: 0
-    //                 }
-    //             };
-    //             if (utils.isPromise(audits)) {
-    //                 audits.then(audits => {
-    //                     this.setState({
-    //                         auditedRow: row,
-    //                         audits: audits || [],
-    //                         scroll,
-    //                         prevScroll,
-    //                         selectedRange,
-    //                         prevRange
-    //                     });
-    //                     // }
-    //                 });
-    //             } else {
-    //                 // if (audits)
-    //                 const scroll = this.state.prevScroll;
-    //                 this.setState({
-    //                     auditedRow: row,
-    //                     audits: audits || [],
-    //                     scroll,
-    //                     prevScroll,
-    //                     selectedRange,
-    //                     prevRange
-    //                 });
-    //             }
-    //         } else {
-    //             return item.function({
-    //                 data,
-    //                 meta,
-    //                 params,
-    //                 row,
-    //                 status,
-    //                 table: this
-    //             });
-    //         }
-    //     } else if (props.menu === "top-left-corner-menu") {
-    //         const { filters, data, meta, params, updatedRows } = this.state;
-    //         let filter = filters.status_;
-    //         if (!filter) {
-    //             filter = { id: "status_", v: 0 };
-    //         }
-    //         const v = item.id % 100;
-    //         if (filter.v & v) {
-    //             filter.v -= v;
-    //         } else {
-    //             filter.v += v;
-    //         }
-    //         if (item.id === 2) {
-    //             const scroll = this.state.prevScroll;
-    //             const selectedRange = this.state.prevRange;
-    //             computeMetaPositions(meta);
-    //             this.setState({
-    //                 auditedRow: undefined,
-    //                 audits: undefined,
-    //                 scroll,
-    //                 prevScroll: undefined,
-    //                 selectedRange,
-    //                 prevRange: undefined
-    //             });
-    //         } else if (item.id === 0 || (item.id >= 100 && item.id < 104)) {
-    //             if (item.id === 0 || filter.v === 0) {
-    //                 delete filters.status_;
-    //             } else if (item.id >= 100) {
-    //                 filters.status_ = filter;
-    //             }
-    //             this.setState({
-    //                 filteredData: this.filters(
-    //                     data,
-    //                     filters,
-    //                     false,
-    //                     updatedRows
-    //                 )
-    //             });
-    //         } else {
-    //             item.function({ data, meta, params, table: this });
-    //         }
-    //     } else if (props.menu === "cell-menu") {
-    //         const { row, column } = props;
-    //         const { data, meta, params } = this.state;
-    //         item.function({ data, meta, params, row, column, table: this });
-    //     }
-    // };
     getCustomMenu = (menu, menus) => {
-        if (this.customContextualMenu && this.customContextualMenu[menu]) {
-            this.customContextualMenu[menu].forEach((menu, index) => {
+        if (this.props.contextualMenu && this.props.contextualMenu[menu]) {
+            this.props.contextualMenu[menu].forEach((menu, index) => {
+                const id = menu.id || 1000000 + menus.length;
+                const children =
+                    menu.children ||
+                    (menu.type === "sub-menu" ? [] : undefined);
                 const item = {
-                    id: 1000000 + menus.length,
-                    separation: index === 0 && menus.length > 0,
-                    type: menu.type,
-                    caption: menu.caption,
-                    onClick: this.handleClickMenu,
-                    function: menu.function,
-                    children: menu.type === "sub-menu" ? [] : undefined
+                    ...menu,
+                    id: menu.id || 1000000 + menus.length,
+                    children
                 };
+                item.onClick = e =>
+                    (menu.onClick || this.handleClickMenu)(e, item);
                 menus.push(item);
             });
         }
     };
     getMenu = (menu, data) => {
-        console.log(this.state, this.table.state);
+        // console.log(this.state, this.table.state);
         const menus = [];
+        if (!this.props.isActive && this.props.onActivation) {
+            this.props.onActivation({ ...data, menu });
+        }
         if (menu === "row-header-menu") {
             if (this.state.meta.table.editable) {
                 menus.push({
@@ -229,7 +97,7 @@ export class ZebulonTableMenu extends Component {
                     disable: !(data.status || {}).updated_,
                     separation: false,
                     caption: `Rollback row updates`,
-                    onClick: this.table.handleClickMenu
+                    onClick: this.handleRollback
                 });
             }
             if (this.state.meta.row.audit) {

@@ -179,6 +179,7 @@ export class TableEvent extends TableMenu {
       this.handleAction(this.doubleClickAction, e, row, column);
     }
   };
+  onFocus = (e, row, column) => this.closeOpenedWindows(true, column);
   handleAction = (action, e, row, column) => {
     if (action.statusEnable === false || action.enable === false) {
       return false;
@@ -660,6 +661,7 @@ export class TableEvent extends TableMenu {
     };
     const foreignObjectQuit = ok_ => {
       const { column, row } = message;
+      const id = this.props.id;
       const value = row[column.id];
       if (!column.foreignObjectFunction) {
         return cellQuit(ok_);
@@ -685,8 +687,11 @@ export class TableEvent extends TableMenu {
         if (!ok) {
           this.noUpdate = true;
           element = document.getElementById(
-            `cell: ${this.props.id}-${row.index_}-${column.index_}`
-          ).children[0];
+            `cell: zebulon-table-${id}-${row.index_}-${column.index_}`
+          );
+          if (element) {
+            element = element.children[0];
+          }
         } else if (column.onChangeFunction) {
           column.onChangeFunction({ value: data, row });
         } else {

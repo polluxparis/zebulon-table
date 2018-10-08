@@ -24,6 +24,7 @@ import {
 import {
   rollback,
   rollbackAll,
+  rollbackFiltered,
   errorHandler,
   getUpdatedRows
 } from "./utils/utils";
@@ -57,6 +58,7 @@ export class ZebulonTable extends ZebulonTableMenu {
         column.filterType = filters[column.id].filterType;
         column.v = filters[column.id].v;
         column.vTo = filters[column.id].vTo;
+        column.link = filters[column.id].link;
         filters[column.id] = column;
       } else if (
         !utils.isNullOrUndefined(column.v) ||
@@ -79,6 +81,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       }
     });
   };
+  refresh = () => this.setState(this.getData(this.props));
   getData = props => {
     this.observable = null;
     let { data, meta, params, filters, filteredData } = props,
@@ -366,6 +369,9 @@ export class ZebulonTable extends ZebulonTableMenu {
             if (ok) {
               this.sorts = this.state.sorts;
               this.setState(this.getData(nextProps));
+              if (this.props.linkedObjects) {
+                this.props.linkedObjects.forEach(object => object.refresh());
+              }
             }
           });
         }
@@ -433,13 +439,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       e.preventDefault();
       const sizes = this.state.sizes;
       sizes.zoom *= zoom === 1 ? 1.1 : 1 / 1.1;
+      computeMetaPositions(this.state.meta, sizes.zoom);
       this.setState({ sizes: { ...sizes } });
-      computeMeta(
-        this.state.meta,
-        sizes.zoom,
-        this.state.functions,
-        (this.props.params || {}).privileges_
-      );
       return;
     }
     if (this.props.keyEvent) {
@@ -485,6 +486,16 @@ export class ZebulonTable extends ZebulonTableMenu {
   // ----------------------------------------
   // comunication with server
   // ----------------------------------------
+  rollback = (updatedRows, index) => {
+    rollback(updatedRows, index);
+    if (this.props.linkedObjects) {
+      this.props.linkedObjects.forEach(object => object.rollbackFiltered());
+    }
+  };
+  rollbackFiltered = () => {
+    rollbackFiltered(this.state.updatedRows, this.props.filters);
+    this.setState({ status: this.state.status });
+  };
   errorHandler = (message, action, callback, callbackReDo) => {
     let handler = (this.props.errorHandler || errorHandler)[action];
     if (
@@ -531,7 +542,7 @@ export class ZebulonTable extends ZebulonTableMenu {
               const row = conflicts.data[index].server;
               row.index_ = index;
               updatedRows[index].row = row;
-              rollback(updatedRows, index);
+              this.rollback(updatedRows, index);
             });
             (action === "onSave" && callbackReDo ? callbackReDo : callback)(ok);
           }
@@ -543,7 +554,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           message.meta.table.object === conflicts.object
             ? this
             : this.props.linkedObjects.find(
-                obj => obj.state.meta.table.object === conflicts.object
+                object => object.state.meta.table.object === conflicts.object
               );
         zebulonTable.confirmationModal = true;
         zebulonTable.setState({
@@ -569,12 +580,28 @@ export class ZebulonTable extends ZebulonTableMenu {
       this.onTableChange_(type, callback_);
     }
   };
+  rollbackAll = () => {
+    rollbackAll(this.state.updatedRows, this.state.data);
+    this.setState({ updatedRows: {} });
+    if (this.table) {
+      this.table.updated = false;
+      this.table.rowUpdated = false;
+      this.table.tableUpdated = false;
+      this.table.adjustScrollRows(this.table.state.filteredData);
+    }
+    if (this.props.linkedObjects) {
+      this.props.linkedObjects.forEach(object => object.rollbackAll());
+    }
+  };
   onTableChange_ = (type, callback_) => {
     const callback =
       !callback_ && type === "refresh"
         ? ok => {
             if (ok) {
               this.setState(this.getData(this.props));
+              if (this.props.linkedObjects) {
+                this.props.linkedObjects.forEach(object => object.refresh());
+              }
             }
           }
         : callback_;
@@ -592,14 +619,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       if (carryOn && ok) {
         this.onSave(callback);
       } else if (carryOn) {
-        rollbackAll(this.state.updatedRows, this.state.data);
-        this.setState({ updatedRows: {} });
-        if (this.table) {
-          this.table.updated = false;
-          this.table.rowUpdated = false;
-          this.table.tableUpdated = false;
-          this.table.adjustScrollRows(this.table.state.filteredData);
-        }
+        this.rollbackAll();
         callback(true);
       } else {
         callback(false);
@@ -630,13 +650,13 @@ export class ZebulonTable extends ZebulonTableMenu {
       table: this.table
     };
     if (this.props.linkedObjects) {
-      this.props.linkedObjects.forEach(ref =>
+      this.props.linkedObjects.forEach(object =>
         message.messages.push({
-          updatedRows: ref.state.updatedRows,
-          meta: ref.state.meta,
-          data: ref.state.data,
+          updatedRows: object.state.updatedRows,
+          meta: object.state.meta,
+          data: object.state.data,
           params: this.props.params,
-          table: ref.table
+          table: object.table
         })
       );
     }
@@ -882,7 +902,8 @@ export class ZebulonTable extends ZebulonTableMenu {
   render() {
     const style = {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,
-      position: "relative"
+      position: "relative",
+      height: "fitContent"
     };
     let {
       data,
@@ -1003,6 +1024,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           rowHeight={
             (this.state.sizes.rowHeight || 25) * (this.state.sizes.zoom || 1)
           }
+          caption={this.props.caption}
           isActive={this.props.isActive}
           onActivation={this.props.onActivation}
           ref={ref => (this.table = ref)}

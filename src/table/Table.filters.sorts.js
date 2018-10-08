@@ -144,7 +144,9 @@ export class TableFilterSort extends TableEvent {
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
     filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
-    filter.left = e.target.offsetLeft;
+    const rect = e.target.getBoundingClientRect();
+    filter.left = rect.x + window.scrollX;
+    // filter.left = e.target.offsetLeft;
     const ok = this.canQuit("rowQuit", ok => {
       if (ok) {
         return this.openFilter_(e, column, filter);
