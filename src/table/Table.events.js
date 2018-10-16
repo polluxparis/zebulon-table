@@ -179,7 +179,9 @@ export class TableEvent extends TableMenu {
       this.handleAction(this.doubleClickAction, e, row, column);
     }
   };
-  onFocus = (e, row, column) => this.closeOpenedWindows(true, column);
+  onFocus = (e, row, column) => {
+    this.closeOpenedWindows(true, column);
+  };
   handleAction = (action, e, row, column) => {
     if (action.statusEnable === false || action.enable === false) {
       return false;
@@ -634,9 +636,12 @@ export class TableEvent extends TableMenu {
     );
   };
   onChange_ = message => {
+    const { row, column, value } = message;
+    row[column.id] = value.value;
     if (
-      message.column.onChangeFunction &&
-      message.column.onChangeFunction(message) === false
+      !column.foreignObjectFunction &&
+      column.onChangeFunction &&
+      column.onChangeFunction(message) === false
     ) {
       return false;
     }

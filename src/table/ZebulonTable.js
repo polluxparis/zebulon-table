@@ -92,7 +92,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       params,
       meta,
       filters: getFilters(meta.properties, filters || {}),
-      sorts: sorts ? Object.values(sorts) : getSorts(meta.properties)
+      sorts: sorts ? Object.values(sorts) : getSorts(meta.properties),
+      props
     };
     if (typeof data === "function") {
       data = data(message);
