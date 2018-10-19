@@ -33,7 +33,7 @@ export class Rows extends ScrollableGrid {
     onDoubleClick,
     component
   ) => {
-    const { editable, value, select } = cellData(
+    const { editable, value, select, dataType } = cellData(
       row,
       column,
       status,
@@ -47,8 +47,8 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-selected": selected,
       "zebulon-table-cell-focused": focused,
       "zebulon-table-cell-editable": editable && focused,
-      "zebulon-table-cell-select": editable && focused && column.select,
-      "zebulon-table-cell-checkbox": column.dataType === "boolean"
+      "zebulon-table-cell-select": editable && focused && select,
+      "zebulon-table-cell-checkbox": dataType === "boolean"
     });
     const id = `cell: ${component}-${row.index_}-${column.index_}`;
     return (
@@ -62,6 +62,7 @@ export class Rows extends ScrollableGrid {
         focused={focused}
         hasFocus={hasFocus}
         select={select}
+        dataType={dataType}
         id={id}
         key={id}
         onChange={onChange}

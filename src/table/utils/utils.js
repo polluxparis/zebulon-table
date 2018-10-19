@@ -146,40 +146,44 @@ export const manageRowError = (
   }
 };
 export const getRowErrors = (status, rowIndex) => {
-  const errors = [];
-  if (!status.deleted_ && status.errors) {
-    Object.keys(status.errors).forEach(column => {
-      if (status.errors[column] || column !== "n_") {
-        Object.keys(status.errors[column]).forEach(type => {
-          if (type !== "n_") {
-            errors.push({
-              column,
-              type,
-              error: status.errors[column][type],
-              rowIndex
-            });
-          }
-        });
-      }
-    });
+  if (rowIndex === undefined) {
+    return [];
+  } else {
+    const errors = [];
+    if (!status.deleted_ && status.errors) {
+      Object.keys(status.errors).forEach(column => {
+        if (status.errors[column] || column !== "n_") {
+          Object.keys(status.errors[column]).forEach(type => {
+            if (type !== "n_") {
+              errors.push({
+                column,
+                type,
+                error: status.errors[column][type],
+                rowIndex
+              });
+            }
+          });
+        }
+      });
+    }
+    if (!status.deleted_ && status.errorsServer) {
+      Object.keys(status.errorsServer).forEach(column => {
+        if (status.errorsServer[column] || column !== "n_") {
+          Object.keys(status.errorsServer[column]).forEach(type => {
+            if (type !== "n_") {
+              errors.push({
+                column,
+                type,
+                error: status.errorsServer[column][type],
+                rowIndex
+              });
+            }
+          });
+        }
+      });
+    }
+    return errors;
   }
-  if (!status.deleted_ && status.errorsServer) {
-    Object.keys(status.errorsServer).forEach(column => {
-      if (status.errorsServer[column] || column !== "n_") {
-        Object.keys(status.errorsServer[column]).forEach(type => {
-          if (type !== "n_") {
-            errors.push({
-              column,
-              type,
-              error: status.errorsServer[column][type],
-              rowIndex
-            });
-          }
-        });
-      }
-    });
-  }
-  return errors;
 };
 export const getErrors = updatedRows => {
   let errors = [];

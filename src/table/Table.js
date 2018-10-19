@@ -722,7 +722,11 @@ export class Table extends TableFilterSort {
     //   title
     // -----------------------------
     let title = null;
-    if (meta.table.caption) {
+    const caption =
+      this.props.caption === ""
+        ? null
+        : this.props.caption || meta.table.caption;
+    if (caption) {
       key = `title-${id}`;
       title = (
         <ContextualMenuClient
@@ -742,7 +746,7 @@ export class Table extends TableFilterSort {
           component={`zebulon-table-${id}`}
           onClick={this.props.onActivation}
         >
-          {this.props.caption || meta.table.caption}
+          {caption}
         </ContextualMenuClient>
       );
     }

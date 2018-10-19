@@ -3,7 +3,7 @@ import { utils, ContextualMenuClient, Input, icons } from "zebulon-controls";
 // import { Input } from "./Input";
 import { computeMetaPositions } from "./utils/compute.meta";
 import { cellData } from "./utils/compute.data";
-import { getRowErrors } from "./utils/utils";
+import { getRowErrors, getRowStatus } from "./utils/utils";
 import classnames from "classnames";
 
 const filter = (
@@ -488,7 +488,6 @@ export const statusCell = (
   style,
   className,
   index,
-  row,
   status,
   onClick,
   onDoubleClick,
@@ -518,8 +517,8 @@ export const statusCell = (
     glyph = (
       <input
         type="checkbox"
-        checked={status.checked_ || false}
-        onChange={() => onChange(row.index_)}
+        checked={status.rowUpdated.checked_ || false}
+        onChange={() => onChange(status.rowUpdated.index_)}
         // style={{ height: 20 }}
       />
     );
@@ -535,11 +534,13 @@ export const statusCell = (
       onClick={e => onClick(index, e.shiftKey)}
       onMouseOver={e => handleErrors(e, errors)}
       onMouseOut={e => handleErrors(e, [])}
-      onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
+      onDoubleClick={
+        onDoubleClick ? e => onDoubleClick(e, status.rowUpdated) : () => {}
+      }
       draggable={draggable}
       onDragStart={handleDragStart}
       status={status}
-      row={row}
+      // row={row}
       menu="row-header-menu"
       component={component}
     >
@@ -579,13 +580,15 @@ export class Status extends Component {
   onChange = index => {
     if (this.props.checkable) {
       const updatedRows = this.state.updatedRows;
-      if (!updatedRows[index]) {
-        updatedRows[index] = { errors: {} };
-      }
-      updatedRows[index].checked_ = !updatedRows[index].checked_;
+      // if (!updatedRows[index]) {
+      //   updatedRows[index] = { errors: {} };
+      // }
+      const checked = !updatedRows[index].rowUpdated.checked_;
+      // updatedRows[index].checked_ = checked;
+      updatedRows[index].rowUpdated.checked_ = checked;
       if (this.props.checkable === 2) {
-        updatedRows[index + 1 - 2 * (index % 2)].checked_ = !updatedRows[index]
-          .checked_;
+        // updatedRows[index + 1 - 2 * (index % 2)].checked_ = !checked;
+        updatedRows[index + 1 - 2 * (index % 2)].rowUpdated.checked_ = !checked;
       }
       this.setState({ updatedRows });
     }
@@ -632,7 +635,19 @@ export class Status extends Component {
       };
       if (index + scroll.startIndex - indexPage < rows.length) {
         const row = rows[index + scroll.startIndex - indexPage];
-        const updatedRow = updatedRows[row.index_] || { errors: {} };
+        const status = getRowStatus(updatedRows, row); //updatedRows[index].checked_updatedRows[row.index_];
+
+        // if (checkable) {
+        //   if (row.checked_ !== undefined && updatedRow.checked_ === undefined) {
+        //     updatedRow.checked_ = row.checked_;
+        //   } else if (
+        //     row.checked_ === undefined &&
+        //     updatedRow.checked_ !== undefined
+        //   ) {
+        //     row.checked_ = updatedRow.checked_;
+        //   }
+        // }
+
         const className = classnames({
           "zebulon-table-status": true,
           "zebulon-table-status-selected":
@@ -644,8 +659,7 @@ export class Status extends Component {
             style,
             className,
             ix + scroll.startIndex,
-            row,
-            updatedRow,
+            status,
             this.onClick,
             onDoubleClick,
             (e, errors) => handleErrors(e, ix, errors),

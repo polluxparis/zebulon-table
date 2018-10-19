@@ -16,23 +16,33 @@ export const cellData = (row, column, status, data, params, focused) => {
         })
       : column.editable);
   //  dont use accessor for analytics computed data
+  let select =
+      column.select && editable && focused
+        ? column.selectItems || column.select
+        : undefined,
+    dataType =
+      typeof column.dataType === "function"
+        ? column.dataType({ row })
+        : column.dataType;
+
   let value = column.analytic
     ? row[column.id]
     : column.accessorFunction
       ? column.accessorFunction({ column, row, params, status, data })
       : row[column.id];
-  if (column.dataType === "date" && typeof value === "string") {
+
+  if (dataType === "date" && typeof value === "string") {
     value = new Date(value);
   }
-
-  let select =
-    column.select && editable && focused
-      ? column.selectItems || column.select
-      : undefined;
   //  map the data
   if (select) {
     if (column.selectFunction && editable && focused && !column.selectItems) {
-      select = column.selectFunction({ column, row, data });
+      select = column.selectFunction({
+        column,
+        row,
+        data,
+        focused
+      });
     }
     if (
       !utils.isPromise(select) &&
@@ -55,7 +65,7 @@ export const cellData = (row, column, status, data, params, focused) => {
       };
     }
   }
-  return { editable, select, value };
+  return { editable, select, value ,dataType};
 };
 export const computeRows = (data, meta, startIndex = 0, noDataMutation) => {
   let foreignObjects = [];

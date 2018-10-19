@@ -319,8 +319,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       document.addEventListener("paste", this.handlePaste);
       document.addEventListener("keydown", this.handleKeyEvent);
     }
-    if (this.props.getZebulonTable) {
-      this.props.getZebulonTable(this);
+    if (this.props.getComponent) {
+      this.props.getComponent(this);
     }
     // const element = document.getElementById(`zebulon-table-${this.props.id}`);
     // element.addEventListener("beforeunload", this.onClose);
