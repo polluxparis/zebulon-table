@@ -770,7 +770,7 @@ export class Table extends TableFilterSort {
           style={{
             width,
             height,
-            display: "inline-grid"
+            display: "block"
           }}
         >
           {detail}
@@ -779,12 +779,12 @@ export class Table extends TableFilterSort {
           {toolTip}
           {search}
           {title}
-          <div id={"columns"} style={{ display: "inline-flex" }}>
+          <div id={"columns"} style={{ display: "flex" }}>
             {statusBarHeader}
             {lockedHeaders}
             {headers}
           </div>
-          <div id={"rows"} style={{ display: "inline-flex" }}>
+          <div id={"rows"} style={{ display: "flex" }}>
             {statusBar}
             {lockedColumns}
             {rows}
