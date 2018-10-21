@@ -484,11 +484,11 @@ export const statusCell = (
   handleErrors,
   component,
   checkable,
+  checked,
   onChange,
   isAudit,
   draggable,
-  handleDragStart,
-  checked
+  handleDragStart
 ) => {
   let glyph;
   if (status.deleted_) {
@@ -656,10 +656,10 @@ export class Status extends Component {
             (e, errors) => handleErrors(e, ix, errors),
             component,
             checkable,
+            row.checked_,
             this.onChange,
             isAudit,
-            draggable,
-            row.checked_
+            draggable
           )
         );
       }
