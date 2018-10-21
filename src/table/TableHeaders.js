@@ -67,16 +67,6 @@ const filter = (
     } else if (column.filterType === "values") {
       value = "";
     }
-    // {
-    //           position: "absolute",
-    //           left:position,
-    //           width: Math.min(
-    //             false ? column.computedWidth + shift : column.computedWidth,
-    //             visibleWidth - left
-    //           ),
-    //           height: rowHeight,
-    //           textAlign
-    //         }
     div = (
       <Input
         column={column}
@@ -497,7 +487,8 @@ export const statusCell = (
   onChange,
   isAudit,
   draggable,
-  handleDragStart
+  handleDragStart,
+  checked
 ) => {
   let glyph;
   if (status.deleted_) {
@@ -517,7 +508,7 @@ export const statusCell = (
     glyph = (
       <input
         type="checkbox"
-        checked={status.rowUpdated.checked_ || false}
+        checked={checked || false}
         onChange={() => onChange(status.rowUpdated.index_)}
         // style={{ height: 20 }}
       />
@@ -667,7 +658,8 @@ export class Status extends Component {
             checkable,
             this.onChange,
             isAudit,
-            draggable
+            draggable,
+            row.checked_
           )
         );
       }
