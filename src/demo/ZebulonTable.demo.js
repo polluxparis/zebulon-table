@@ -6,7 +6,6 @@ import { functions } from "zebulon-controls";
 import { MyDataset } from "./dataset.example";
 import { datasetFunctions } from "./dataset.functions";
 import { MyDatasetConfiguration } from "./dataset.configuration";
-import { ResizableBox } from "react-resizable";
 // import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
 class ZebulonTableDemo extends Component {
@@ -16,12 +15,6 @@ class ZebulonTableDemo extends Component {
     // const functions = { dataset: datasetFunctions };
     this.state = {
       data: null,
-      sizes: {
-        height: 600,
-        width: 1300,
-        rowHeight: 25,
-        zoom: 1
-      },
       keyEvent: null,
       functions: functions.functions(datasetFunctions),
       updatedRows: {},
@@ -55,15 +48,7 @@ class ZebulonTableDemo extends Component {
     document.removeEventListener("keydown", this.handleKeyEvent);
     // window.removeEventListener("beforeunload", this.handleKeyEvent);
   }
-  onResize = (e, data) => {
-    this.setState({
-      sizes: {
-        ...this.state.sizes,
-        height: data.size.height,
-        width: data.size.width
-      }
-    });
-  };
+
   handleKeyEvent = e => {
     this.setState({ keyEvent: e });
     return true;
@@ -90,24 +75,18 @@ class ZebulonTableDemo extends Component {
 
   getTabContent = tabIndex => {
     const { keyEvent, functions } = this.state;
-    const sizes = { ...this.state.sizes };
+    // const sizes = { ...this.state.sizes };
     if (tabIndex === 0) {
       return (
-        <MyDataset
-          id="dataset"
-          functions={functions}
-          keyEvent={keyEvent}
-          sizes={sizes}
-        />
+        <MyDataset id="dataset" functions={functions} keyEvent={keyEvent} />
       );
     } else if (tabIndex === 1) {
-      sizes.height = sizes.height - 52;
+      // sizes.height = sizes.height - 52;
       return (
         <MyDatasetConfiguration
           id="dataset"
           functions={functions}
           keyEvent={keyEvent}
-          sizes={sizes}
         />
       );
     }
@@ -116,42 +95,40 @@ class ZebulonTableDemo extends Component {
     const zoomValue = 1;
     return (
       <div
-        style={{ fontSize: `${zoomValue * 100}%`, fontFamily: "sans-serif" }}
+        style={{
+          fontSize: `${zoomValue * 100}%`,
+          fontFamily: "sans-serif",
+          width: 1300
+        }}
       >
-        <ResizableBox
-          height={this.state.sizes.height}
-          width={this.state.sizes.width}
-          onResize={this.onResize}
+        <div
+          style={{
+            display: "flex",
+            height: 25 * zoomValue
+          }}
+          className="zebulon-tabs-list"
         >
-          <div
-            style={{
-              display: "flex",
-              height: 25 * zoomValue
-            }}
-            className="zebulon-tabs-list"
-          >
-            {this.tabs.map((tab, index) => (
-              <div
-                key={index}
-                style={{ width: "50%" }}
-                className={cx({
-                  "zebulon-tabs-tab": true,
-                  "zebulon-tabs-tab-selected": index === this.state.selectedTab
-                })}
-                onClick={() => this.onSelectTab(index)}
-              >
-                {tab.caption}
-              </div>
-            ))}
-          </div>
-          <div
-            style={{
-              height: this.state.sizes.height - 30 * zoomValue
-            }}
-          >
-            {this.getTabContent(this.state.selectedTab)}
-          </div>
-        </ResizableBox>
+          {this.tabs.map((tab, index) => (
+            <div
+              key={index}
+              style={{ width: "50%" }}
+              className={cx({
+                "zebulon-tabs-tab": true,
+                "zebulon-tabs-tab-selected": index === this.state.selectedTab
+              })}
+              onClick={() => this.onSelectTab(index)}
+            >
+              {tab.caption}
+            </div>
+          ))}
+        </div>
+        <div
+        // style={{
+        //   height: this.state.sizes.height - 30 * zoomValue
+        // }}
+        >
+          {this.getTabContent(this.state.selectedTab)}
+        </div>
       </div>
     );
   }

@@ -10,7 +10,8 @@ import {
   accessors,
   constants,
   functions,
-  ContextualMenu
+  ContextualMenu,
+  EventHandler
 } from "zebulon-controls";
 import { metaFunctions } from "./MetaDescriptions";
 import {
@@ -31,7 +32,7 @@ import {
 export class ZebulonTable extends ZebulonTableMenu {
   constructor(props) {
     super(props);
-    this.onClose.bind(this);
+    // this.onClose.bind(this);
     this.state = {
       meta: props.meta,
       updatedRows: props.updatedRows || {},
@@ -147,7 +148,6 @@ export class ZebulonTable extends ZebulonTableMenu {
         (this.props.params || {}).privileges_
       );
       Promise.all(meta.promises).then(values => {
-        // console.log(values);
         this.initData2(
           data,
           meta,
@@ -274,7 +274,6 @@ export class ZebulonTable extends ZebulonTableMenu {
     }
   };
   initSizes = (meta, data, sizes) => {
-    // const { sizes } = this.state;
     if (sizes.auto) {
       sizes.height = null;
       sizes.width = null;
@@ -313,32 +312,12 @@ export class ZebulonTable extends ZebulonTableMenu {
       }
     }
   };
-  componentDidMount() {
-    if (this.props.keyEvent === undefined) {
-      document.addEventListener("copy", this.handleCopy);
-      document.addEventListener("paste", this.handlePaste);
-      document.addEventListener("keydown", this.handleKeyEvent);
-    }
-    if (this.props.getComponent) {
-      this.props.getComponent(this);
-    }
-    // const element = document.getElementById(`zebulon-table-${this.props.id}`);
-    // element.addEventListener("beforeunload", this.onClose);
-  }
-  componentWillUnmount() {
-    if (this.props.keyEvent === undefined) {
-      document.removeEventListener("copy", this.handleCopy);
-      document.removeEventListener("paste", this.handlePaste);
-      document.removeEventListener("keydown", this.handleKeyEvent);
-    }
-    // document.removeEventListener("beforeunload", this.onClose);
-  }
-  onClose = e => {
-    console.log("onClose", e);
-    const a = 1;
-    const b = 1;
-    return e;
-  };
+  // onClose = e => {
+  //   console.log("onClose", e);
+  //   const a = 1;
+  //   const b = 1;
+  //   return e;
+  // };
   componentWillReceiveProps(nextProps) {
     const {
       data,
@@ -352,42 +331,39 @@ export class ZebulonTable extends ZebulonTableMenu {
       refresh
     } = nextProps;
 
-    if (this.props.keyEvent !== keyEvent) {
-      this.handleKeyEvent(keyEvent);
-    } else {
-      if (updatedRows && this.props.updatedRows !== updatedRows) {
-        this.setState({ updatedRows });
-      }
-      if (
-        this.props.data !== data ||
-        this.props.status !== status ||
-        (this.props.filters !== filters && meta.table.filteredByServer) ||
-        this.props.refresh !== refresh
-      ) {
-        let ok = true;
-        if (!saveConfirmationRequired && !this.props.saveConfirmationRequired) {
-          ok = this.onTableChange("refresh", ok => {
-            if (ok) {
-              this.sorts = this.state.sorts;
-              this.setState(this.getData(nextProps));
-              if (this.props.linkedObjects) {
-                this.props.linkedObjects.forEach(object => object.refresh());
-              }
+    if (updatedRows && this.props.updatedRows !== updatedRows) {
+      this.setState({ updatedRows });
+    }
+    if (
+      this.props.data !== data ||
+      this.props.status !== status ||
+      (this.props.filters !== filters && meta.table.filteredByServer) ||
+      this.props.refresh !== refresh
+    ) {
+      let ok = true;
+      if (!saveConfirmationRequired && !this.props.saveConfirmationRequired) {
+        ok = this.onTableChange("refresh", ok => {
+          if (ok) {
+            this.sorts = this.state.sorts;
+            this.setState(this.getData(nextProps));
+            if (this.props.linkedObjects) {
+              this.props.linkedObjects.forEach(object => object.refresh());
             }
-          });
-        }
-        if (ok) {
-          this.setState(this.getData(nextProps));
-        }
-      } else {
-        if (this.props.sizes !== sizes) {
-          this.setState({ sizes });
-        }
-        if (this.props.filters !== filters) {
-          this.setState({ filters });
-        }
+          }
+        });
+      }
+      if (ok) {
+        this.setState(this.getData(nextProps));
+      }
+    } else {
+      if (this.props.sizes !== sizes) {
+        this.setState({ sizes });
+      }
+      if (this.props.filters !== filters) {
+        this.setState({ filters });
       }
     }
+    // }
     if (
       nextProps.auditedRow &&
       nextProps.auditedRow !== this.state.auditedRow
@@ -419,14 +395,6 @@ export class ZebulonTable extends ZebulonTableMenu {
     if (saveConfirmationRequired && !this.props.saveConfirmationRequired) {
       this.onTableChange("close", saveConfirmationRequired);
     }
-  }
-  shouldComponentUpdate(nextProps, nextState) {
-    if (this.keyEvent && !this.confirmationModal) {
-      this.keyEvent = false;
-      return false;
-    }
-    this.keyEvent = false;
-    return true;
   }
   handleKeyEvent = e => {
     if (this.confirmationModal) {
@@ -628,7 +596,6 @@ export class ZebulonTable extends ZebulonTableMenu {
     };
     const ok = this.errorHandler(message, "onTableChange", save);
     if (ok !== undefined) {
-      // console.log("errorHandler", ok, this.state);
       callback(ok);
     }
   };
@@ -995,7 +962,8 @@ export class ZebulonTable extends ZebulonTableMenu {
     // }
 
     let div = (
-      <div
+      <EventHandler
+        component={this}
         style={style}
         className="zebulon-table"
         id={`zebulon-table-${this.props.id}`}
@@ -1064,7 +1032,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           keyEvent={this.state.keyEvent}
           ref={ref => (this.modal = ref)}
         />
-      </div>
+      </EventHandler>
     );
     return div;
   }

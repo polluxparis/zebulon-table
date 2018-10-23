@@ -6,7 +6,7 @@ export const getSizes = (meta, rowHeight) => {
     !meta.table.noFilter *
       (1 +
         (meta.properties.findIndex(
-          column => column.filterType === "between"
+          column => column.filterType === "between" && !column.hidden
         ) !==
           -1));
   const headersHeight =

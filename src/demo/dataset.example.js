@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { ZebulonTable } from "../table/ZebulonTable";
 import { onNext, onCompleted, onError } from "../table/MetaDescriptions";
+import { ResizableBox } from "react-resizable";
 
 import {
   getRowErrors,
@@ -22,6 +23,12 @@ export class MyDataset extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      sizes: {
+        height: 500,
+        width: 1300,
+        rowHeight: 25,
+        zoom: 1
+      },
       status: {},
       // filters: { qty: { id: "qty", filterType: "between", v: 123, vTo: 256 } },
       sorts: {
@@ -227,6 +234,15 @@ export class MyDataset extends Component {
       status: { loading: true }
     });
   };
+  onResize = (e, data) => {
+    this.setState({
+      sizes: {
+        ...this.state.sizes,
+        height: data.size.height,
+        width: data.size.width
+      }
+    });
+  };
   // Object.keys(this.previousState).map(key=>({key, ok:this.previousState[key]===this.state[key]}))
   render() {
     const { keyEvent, functions } = this.props;
@@ -401,31 +417,37 @@ export class MyDataset extends Component {
       </div>
     );
 
-    sizes.height = sizes.height - 245;
+    // sizes.height = sizes.height - 245;
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}
-        <ZebulonTable
-          id="dataset"
-          style={{ border: "solid grey 0.06em" }}
-          meta={meta}
-          params={params}
-          filters={filters}
-          sorts={sorts}
-          status={status}
-          sizes={sizes}
-          functions={functions}
-          keyEvent={keyEvent}
-          errorHandler={errorHandler}
-          // navigationKeyHandler={navigationKeyHandler}
-          onFilter={this.getLengths}
-          onGetPage={this.getPageLengths}
-          // contextualMenu={customMenuFunctions}
-          ref={ref => (this.table = ref)}
-          isActive={activeTable === "dataset"}
-          onActivation={() => this.onActivation("dataset")}
-          saveConfirmationRequired={saveConfirmationRequired}
-        />
+        <ResizableBox
+          height={this.state.sizes.height}
+          width={this.state.sizes.width}
+          onResize={this.onResize}
+        >
+          <ZebulonTable
+            id="dataset"
+            style={{ border: "solid grey 0.06em" }}
+            meta={meta}
+            params={params}
+            filters={filters}
+            sorts={sorts}
+            status={status}
+            sizes={this.state.sizes}
+            functions={functions}
+            keyEvent={keyEvent}
+            errorHandler={errorHandler}
+            // navigationKeyHandler={navigationKeyHandler}
+            onFilter={this.getLengths}
+            onGetPage={this.getPageLengths}
+            // contextualMenu={customMenuFunctions}
+            ref={ref => (this.table = ref)}
+            isActive={activeTable === "dataset"}
+            onActivation={() => this.onActivation("dataset")}
+            saveConfirmationRequired={saveConfirmationRequired}
+          />
+        </ResizableBox>
         {footer}
       </div>
     );

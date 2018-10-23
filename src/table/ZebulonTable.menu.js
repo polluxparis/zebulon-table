@@ -55,11 +55,11 @@ export class ZebulonTableMenu extends Component {
         }
         this.table.handleClickMenu(props, item);
     };
-    handleClickMenu = (props, item) => {
-        const a = 1;
-        console.log("zebtable", this.state);
-        return true;
-    };
+    // handleClickMenu = (props, item) => {
+    //     const a = 1;
+    //     console.log("zebtable", this.state);
+    //     return true;
+    // };
     handleRollback = (props, item) => {
         this.rollback(this.state.updatedRows, props.row.index_);
         this.table.handleClickMenu(props, item);
