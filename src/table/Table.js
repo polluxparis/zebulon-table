@@ -764,7 +764,7 @@ export class Table extends TableFilterSort {
         }}
       >
         <div
-          id={"table"}
+          id={`table-${id}`}
           style={{
             width,
             height,

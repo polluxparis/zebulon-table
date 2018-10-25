@@ -145,7 +145,9 @@ export class TableFilterSort extends TableEvent {
     filter = this.getFilterItems(filter, column);
     // filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
     const rect = e.target.getBoundingClientRect();
-    const rectTable = document.getElementById("table").getBoundingClientRect();
+    const rectTable = document
+      .getElementById(`table-${this.props.id}`)
+      .getBoundingClientRect();
     filter.top = rect.y - rectTable.y;
     filter.left = rect.x - rectTable.x; //+ window.scrollX;
     // filter.left = e.target.offsetLeft;
