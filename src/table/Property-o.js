@@ -11,11 +11,6 @@ export class Property extends Component {
 		this.title = "Functions for analytic property";
 		this.inputs = [];
 		const style = {
-			// border: "solid lightgrey thin",
-			// boxSizing: "border-box",
-			// padding: 0,
-			// backgroundColor: "inherit",
-			// width: 200,
 			textAlign: "left"
 		};
 		const { row, status, data, params } = props;

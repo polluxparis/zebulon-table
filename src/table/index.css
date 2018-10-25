@@ -91,7 +91,7 @@
   background-color: lightgrey;
 }
 .zebulon-table-status {
-  position: absolute;
+  /*position: absolute;toto*/
   outline: none;
   background-color: rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
@@ -127,6 +127,7 @@
   border-right: solid 0.05em rgba(0, 0, 0, 0.7);
   box-sizing: border-box;
 }
+
 @keyframes anim-info-updated {
   0% {
     background-color: red;

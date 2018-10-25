@@ -432,7 +432,7 @@ export class Headers extends Component {
             <div
               key={column.id || `undefined ${column.index_}`}
               style={{
-                position: "absolute",
+                // position: "absolute", toto
                 left: position,
                 display: "block",
                 width: columnWidth,

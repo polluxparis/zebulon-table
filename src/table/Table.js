@@ -314,7 +314,7 @@ export class Table extends TableFilterSort {
           id={key}
           key={key}
           style={{
-            position: "absolute",
+            // position: "absolute", toto
             border: "solid 0.1em rgba(0, 0, 0, 0.5)",
             backgroundColor: "white",
             top: top + (headersLength - 2) * this.rowHeight,
@@ -390,7 +390,11 @@ export class Table extends TableFilterSort {
           id={key}
           key={key}
           className="zebulon-tool-tip"
-          style={{ top: toolTip.top, left: toolTip.left, position: "absolute" }}
+          style={{
+            top: toolTip.top,
+            left: toolTip.left
+            // position: "absolute" toto
+          }}
         >
           {content}
         </div>
@@ -437,7 +441,11 @@ export class Table extends TableFilterSort {
           id={key}
           key={key}
           className="zebulon-tool-tip"
-          style={{ top: 0, left: 0, position: "absolute" }}
+          style={{
+            top: 0,
+            left: 0,
+            position: "absolute"
+          }}
         >
           {content}
         </div>
