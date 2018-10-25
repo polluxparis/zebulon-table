@@ -37,7 +37,6 @@ const filter = (
   let value = column.v,
     div;
   if (column.filterType === "values" && column.v) {
-    // value = "Y";
     div = (
       <div
         style={{
@@ -372,6 +371,7 @@ export class Headers extends Component {
                 utils.nullValue(column.dataType, "object")
               )
             ) {
+              //  filter (or filter from0
               div.push(
                 filter(
                   column,
@@ -381,10 +381,10 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  // focusedId,
                   component
                 )
               );
+              // empty cell
             } else {
               div.push(
                 filterEmpty(
@@ -395,6 +395,7 @@ export class Headers extends Component {
                 )
               );
             }
+            // filter "to" (between)
             if (headersLength === 3) {
               if (
                 column.filterType === "between" &&
@@ -411,10 +412,10 @@ export class Headers extends Component {
                     column.filterType === "between",
                     onChange,
                     openFilter,
-                    // focusedId,
                     component
                   )
                 );
+                // empty cell
               } else {
                 div.push(
                   filterEmpty(

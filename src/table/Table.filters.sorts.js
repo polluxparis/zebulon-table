@@ -143,9 +143,11 @@ export class TableFilterSort extends TableEvent {
     e.persist();
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
-    filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
+    // filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
     const rect = e.target.getBoundingClientRect();
-    filter.left = rect.x + window.scrollX;
+    const rectTable = document.getElementById("table").getBoundingClientRect();
+    filter.top = rect.y - rectTable.y;
+    filter.left = rect.x - rectTable.x; //+ window.scrollX;
     // filter.left = e.target.offsetLeft;
     const ok = this.canQuit("rowQuit", ok => {
       if (ok) {

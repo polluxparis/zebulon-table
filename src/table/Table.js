@@ -768,7 +768,8 @@ export class Table extends TableFilterSort {
           style={{
             width,
             height,
-            display: "block"
+            display: "block",
+            position: "absolute"
           }}
         >
           {detail}

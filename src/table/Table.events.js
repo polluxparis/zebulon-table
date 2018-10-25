@@ -91,6 +91,21 @@ export class TableEvent extends TableMenu {
     if (70 === (e.which || e.keyCode) && e.ctrlKey) {
       this.hasFocus = false;
       this.handleSearch(e);
+    } else if (
+      // can't garantee that the focus in on the selected cell
+      key === "Space" &&
+      this.hasFocus &&
+      this.column.dataType === "boolean" &&
+      document.activeElement.id !==
+        `cell: zebulon-table-${this.props.id}-${this.row.index_}-${this.column
+          .index_}`
+    ) {
+      e.preventDefault();
+      this.onChange({
+        row: this.row,
+        column: this.column,
+        value: { value: !this.row[this.column.id] }
+      });
     } else if (utils.isNavigationKey(e)) {
       if (openedFilter) {
         if (key === "Enter") {

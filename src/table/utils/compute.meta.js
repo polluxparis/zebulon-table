@@ -264,6 +264,10 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       "formats",
       column.format
     );
+    // a voir bricole avec les joined objects
+    if (column.select === " ") {
+      column.select = undefined;
+    }
     column.selectFunction = functions.getAccessorFunction(
       object,
       "selects",
