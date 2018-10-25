@@ -870,7 +870,7 @@ export class ZebulonTable extends ZebulonTableMenu {
   render() {
     const style = {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,
-      position: "relative",
+      position: "absolute",
       height: "fitContent"
     };
     let {
