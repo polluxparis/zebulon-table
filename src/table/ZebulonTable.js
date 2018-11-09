@@ -36,7 +36,7 @@ export class ZebulonTable extends ZebulonTableMenu {
     this.state = {
       meta: props.meta,
       updatedRows: props.updatedRows || {},
-      sizes: props.sizes || {},
+      sizes: props.sizes || { auto: true },
       keyEvent: props.keyEvent,
       confirmationModal: false,
       params: props.params || {},
@@ -870,7 +870,7 @@ export class ZebulonTable extends ZebulonTableMenu {
   render() {
     const style = {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,
-      position: "absolute",
+      position: "relative",
       height: "fitContent"
     };
     let {

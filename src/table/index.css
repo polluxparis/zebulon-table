@@ -145,8 +145,10 @@
   }
 }
 .zebulon-action-button {
+  font-size: 80%;
 }
 .zebulon-action-button-disabled {
+  font-size: 80%;
   color: grey;
 }
 .zebulon-modal-backdrop {

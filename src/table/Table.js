@@ -520,8 +520,8 @@ export class Table extends TableFilterSort {
         // backgroundColor: "lightgrey"
       };
       const className = enable
-        ? "zebulon-action-button"
-        : "zebulon-action-button-disabled";
+        ? ".zebulon-action-button"
+        : ".zebulon-action-button-disabled";
       if (action.jsxFunction) {
         return action.jsxFunction({
           disabled: !enable,

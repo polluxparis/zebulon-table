@@ -149,7 +149,7 @@ export class Rows extends ScrollableGrid {
             this.props.data,
             this.props.params,
             {
-              position: "absolute",
+              // position: "absolute", toto
               left,
               width: Math.min(
                 false ? column.computedWidth + shift : column.computedWidth,

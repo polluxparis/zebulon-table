@@ -7,7 +7,9 @@ export class ZebulonTableMenu extends Component {
     handleAudit = (props, item) => {
         const { row, status } = props;
         console.log("zebtable", this.state);
-        const audits = this.state.meta.row.auditFunction({ row });
+        const audits = this.state.meta.row.auditFunction({
+            row: status.row || status.rowUpdated
+        });
         if (utils.isPromise(audits)) {
             this.setState({
                 status: { loaded: false, loading: true }
