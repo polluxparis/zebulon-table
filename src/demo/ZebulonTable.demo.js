@@ -2,12 +2,15 @@ import React, { Component } from "react";
 import "zebulon-controls/lib/index.css";
 import "../table/index.css";
 // import { functions } from "../table/MetaDescriptions";
-import { functions } from "zebulon-controls";
+import { functions, utils } from "zebulon-controls";
+import * as toto from "zebulon-controls";
+
 import { MyDataset } from "./dataset.example";
 import { datasetFunctions } from "./dataset.functions";
 import { MyDatasetConfiguration } from "./dataset.configuration";
 // import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
+console.log("datasetFunctions", toto, functions, datasetFunctions);
 class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);

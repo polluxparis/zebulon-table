@@ -1,16 +1,10 @@
 {
 	"name": "zebulon-table",
-	"version": "1.1.16",
+	"version": "1.1.23",
 	"homepage": "http://polluxparis.github.io/zebulon-table",
 	"license": "MIT",
 	"description": "React editable table",
-	"tags": [
-		"table",
-		"grid",
-		"editable",
-		"react",
-		"javascript"
-	],
+	"tags": ["table", "grid", "editable", "react", "javascript"],
 	"author": "Thomas Bres <thomas.bres@pollux.paris>",
 	"main": "lib/index.js",
 	"scripts": {
@@ -25,9 +19,7 @@
 		"compile:css": "rimraf lib/index.css && postcss --use autoprefixer --use cssnano -o lib/index.css src/table/index.css"
 	},
 	"babel": {
-		"presets": [
-			"react-app"
-		]
+		"presets": ["react-app"]
 	},
 	"devDependencies": {
 		"babel-cli": "^6.26.0",
@@ -39,8 +31,6 @@
 		"rimraf": "^2.6.2"
 	},
 	"dependencies": {
-		"react": "16.6.1",
-		"react-dom": "16.6.1",
-		"zebulon-controls": "^1.2.43"
+		"zebulon-controls": "file:../controls/zebulon-controls-1.2.39.tgz"
 	}
 }
