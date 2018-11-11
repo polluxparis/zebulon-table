@@ -5,11 +5,10 @@ import { computeMetaPositions } from "./utils/compute.meta";
 
 export class ZebulonTableMenu extends Component {
     handleAudit = (props, item) => {
-        const { row, status } = props;
-        console.log("zebtable", this.state);
-        const audits = this.state.meta.row.auditFunction({
-            row: status.row || status.rowUpdated
-        });
+        const { status } = props;
+        // console.log("zebtable", this.state);
+        const row = status.row || status.rowUpdated;
+        const audits = this.state.meta.row.auditFunction({ row });
         if (utils.isPromise(audits)) {
             this.setState({
                 status: { loaded: false, loading: true }
