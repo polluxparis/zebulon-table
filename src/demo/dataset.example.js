@@ -53,11 +53,11 @@ export class MyDataset extends Component {
     this.text =
       "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
   }
-  componentWillReceiveProps(nextProps) {
-    const a = 1;
-    console.log("ex", this.props);
-    console.log("ex", nextProps);
-  }
+  // componentWillReceiveProps(nextProps) {
+  //   const a = 1;
+  //   console.log("ex", this.props);
+  //   console.log("ex", nextProps);
+  // }
   getLengths = ({ data, filteredData }) => {
     // if (Array.isArray(data)) {
     //   this.setState({
@@ -234,15 +234,15 @@ export class MyDataset extends Component {
       status: { loading: true }
     });
   };
-  onResize = (e, data) => {
-    this.setState({
-      sizes: {
-        ...this.state.sizes,
-        height: data.size.height,
-        width: data.size.width
-      }
-    });
-  };
+  // onResize = (e, data) => {
+  //   this.setState({
+  //     sizes: {
+  //       ...this.state.sizes,
+  //       height: data.size.height,
+  //       width: data.size.width
+  //     }
+  //   });
+  // };
   // Object.keys(this.previousState).map(key=>({key, ok:this.previousState[key]===this.state[key]}))
   render() {
     const { keyEvent, functions } = this.props;
@@ -421,46 +421,62 @@ export class MyDataset extends Component {
     return (
       <div style={{ fontFamily: "sans-serif" }} id="zebulon">
         {header}
-        <ResizableBox
-          height={this.state.sizes.height}
-          width={this.state.sizes.width}
-          onResize={this.onResize}
-        >
-          <ZebulonTable
-            id="dataset"
-            style={{ border: "solid grey 0.06em" }}
-            meta={meta}
-            params={params}
-            filters={filters}
-            sorts={sorts}
-            status={status}
-            sizes={this.state.sizes}
-            functions={functions}
-            keyEvent={keyEvent}
-            errorHandler={errorHandler}
-            // navigationKeyHandler={navigationKeyHandler}
-            onFilter={this.getLengths}
-            onGetPage={this.getPageLengths}
-            // contextualMenu={customMenuFunctions}
-            ref={ref => (this.table = ref)}
-            isActive={activeTable === "dataset"}
-            onActivation={() => this.onActivation("dataset")}
-            saveConfirmationRequired={saveConfirmationRequired}
-          />
-        </ResizableBox>
+        <ZebulonTable
+          id="dataset"
+          style={{ border: "solid grey 0.06em" }}
+          meta={meta}
+          params={params}
+          filters={filters}
+          sorts={sorts}
+          status={status}
+          sizes={this.state.sizes}
+          functions={functions}
+          keyEvent={keyEvent}
+          errorHandler={errorHandler}
+          // navigationKeyHandler={navigationKeyHandler}
+          onFilter={this.getLengths}
+          onGetPage={this.getPageLengths}
+          // contextualMenu={customMenuFunctions}
+          ref={ref => (this.table = ref)}
+          isActive={activeTable === "dataset"}
+          onActivation={() => this.onActivation("dataset")}
+          saveConfirmationRequired={saveConfirmationRequired}
+        />
         {footer}
       </div>
     );
   }
 }
-/*
- <input
-                type="radio"
-                id="radioPagination"
-                name="radioDataset"
-                value="get_pagination_manager"
-                checked={radioDataset === "get_pagination_manager"}
-                onChange={this.handleRadioDataset}
-              />
-              <label htmlFor="radioPagination"> a pagination manager </label>
- */
+// return (
+//    <div style={{ fontFamily: "sans-serif" }} id="zebulon">
+//      {header}
+//      <ResizableBox
+//        height={this.state.sizes.height}
+//        width={this.state.sizes.width}
+//        onResize={this.onResize}
+//      >
+//        <ZebulonTable
+//          id="dataset"
+//          style={{ border: "solid grey 0.06em" }}
+//          meta={meta}
+//          params={params}
+//          filters={filters}
+//          sorts={sorts}
+//          status={status}
+//          sizes={this.state.sizes}
+//          functions={functions}
+//          keyEvent={keyEvent}
+//          errorHandler={errorHandler}
+//          // navigationKeyHandler={navigationKeyHandler}
+//          onFilter={this.getLengths}
+//          onGetPage={this.getPageLengths}
+//          // contextualMenu={customMenuFunctions}
+//          ref={ref => (this.table = ref)}
+//          isActive={activeTable === "dataset"}
+//          onActivation={() => this.onActivation("dataset")}
+//          saveConfirmationRequired={saveConfirmationRequired}
+//        />
+//      </ResizableBox>
+//      {footer}
+//    </div>
+//  );

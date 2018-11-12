@@ -10,7 +10,7 @@ import { datasetFunctions } from "./dataset.functions";
 import { MyDatasetConfiguration } from "./dataset.configuration";
 // import { navigationKeyHandler } from "./navigation.handler";
 import cx from "classnames";
-console.log("datasetFunctions", toto, functions, datasetFunctions);
+// console.log("datasetFunctions", toto, functions, datasetFunctions);
 class ZebulonTableDemo extends Component {
   constructor(props) {
     super(props);

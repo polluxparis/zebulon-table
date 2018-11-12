@@ -131,7 +131,10 @@ export class Rows extends ScrollableGrid {
             );
           },
           onMouseOver = e => {
-            if ((e.buttons & 1) === 1 && !this.noOver) {
+            if (
+              (e.buttons & 1) === 1 &&
+              !(this.noOver || this.props.openedFilter)
+            ) {
               // e.preventDefault();
               this.selectCell({ rows: rowIndex, columns: columnIndex }, true);
             }

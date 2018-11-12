@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { ZebulonTableMenu } from "./ZebulonTable.menu";
 import { Table } from "./Table";
 import { computeMetaPositions } from "./utils/compute.meta";
+import { ResizableBox } from "react-resizable";
 
 import "./index.css";
 import {
@@ -183,7 +184,12 @@ export class ZebulonTable extends ZebulonTableMenu {
         this.setSorts(this.state.sorts, meta.properties);
         this.sorts = null;
       }
-      this.setState({ data, status });
+      if (this._isMounted) {
+        this.setState({ data, status });
+      } else {
+        this.state.data = data;
+        this.state.statu = status;
+      }
     }
   };
   resolvePromise = (data, message) => {
@@ -312,12 +318,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       }
     }
   };
-  // onClose = e => {
-  //   console.log("onClose", e);
-  //   const a = 1;
-  //   const b = 1;
-  //   return e;
-  // };
+  componentDidMount = () => (this._isMounted = true);
+  componentWillUnmount = () => (this._isMounted = false);
   componentWillReceiveProps(nextProps) {
     const {
       data,
@@ -866,7 +868,15 @@ export class ZebulonTable extends ZebulonTableMenu {
       />
     );
   };
-
+  onResize = (e, data) => {
+    this.setState({
+      sizes: {
+        ...this.state.sizes,
+        height: data.size.height,
+        width: data.size.width
+      }
+    });
+  };
   render() {
     const style = {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,
@@ -895,8 +905,16 @@ export class ZebulonTable extends ZebulonTableMenu {
             .row.descriptorFunction
             ? meta.row.descriptorFunction({ row: auditedRow })
             : auditedRow.index_})`
-        },
-        properties: [
+        }
+      };
+      // linked object
+      data = audits;
+      filters = {};
+      updatedRows = {};
+      if (this.props.auditedRow) {
+        meta.table.caption = `${meta.table.caption || meta.table.object}`;
+      } else {
+        meta.properties = [
           {
             id: "user_",
             caption: "User",
@@ -927,13 +945,10 @@ export class ZebulonTable extends ZebulonTableMenu {
             locked: false,
             v: undefined
           }))
-        ]
-      };
-      // linked object
-      data = audits;
-      if (this.props.auditedRow) {
-        meta.table.caption = `${meta.table.caption || meta.table.object}`;
-      } else {
+        ];
+        computeMetaPositions(meta, this.state.sizes.zoom);
+        meta.lockedIndex = 2;
+        meta.lockedWidth = 300 * this.state.sizes.zoom;
         let rowAudited = updatedRows[auditedRow.index_];
         if (
           rowAudited &&
@@ -949,18 +964,10 @@ export class ZebulonTable extends ZebulonTableMenu {
           data = [rowAudited].concat(data);
         }
       }
-      filters = {};
-      updatedRows = {};
-      computeMetaPositions(meta, this.state.sizes.zoom);
-      meta.lockedIndex = 2;
-      meta.lockedWidth = 300 * this.state.sizes.zoom;
+
       sizes = { ...sizes };
       this.initSizes(meta, data, sizes);
     }
-    // else {
-    // computeMetaPositions(meta, this.state.sizes.zoom);
-    // }
-
     let div = (
       <EventHandler
         component={this}
@@ -1034,6 +1041,17 @@ export class ZebulonTable extends ZebulonTableMenu {
         />
       </EventHandler>
     );
+    if (this.props.resizable || this.props.resizable === undefined) {
+      div = (
+        <ResizableBox
+          width={sizes.width}
+          height={sizes.height}
+          onResize={this.onResize}
+        >
+          {div}
+        </ResizableBox>
+      );
+    }
     return div;
   }
 }

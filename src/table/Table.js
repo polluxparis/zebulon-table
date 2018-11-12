@@ -292,7 +292,7 @@ export class Table extends TableFilterSort {
             fontFamily: "inherit",
             top,
             left,
-            width: Math.max(computedWidth * 1.2, 150),
+            width: Math.max(computedWidth * 1.5, 150),
             zIndex: 3,
             opacity: 1
           }}
@@ -585,6 +585,7 @@ export class Table extends TableFilterSort {
         // style={style}
         onDoubleClick={this.onDoubleClick}
         component={`zebulon-table-${id}`}
+        openedFilter={this.state.openedFilter}
       />
     );
     let lockedColumns = null;
@@ -615,6 +616,7 @@ export class Table extends TableFilterSort {
           onDoubleClick={this.onDoubleClick}
           locked={locked}
           component={`zebulon-table-${id}`}
+          openedFilter={this.state.openedFilter}
         />
       );
     }
