@@ -318,7 +318,12 @@ export class ZebulonTable extends ZebulonTableMenu {
       }
     }
   };
-  componentDidMount = () => (this._isMounted = true);
+  componentDidMount = () => {
+    this._isMounted = true;
+    if (this.props.getComponent) {
+      this.props.getComponent(this);
+    }
+  };
   componentWillUnmount = () => (this._isMounted = false);
   componentWillReceiveProps(nextProps) {
     const {
