@@ -973,7 +973,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       sizes = { ...sizes };
       this.initSizes(meta, data, sizes);
     }
-    const componentId = `zebulon-table-${this.props.id}`;
+    const componentId =
+      this.props.componentId || `zebulon-table-${this.props.id}`;
     let div = (
       <EventHandler
         id={componentId}
