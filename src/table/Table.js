@@ -752,7 +752,7 @@ export class Table extends TableFilterSort {
           }}
           menu="title-menu"
           component={`zebulon-table-${id}`}
-          onClick={this.props.onActivation}
+          onClick={() => this.props.onActivation(id)}
         >
           {caption}
         </ContextualMenuClient>
