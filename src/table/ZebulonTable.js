@@ -567,7 +567,11 @@ export class ZebulonTable extends ZebulonTableMenu {
       this.table.adjustScrollRows(this.table.state.filteredData);
     }
     if (this.props.linkedObjects) {
-      this.props.linkedObjects.forEach(object => object.rollbackAll());
+      this.props.linkedObjects.forEach(object => {
+        if (object.rollbackAll) {
+          object.rollbackAll();
+        }
+      });
     }
   };
   onTableChange_ = (type, callback_) => {
@@ -577,7 +581,11 @@ export class ZebulonTable extends ZebulonTableMenu {
             if (ok) {
               this.setState(this.getData(this.props));
               if (this.props.linkedObjects) {
-                this.props.linkedObjects.forEach(object => object.refresh());
+                this.props.linkedObjects.forEach(object => {
+                  if (object.refresh) {
+                    object.refresh();
+                  }
+                });
               }
             }
           }

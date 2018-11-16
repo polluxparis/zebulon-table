@@ -220,7 +220,10 @@ export class TableEvent extends TableMenu {
       } else if (action.type === "save") {
         return this.props.onSave();
       } else if (action.type === "refresh") {
-        this.props.onTableChange("refresh");
+        this.props.onTableChange(
+          "refresh",
+          this.onRowEnter(this.getRow(this.state.selectedRange.end.rows))
+        );
       } else {
         if (action.type === "detail" && action.content) {
           this.setState({ detail: action });
