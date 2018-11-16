@@ -752,7 +752,7 @@ export class Table extends TableFilterSort {
           }}
           menu="title-menu"
           componentId={this.props.componentId}
-          onClick={() => this.props.onActivation(id)}
+          onClick={() => this.props.onActivation(this.props.componentId || id)}
         >
           {caption}
         </ContextualMenuClient>

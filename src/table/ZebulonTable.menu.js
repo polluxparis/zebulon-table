@@ -88,7 +88,9 @@ export class ZebulonTableMenu extends Component {
         // console.log(this.state, this.table.state);
         const menus = [];
         if (!this.props.isActive && this.props.onActivation) {
-            this.props.onActivation(`zebulon-table-${this.props.id}`);
+            this.props.onActivation(
+                this.props.componentId || `zebulon-table-${this.props.id}`
+            );
         }
         if (menu === "row-header-menu") {
             if (this.state.meta.table.editable) {
