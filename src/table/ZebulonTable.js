@@ -334,7 +334,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       updatedRows,
       filters,
       status,
-      saveConfirmationRequired,
+      closeRequired,
       refresh
     } = nextProps;
 
@@ -348,17 +348,17 @@ export class ZebulonTable extends ZebulonTableMenu {
       this.props.refresh !== refresh
     ) {
       let ok = true;
-      if (!saveConfirmationRequired && !this.props.saveConfirmationRequired) {
-        ok = this.onTableChange("refresh", ok => {
-          if (ok) {
-            this.sorts = this.state.sorts;
-            this.setState(this.getData(nextProps));
-            if (this.props.linkedObjects) {
-              this.props.linkedObjects.forEach(object => object.refresh());
-            }
+      // if (!closeRequired && !this.props.closeRequired) {
+      ok = this.onTableChange("refresh", ok => {
+        if (ok) {
+          this.sorts = this.state.sorts;
+          this.setState(this.getData(nextProps));
+          if (this.props.linkedObjects) {
+            this.props.linkedObjects.forEach(object => object.refresh());
           }
-        });
-      }
+        }
+      });
+      // }
       if (ok) {
         this.setState(this.getData(nextProps));
       }
@@ -399,9 +399,9 @@ export class ZebulonTable extends ZebulonTableMenu {
         }
       }
     }
-    if (saveConfirmationRequired && !this.props.saveConfirmationRequired) {
-      this.onTableChange("close", saveConfirmationRequired);
-    }
+    // if (closeRequired && !this.props.closeRequired) {
+    //   this.onClose(closeRequired);
+    // }
   }
   handleKeyEvent = e => {
     if (this.confirmationModal) {
@@ -546,6 +546,7 @@ export class ZebulonTable extends ZebulonTableMenu {
     }
     return true;
   };
+  onClose = callback_ => this.onTableChange("close", callback_);
   onTableChange = (type, callback_) => {
     const ok = this.table.canQuit("rowQuit", ok => {
       if (ok) {

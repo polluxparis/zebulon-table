@@ -544,7 +544,7 @@ export class TableEvent extends TableMenu {
   };
   selectRange_ = (range, callback, row, type, noFocus, scrollOnClick) => {
     if (!this.props.isActive && this.props.onActivation) {
-      this.props.onActivation(this.props.id);
+      this.props.onActivation(this.props.componentId || this.props.id);
     }
     let { selectedRange, scroll } = this.state;
     const meta = this.state.meta;

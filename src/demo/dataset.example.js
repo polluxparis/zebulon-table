@@ -46,7 +46,7 @@ export class MyDataset extends Component {
       rollingAverage: false,
       confirmationModal: false,
       activeTable: "dataset",
-      saveConfirmationRequired: false,
+      closeRequired: false,
       params: { user_: "Pollux" },
       userZebulon: false
     };
@@ -166,7 +166,7 @@ export class MyDataset extends Component {
     // console.log("radio", e.target);
     const value = e.target.value;
     this.setState({
-      saveConfirmationRequired: ok => {
+      closeRequired: ok => {
         // console.log("confirmation", ok);
         if (ok) {
           if (value === "get_array") {
@@ -185,12 +185,12 @@ export class MyDataset extends Component {
           this.setState({
             radioDataset: value,
             status: { loading: true },
-            saveConfirmationRequired: false
+            closeRequired: false
           });
         } else {
           this.setState({
             radioDataset: this.state.radioDataset,
-            saveConfirmationRequired: false
+            closeRequired: false
           });
         }
       }
@@ -257,7 +257,7 @@ export class MyDataset extends Component {
       radioDataset,
       status,
       activeTable,
-      saveConfirmationRequired,
+      closeRequired,
       params
     } = this.state;
     let header = null,
@@ -440,7 +440,7 @@ export class MyDataset extends Component {
           ref={ref => (this.table = ref)}
           isActive={activeTable === "dataset"}
           onActivation={() => this.onActivation("dataset")}
-          saveConfirmationRequired={saveConfirmationRequired}
+          closeRequired={closeRequired}
         />
         {footer}
       </div>
@@ -474,7 +474,7 @@ export class MyDataset extends Component {
 //          ref={ref => (this.table = ref)}
 //          isActive={activeTable === "dataset"}
 //          onActivation={() => this.onActivation("dataset")}
-//          saveConfirmationRequired={saveConfirmationRequired}
+//          closeRequired={closeRequired}
 //        />
 //      </ResizableBox>
 //      {footer}
