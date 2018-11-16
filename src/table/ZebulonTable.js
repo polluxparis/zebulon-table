@@ -973,22 +973,25 @@ export class ZebulonTable extends ZebulonTableMenu {
       sizes = { ...sizes };
       this.initSizes(meta, data, sizes);
     }
+    const componentId = `zebulon-table-${this.props.id}`;
     let div = (
       <EventHandler
+        id={componentId}
         component={this}
         style={style}
         className="zebulon-table"
-        id={`zebulon-table-${this.props.id}`}
+        componentId={componentId}
       >
         <ContextualMenu
           key="table-menu"
           getMenu={this.getMenu}
-          component={`zebulon-table-${this.props.id}`}
+          componentId={componentId}
           id="table-menu"
           ref={ref => (this.contextualMenu = ref)}
         />
         <Table
           id={this.props.id}
+          componentId={componentId}
           style={this.props.style}
           status={status}
           data={data}

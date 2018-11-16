@@ -15,7 +15,7 @@ const filter = (
   onChange,
   openFilter,
   focusedId,
-  component
+  componentId
 ) => {
   const className = classnames({
     "zebulon-table-cell": true,
@@ -32,7 +32,7 @@ const filter = (
     else if (column.dataType === "date" || column.dataType === "boolean")
       textAlign = "center";
   }
-  const id = `filter${filterTo ? "To" : ""}: ${component}--${column.index_}`;
+  const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
   const focused = (document.activeElement || {}).id === id;
   let value = column.v,
     div;
@@ -103,7 +103,7 @@ const header = (
   handleDragStart,
   handleDragOver,
   handleDrop,
-  component
+  componentId
   // handleDragEnd
 ) => {
   let sort = "";
@@ -112,7 +112,7 @@ const header = (
   } else if (column.sort === "desc") {
     sort = "↓";
   }
-  const id = `header: ${component}--${column.index_}`;
+  const id = `header: ${componentId}--${column.index_}`;
   return (
     <ContextualMenuClient
       key={id}
@@ -131,7 +131,7 @@ const header = (
       }}
       column={column}
       menu="column-header-menu"
-      component={component}
+      componentId={componentId}
     >
       <div
         id={id}
@@ -159,7 +159,7 @@ const header = (
     </ContextualMenuClient>
   );
 };
-const auditCell = (row, column, status, data, params, style, component) => {
+const auditCell = (row, column, status, data, params, style, componentId) => {
   const { value } = cellData(row, column, status, data, params, false);
   let textAlign = column.alignement || "left";
   if (!column.alignement) {
@@ -179,7 +179,7 @@ const auditCell = (row, column, status, data, params, style, component) => {
     // "zebulon-table-cell-editable": editable && focused
   });
   // if (column.dataType === "boolean") value = value || false;
-  const id = `audit-cell: ${component}-${row.index_}-${column.index_}`;
+  const id = `audit-cell: ${componentId}-${row.index_}-${column.index_}`;
   return (
     <Input
       row={row}
@@ -215,7 +215,7 @@ export class Headers extends Component {
   }
   handleClick = (column, double) => {
     if (!this.props.isActive && this.props.onActivation) {
-      this.props.onActivation();
+      this.props.onActivation(this.props.componentId);
     }
     const { onSort } = this.props;
     if (!double) {
@@ -304,7 +304,7 @@ export class Headers extends Component {
       locked,
       auditedRow,
       auditStatus,
-      component,
+      componentId,
       data,
       params
     } = this.props;
@@ -341,7 +341,7 @@ export class Headers extends Component {
           this.handleDragStart,
           this.handleDragOver,
           this.handleDrop,
-          component
+          componentId
         );
         if (headersLength > 1) {
           if (auditedRow) {
@@ -361,7 +361,7 @@ export class Headers extends Component {
                 data,
                 params,
                 style,
-                component
+                componentId
               )
             );
           } else {
@@ -381,7 +381,7 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  component
+                  componentId
                 )
               );
               // empty cell
@@ -412,7 +412,7 @@ export class Headers extends Component {
                     column.filterType === "between",
                     onChange,
                     openFilter,
-                    component
+                    componentId
                   )
                 );
                 // empty cell
@@ -483,7 +483,7 @@ export const statusCell = (
   onClick,
   onDoubleClick,
   handleErrors,
-  component,
+  componentId,
   checkable,
   checked,
   onChange,
@@ -515,7 +515,7 @@ export const statusCell = (
       />
     );
   }
-  const id = `status: ${component}-${index}-`;
+  const id = `status: ${componentId}-${index}-`;
   return (
     <ContextualMenuClient
       id={id}
@@ -534,7 +534,7 @@ export const statusCell = (
       status={status}
       // row={row}
       menu="row-header-menu"
-      component={component}
+      componentId={componentId}
     >
       {glyph}
     </ContextualMenuClient>
@@ -598,7 +598,7 @@ export class Status extends Component {
       selectedIndex,
       handleErrors,
       dataLength,
-      component,
+      componentId,
       checkable,
       onDoubleClick,
       isAudit,
@@ -655,7 +655,7 @@ export class Status extends Component {
             this.onClick,
             onDoubleClick,
             (e, errors) => handleErrors(e, ix, errors),
-            component,
+            componentId,
             checkable,
             row.checked_,
             this.onChange,
@@ -669,8 +669,8 @@ export class Status extends Component {
     this.stopIndex = index + scroll.startIndex - 1;
     return (
       <div
-        key={"status: " + component}
-        id={"status: " + component}
+        key={"status: " + componentId}
+        id={"status: " + componentId}
         style={{
           width: rowHeight,
           height,

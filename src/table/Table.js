@@ -476,7 +476,7 @@ export class Table extends TableFilterSort {
           meta={meta}
           handleErrors={this.handleErrors}
           noUpdate={noUpdate}
-          component={`zebulon-table-${id}`}
+          componentId={this.props.componentId}
           checkable={meta.table.checkable}
           onDoubleClick={this.onDoubleClick}
           draggable={meta.table.statusDraggable}
@@ -584,7 +584,7 @@ export class Table extends TableFilterSort {
         noUpdate={noUpdate}
         // style={style}
         onDoubleClick={this.onDoubleClick}
-        component={`zebulon-table-${id}`}
+        componentId={this.props.componentId}
         openedFilter={this.state.openedFilter}
       />
     );
@@ -615,7 +615,7 @@ export class Table extends TableFilterSort {
           noVerticalScrollbar={true}
           onDoubleClick={this.onDoubleClick}
           locked={locked}
-          component={`zebulon-table-${id}`}
+          componentId={this.props.componentId}
           openedFilter={this.state.openedFilter}
         />
       );
@@ -643,7 +643,7 @@ export class Table extends TableFilterSort {
         openFilter={this.openFilter}
         onChange={this.onChangeFilter}
         // style={style}
-        component={`zebulon-table-${id}`}
+        componentId={this.props.componentId}
         // auditedRow={auditedRow}
         // auditStatus={{}}
         isActive={this.props.isActive}
@@ -669,7 +669,7 @@ export class Table extends TableFilterSort {
           openFilter={this.openFilter}
           onChange={this.onChangeFilter}
           locked={true}
-          component={`zebulon-table-${id}`}
+          componentId={this.props.componentId}
           // auditedRow={auditedRow}
           // auditStatus={{}}
           isActive={this.props.isActive}
@@ -718,7 +718,7 @@ export class Table extends TableFilterSort {
           id={key}
           key={key}
           menu="top-left-corner-menu"
-          component={`zebulon-table-${id}`}
+          componentId={this.props.componentId}
         >
           {statusBarHeader}
         </ContextualMenuClient>
@@ -751,7 +751,7 @@ export class Table extends TableFilterSort {
             boxSizing: "border-box"
           }}
           menu="title-menu"
-          component={`zebulon-table-${id}`}
+          componentId={this.props.componentId}
           onClick={() => this.props.onActivation(id)}
         >
           {caption}
