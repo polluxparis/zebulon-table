@@ -137,7 +137,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       data = [];
     }
     // }
-    return { data, meta, status, filters, sorts };
+    return { data, meta, status, filters, sorts, updatedRows: {} };
   };
   initData = (data, meta, zoom, functions, startIndex, filters, status) => {
     if (Array.isArray(data)) {
@@ -580,6 +580,9 @@ export class ZebulonTable extends ZebulonTableMenu {
         ? ok => {
             if (ok) {
               this.setState(this.getData(this.props));
+              this.table.updated = false;
+              this.table.rowUpdated = false;
+              this.table.tableUpdated = false;
               if (this.props.linkedObjects) {
                 this.props.linkedObjects.forEach(object => {
                   if (object.refresh) {

@@ -220,10 +220,7 @@ export class TableEvent extends TableMenu {
       } else if (action.type === "save") {
         return this.props.onSave();
       } else if (action.type === "refresh") {
-        this.props.onTableChange(
-          "refresh",
-          this.onRowEnter(this.getRow(this.state.selectedRange.end.rows))
-        );
+        this.props.onTableChange("refresh");
       } else {
         if (action.type === "detail" && action.content) {
           this.setState({ detail: action });
@@ -637,7 +634,11 @@ export class TableEvent extends TableMenu {
     const { updatedRows, data, meta, dataStrings } = this.state;
     delete dataStrings[row.index_];
     const status = getRowStatus(updatedRows, row);
-    setStatus(status, "updated_");
+    if (!status.updated_) {
+      setStatus(status, "updated_");
+      this.setState({ statusChanged: !this.state.statusChanged });
+    }
+    console.log("change", status);
     column.items = undefined;
     const message = {
       value,

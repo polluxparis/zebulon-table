@@ -63,8 +63,8 @@ export class Table extends TableFilterSort {
         }
       },
       selectedRange: {
-        start: { rows: 0, columns },
-        end: { rows: 0, columns }
+        start: { rows: undefined, columns },
+        end: { rows: undefined, columns }
       },
       detail: {},
       text: {},
@@ -135,27 +135,31 @@ export class Table extends TableFilterSort {
         filters: nextProps.filters || {},
         meta: nextProps.meta,
         status,
-        updatedRows: nextProps.updatedRows,
+        updatedRows: nextProps.updatedRows
+        // scroll: this.state.scroll
         // selectedRange: { start: {}, end: {} },
-        scroll: {
-          rows: {
-            index: 0,
-            direction: 1,
-            startIndex: 0,
-            shift: 0,
-            position: 0
-          },
-          columns: {
-            index: 0,
-            direction: 1,
-            startIndex: 0,
-            shift: 0,
-            position: 0
-          }
-        }
+        // scroll: {
+        //   rows: {
+        //     index: 0,
+        //     direction: 1,
+        //     startIndex: 0,
+        //     shift: 0,
+        //     position: 0
+        //   },
+        //   columns: {
+        //     index: 0,
+        //     direction: 1,
+        //     startIndex: 0,
+        //     shift: 0,
+        //     position: 0
+        //   }
+        // }
       });
       if (status.loaded && this.bLoaded === undefined) {
         this.bLoaded = true;
+      }
+      if (status.loading) {
+        this.bLoaded = undefined;
       }
       if (
         status.loaded &&
@@ -187,17 +191,44 @@ export class Table extends TableFilterSort {
   }
   onLoad = () => {
     if (this.bLoaded && this.state.filteredData.length) {
-      const columns = (this.state.meta.visibleIndexes || [0])[0];
-      this.selectRange(
-        {
-          start: { rows: 0, columns },
-          end: { rows: 0, columns }
-        },
-        undefined,
-        this.state.filteredData[0],
-        "enter",
-        true
-      );
+      this.updated = false;
+      this.rowUpdated = false;
+      this.tableUpdated = false;
+      this.adjustScrollRows(this.state.filteredData);
+      // const { selectedRange, scroll } = this.state;
+      // if (selectedRange.end.rows <= this.state.filteredData.length) {
+      //   const rowDirection = Math.sign(
+      //     selectedRange.end.rows - (scroll.rows.startIndex || 0)
+      //   );
+      //   const columnDirection = Math.sign(
+      //     selectedRange.end.columns - scroll.columns.startIndex
+      //   );
+      //   this.selectRange(
+      //     selectedRange,
+      //     undefined,
+      //     this.state.filteredData[selectedRange.end.rows],
+      //     "enter"
+      //   );
+      //   this.rowUpdated = true;
+      //   this.scrollTo(
+      //     selectedRange.end.rows,
+      //     rowDirection,
+      //     selectedRange.end.columns,
+      //     columnDirection
+      //   );
+      // } else {
+      // const columns = (this.state.meta.visibleIndexes || [0])[0];
+      // this.selectRange(
+      //   {
+      //     start: { rows: 0, columns },
+      //     end: { rows: 0, columns }
+      //   },
+      //   undefined,
+      //   this.state.filteredData[0],
+      //   "enter",
+      //   true
+      // );
+
       this.hasFocus = true;
       this.bLoaded = null;
     }
@@ -225,7 +256,8 @@ export class Table extends TableFilterSort {
         data,
         auditedRow,
         audits,
-        scroll
+        scroll,
+        statusChanged
       } = this.state,
       filteredData,
       filteredDataLength;
@@ -481,6 +513,7 @@ export class Table extends TableFilterSort {
           onDoubleClick={this.onDoubleClick}
           draggable={meta.table.statusDraggable}
           isAudit={auditedRow ? true : false}
+          statusChanged={statusChanged}
         />
       );
     }

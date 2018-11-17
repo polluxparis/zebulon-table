@@ -543,13 +543,13 @@ export const statusCell = (
 export class Status extends Component {
   constructor(props) {
     super(props);
-    this.state = { updatedRows: this.props.updatedRows };
+    // this.state = { updatedRows: this.props.updatedRows };
   }
-  componentWillReceiveProps(nextProps) {
-    if (this.state.updatedRows !== nextProps.updatedRows) {
-      this.setState({ updatedRows: nextProps.updatedRows });
-    }
-  }
+  // componentWillReceiveProps(nextProps) {
+  //   if (this.state.updatedRows !== nextProps.updatedRows) {
+  //     this.setState({ updatedRows: nextProps.updatedRows });
+  //   }
+  // }
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
@@ -571,7 +571,8 @@ export class Status extends Component {
   };
   onChange = index => {
     if (this.props.checkable) {
-      const updatedRows = this.state.updatedRows;
+      // const updatedRows = this.state.updatedRows;
+      const updatedRows = this.props.updatedRows;
       // if (!updatedRows[index]) {
       //   updatedRows[index] = { errors: {} };
       // }
@@ -582,7 +583,7 @@ export class Status extends Component {
         // updatedRows[index + 1 - 2 * (index % 2)].checked_ = !checked;
         updatedRows[index + 1 - 2 * (index % 2)].rowUpdated.checked_ = !checked;
       }
-      this.setState({ updatedRows });
+      // this.setState({ updatedRows });
     }
   };
   handleDragStart = e => {
@@ -602,9 +603,11 @@ export class Status extends Component {
       checkable,
       onDoubleClick,
       isAudit,
-      draggable
+      draggable,
+      statusChanged
     } = this.props;
-    const updatedRows = this.state.updatedRows;
+    const updatedRows = this.props.updatedRows;
+    console.log("status", this.props.updatedRows);
     let index = 0,
       indexPage = 0,
       rows = data;
@@ -627,8 +630,11 @@ export class Status extends Component {
       };
       if (index + scroll.startIndex - indexPage < rows.length) {
         const row = rows[index + scroll.startIndex - indexPage];
-        const status = getRowStatus(updatedRows, row); //updatedRows[index].checked_updatedRows[row.index_];
-
+        const status_ = getRowStatus(updatedRows, row); //updatedRows[index].checked_updatedRows[row.index_];
+        if (row.id === 0) {
+          console.log("UPDATED 0", status_.updated_);
+        }
+        console.log("statusupdated", status_);
         // if (checkable) {
         //   if (row.checked_ !== undefined && updatedRow.checked_ === undefined) {
         //     updatedRow.checked_ = row.checked_;
@@ -651,7 +657,7 @@ export class Status extends Component {
             style,
             className,
             ix + scroll.startIndex,
-            status,
+            status_,
             this.onClick,
             onDoubleClick,
             (e, errors) => handleErrors(e, ix, errors),

@@ -32,6 +32,8 @@ export class TableFilterSort extends TableEvent {
           false,
           filteredData.length
         );
+        this.selectRange(selectedRange, undefined, filteredData[0], "enter");
+        this.setState({ scroll: { ...scroll } });
       } else if (selectedRange.end.rows > filteredData.length - 1) {
         selectedRange.end.rows = filteredData.length - 1;
         this.scrollTo(
@@ -42,7 +44,10 @@ export class TableFilterSort extends TableEvent {
           false,
           filteredData.length
         );
-      } else {
+      } else if (
+        scroll.rows.index + this.rowsHeight / this.rowHeight >
+        filteredData.length - 1
+      ) {
         this.scrollTo(
           selectedRange.end.rows,
           scroll.rows.direction,
@@ -51,8 +56,17 @@ export class TableFilterSort extends TableEvent {
           false,
           filteredData.length
         );
+      } else {
+        this.selectRange(
+          selectedRange,
+          undefined,
+          filteredData[selectedRange.end.rows],
+          "enter"
+        );
+        this.setState({ scroll: { ...scroll } });
       }
-      return filteredData[selectedRange.end.rows];
+      this.row = filteredData[selectedRange.end.rows];
+      return this.row;
     }
   };
   filters = (data, filters, noFocus, updatedRows) => {

@@ -190,7 +190,9 @@ export const get_promise = ({ params, meta, filters }) => {
 		console.log("promise", data_.length, serverData.length);
 		// if the filters are applied on the server data:
 		if (filters) {
-			data_ = data_.filter(filtersFunction(filters, params, data_));
+			data_ = data_
+				.filter(filtersFunction(filters, params, data_))
+				.map(row => ({ ...row }));
 		}
 		resolve(data_);
 	});
