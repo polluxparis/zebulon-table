@@ -62,7 +62,15 @@ class ZebulonTableDemo extends Component {
     }
   };
   onSelectTab = index => {
-    this.setState({ selectedTab: index });
+    if (index === 1 && this.component && this.component.onClose) {
+      this.component.onClose(ok => {
+        if (ok) {
+          this.setState({ selectedTab: index });
+        }
+      });
+    } else {
+      this.setState({ selectedTab: index });
+    }
   };
   tabs = [
     {
@@ -81,7 +89,12 @@ class ZebulonTableDemo extends Component {
     // const sizes = { ...this.state.sizes };
     if (tabIndex === 0) {
       return (
-        <MyDataset id="dataset" functions={functions} keyEvent={keyEvent} />
+        <MyDataset
+          id="dataset"
+          functions={functions}
+          keyEvent={keyEvent}
+          getComponent={ref => (this.component = ref)}
+        />
       );
     } else if (tabIndex === 1) {
       // sizes.height = sizes.height - 52;

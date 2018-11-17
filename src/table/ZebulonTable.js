@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import ReactDOM from "react-dom";
 import { ZebulonTableMenu } from "./ZebulonTable.menu";
 import { Table } from "./Table";
 import { computeMetaPositions } from "./utils/compute.meta";
@@ -509,6 +510,16 @@ export class ZebulonTable extends ZebulonTableMenu {
           confirmationModal: true,
           modal: { body, type, callback }
         });
+        // ReactDOM.render(
+        //   <ConfirmationModal
+        //     show={true}
+        //     detail={{ body, type, callback }}
+        //     onConfirm={this.onConfirm}
+        //     keyEvent={this.state.keyEvent}
+        //     ref={ref => (this.modal = ref)}
+        //   />,
+        //   document.getElementById("root")
+        // );
         return;
       } else if (conflicts) {
         const resolveConflicts = updatedRows => (ok, data) => {
@@ -987,6 +998,15 @@ export class ZebulonTable extends ZebulonTableMenu {
     }
     const componentId =
       this.props.componentId || `zebulon-table-${this.props.id}`;
+    const modal = this.state.confirmationModal ? (
+      <ConfirmationModal
+        show={this.state.confirmationModal}
+        detail={this.state.modal}
+        onConfirm={this.onConfirm}
+        keyEvent={this.state.keyEvent}
+        ref={ref => (this.modal = ref)}
+      />
+    ) : null;
     let div = (
       <EventHandler
         id={componentId}
@@ -1053,13 +1073,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           isModal={this.props.isModal}
           modal={this.state.confirmationModal || this.state.modalCancel}
         />
-        <ConfirmationModal
-          show={this.state.confirmationModal}
-          detail={this.state.modal}
-          onConfirm={this.onConfirm}
-          keyEvent={this.state.keyEvent}
-          ref={ref => (this.modal = ref)}
-        />
+        {modal}
       </EventHandler>
     );
     if (this.props.resizable || this.props.resizable === undefined) {

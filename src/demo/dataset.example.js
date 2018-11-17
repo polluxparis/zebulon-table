@@ -245,7 +245,7 @@ export class MyDataset extends Component {
   // };
   // Object.keys(this.previousState).map(key=>({key, ok:this.previousState[key]===this.state[key]}))
   render() {
-    const { keyEvent, functions } = this.props;
+    const { keyEvent, functions, getComponent } = this.props;
     const {
       filters,
       sorts,
@@ -441,6 +441,7 @@ export class MyDataset extends Component {
           isActive={activeTable === "dataset"}
           onActivation={() => this.onActivation("dataset")}
           closeRequired={closeRequired}
+          getComponent={getComponent}
         />
         {footer}
       </div>
