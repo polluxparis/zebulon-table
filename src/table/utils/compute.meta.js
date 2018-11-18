@@ -54,7 +54,7 @@ const grantPrivilege = (meta, privileges) => {
   if (privileges !== null) {
     let b = privileges && privileges.children_ && privileges.children_.actions;
     meta.table.actions.forEach(action => {
-      if (!(b && privileges.children_.actions[action.id].checked_)) {
+      if (!(b && (privileges.children_.actions[action.id] || {}).checked_)) {
         action.enableFunction = () => false;
         action.enable = false;
       }
@@ -65,7 +65,13 @@ const grantPrivilege = (meta, privileges) => {
       privileges.children_.properties &&
       privileges.checked_;
     meta.properties.forEach(property => {
-      if (!(b && privileges.children_.properties[property.id].checked_)) {
+      if (
+        !(
+          b &&
+          property.editable &&
+          (privileges.children_.properties[property.id] || {}).checked_
+        )
+      ) {
         property.editableFunction = () => false;
         property.editable = false;
       }
