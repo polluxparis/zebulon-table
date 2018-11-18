@@ -89,7 +89,6 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   // functions.setVisibility(object);
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
-  grantPrivilege(meta, privileges);
   meta.zoom = zoom;
   meta.table.selectFunction = functions.getAccessorFunction(
     object,
@@ -143,13 +142,6 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
-      // grantPrivilege(
-      //   meta.table.object,
-      //   action.id || action.caption,
-      //   action,
-      //   privileges,
-      //   "actions"
-      // );
       if (action.action) {
         action.actionFunction =
           typeof action.action === "function"
@@ -195,14 +187,6 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       column.hidden = true;
       column.mandatory = false;
     }
-    // grantPrivilege(
-    //   meta.table.object,
-    //   column.id,
-    //   column,
-    //   privileges,
-    //   "properties"
-    // );
-
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
     }
@@ -455,6 +439,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       column.editable = false;
     }
   });
+  grantPrivilege(meta, privileges);
 };
 // return meta;
 // };
