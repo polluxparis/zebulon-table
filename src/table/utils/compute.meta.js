@@ -59,8 +59,12 @@ const grantPrivilege = (meta, privileges) => {
         action.enable = false;
       }
     });
-    b = privileges && privileges.children_ && privileges.children_.properties;
-    meta.table.properties.forEach(property => {
+    b =
+      privileges &&
+      privileges.children_ &&
+      privileges.children_.properties &&
+      privileges.checked_;
+    meta.properties.forEach(property => {
       if (!(b && privileges.children_.properties[property.id].checked_)) {
         property.editableFunction = () => false;
         property.editable = false;
