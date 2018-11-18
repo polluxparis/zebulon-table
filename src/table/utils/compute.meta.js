@@ -50,41 +50,23 @@ export const computeMetaPositions = (meta, zoom) => {
   });
   return meta.visibleIndexes;
 };
-const grantPrivilege = (object, subObject, target, privileges, type) => {
-  if (privileges && privileges[object] && privileges[object][type]) {
-    let priv = privileges[object][type];
-    if (type !== "table") {
-      priv = priv[subObject];
-    }
-    if (priv) {
-      if (type === "actions") {
-        if (priv === "enable") {
-          target.enable = true;
-          target.hidden = false;
-        } else if (priv === "disable") {
-          target.enable = false;
-          target.hidden = false;
-        } else if (priv === "hidden") {
-          target.hidden = true;
-          target.enable = false;
-        } else {
-          target.enable = priv;
-        }
-      } else if (type === "properties") {
-        if (priv === "editable") {
-          target.editable = true;
-          target.hidden = false;
-        } else if (priv === "visible") {
-          target.editable = false;
-          target.enable = false;
-        } else if (priv === "hidden") {
-          target.editable = false;
-          target.hidden = true;
-        } else {
-          target.editable = priv;
-        }
+const grantPrivilege = (meta, privileges) => {
+  if (privileges !== null) {
+    let b = privileges && privileges.children_ && privileges.children_.actions;
+    meta.table.actions.forEach(action => {
+      if (!(b && privileges.children_.actions[action.id].checked_)) {
+        action.enableFunction = () => false;
+        action.enable = false;
       }
-    }
+    });
+    let b =
+      privileges && privileges.children_ && privileges.children_.properties;
+    meta.table.properties.forEach(property => {
+      if (!(b && privileges.children_.properties[property.id].checked_)) {
+        property.editableFunction = () => false;
+        property.editable = false;
+      }
+    });
   }
 };
 export const computeMeta = (meta, zoom = 1, functions, privileges) => {
@@ -98,7 +80,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   // functions.setVisibility(object);
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
-  grantPrivilege(object, null, meta.table, privileges, "table");
+  grantPrivilege(meta, privileges);
   meta.zoom = zoom;
   meta.table.selectFunction = functions.getAccessorFunction(
     object,
@@ -152,13 +134,13 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
-      grantPrivilege(
-        meta.table.object,
-        action.id || action.caption,
-        action,
-        privileges,
-        "actions"
-      );
+      // grantPrivilege(
+      //   meta.table.object,
+      //   action.id || action.caption,
+      //   action,
+      //   privileges,
+      //   "actions"
+      // );
       if (action.action) {
         action.actionFunction =
           typeof action.action === "function"
@@ -204,13 +186,13 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       column.hidden = true;
       column.mandatory = false;
     }
-    grantPrivilege(
-      meta.table.object,
-      column.id,
-      column,
-      privileges,
-      "properties"
-    );
+    // grantPrivilege(
+    //   meta.table.object,
+    //   column.id,
+    //   column,
+    //   privileges,
+    //   "properties"
+    // );
 
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;

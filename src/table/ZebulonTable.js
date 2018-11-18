@@ -20,7 +20,7 @@ import {
   getFilters,
   getSorts,
   computeData,
-  computeMeta,
+  // computeMeta,
   computeMetaFromData,
   getSizes
 } from "./utils";
@@ -147,7 +147,9 @@ export class ZebulonTable extends ZebulonTableMenu {
         meta,
         zoom,
         functions,
-        (this.props.params || {}).privileges_
+        this.props.privileges
+          ? this.props.privileges.get(this.props.componentName)
+          : null
       );
       Promise.all(meta.promises).then(values => {
         this.initData2(
@@ -1005,6 +1007,8 @@ export class ZebulonTable extends ZebulonTableMenu {
         onConfirm={this.onConfirm}
         keyEvent={this.state.keyEvent}
         ref={ref => (this.modal = ref)}
+        id={`modal-${this.props.id}`}
+        key={`modal-${this.props.id}`}
       />
     ) : null;
     let div = (

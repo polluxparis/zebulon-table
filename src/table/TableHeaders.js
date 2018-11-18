@@ -85,7 +85,6 @@ const filter = (
         filterTo={filterTo}
         onChange={onChange}
         onFocus={e => {
-          // console.log("filter", this);
           openFilter(e, column);
         }}
       />
@@ -239,13 +238,11 @@ export class Headers extends Component {
     this.dragId = e.target.id;
     this.dragType = type;
     this.dragX = e.pageX;
-    // console.log("handleDragStart", this.dragId, e);
     e.dataTransfer.setData("text", this.dragId);
     e.stopPropagation();
   };
 
   handleDragOver = e => {
-    // console.log("handleDragOver", e);
     if (
       this.dragType === "move" ||
       (this.dragType === "resize" &&
@@ -607,7 +604,6 @@ export class Status extends Component {
       statusChanged
     } = this.props;
     const updatedRows = this.props.updatedRows;
-    console.log("status", this.props.updatedRows);
     let index = 0,
       indexPage = 0,
       rows = data;
@@ -631,10 +627,7 @@ export class Status extends Component {
       if (index + scroll.startIndex - indexPage < rows.length) {
         const row = rows[index + scroll.startIndex - indexPage];
         const status_ = getRowStatus(updatedRows, row); //updatedRows[index].checked_updatedRows[row.index_];
-        if (row.id === 0) {
-          console.log("UPDATED 0", status_.updated_);
-        }
-        console.log("statusupdated", status_);
+
         // if (checkable) {
         //   if (row.checked_ !== undefined && updatedRow.checked_ === undefined) {
         //     updatedRow.checked_ = row.checked_;
