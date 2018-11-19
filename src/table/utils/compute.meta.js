@@ -58,25 +58,22 @@ const grantPrivilege = (meta, privileges) => {
         b &&
         (privileges.children_.actions[action.id] || { enable: false }).enable;
       action.hidden =
-        !b &&
+        !b ||
         !!(privileges.children_.actions[action.id] || { hidden: true }).hidden;
       if (!action.enable) {
         action.enableFunction = () => false;
       }
     });
-    b =
-      privileges &&
-      privileges.children_ &&
-      privileges.children_.properties &&
-      privileges.editable;
+    b = privileges && privileges.children_ && privileges.children_.properties;
     meta.properties.forEach(property => {
       property.editable =
         b &&
+        privileges.editable &&
         property.editable &&
         (privileges.children_.properties[property.id] || { editable: false })
           .editable;
       property.hidden =
-        !b &&
+        !b ||
         !!(privileges.children_.properties[property.id] || { hidden: true })
           .hidden;
       if (!property.editable) {
