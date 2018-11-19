@@ -49,6 +49,7 @@ export class ZebulonTable extends ZebulonTableMenu {
     this.state.functions = props.functions || functions.functions([]);
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
+    this.config = props.config;
     const { data, status, filters } = this.getData(props);
     this.state.data = data;
     this.state.status = status;
@@ -142,6 +143,7 @@ export class ZebulonTable extends ZebulonTableMenu {
   };
   initData = (data, meta, zoom, functions, startIndex, filters, status) => {
     if (Array.isArray(data)) {
+      meta.config = this.config;
       computeMetaFromData(
         data,
         meta,
@@ -151,6 +153,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           ? this.props.privileges.get(this.props.componentName)
           : null
       );
+      this.config = undefined;
       Promise.all(meta.promises).then(values => {
         this.initData2(
           data,
@@ -338,9 +341,12 @@ export class ZebulonTable extends ZebulonTableMenu {
       filters,
       status,
       closeRequired,
-      refresh
+      refresh,
+      config
     } = nextProps;
-
+    if (config !== this.props.config) {
+      this.config = config;
+    }
     if (updatedRows && this.props.updatedRows !== updatedRows) {
       this.setState({ updatedRows });
     }
@@ -907,6 +913,46 @@ export class ZebulonTable extends ZebulonTableMenu {
       }
     });
   };
+
+  getConfiguration_ = (configuration, layout) => {
+    const {
+      height,
+      width,
+      display,
+      tabs,
+      ratioHeight,
+      ratioWidth,
+      layouts,
+      content,
+      caption
+    } = layout;
+
+    configuration.height = height;
+    configuration.width = width;
+    configuration.display = display;
+    configuration.tabs = tabs;
+    configuration.ratioHeight = ratioHeight;
+    configuration.ratioWidth = ratioWidth;
+    configuration.content = content;
+    configuration.caption = caption;
+    if (layouts && layouts.length) {
+      configuration.layouts = [];
+      layouts.forEach((layout, index) => {
+        configuration.layouts.push({});
+        this.getConfiguration_(configuration.layouts[index], layout);
+      });
+    }
+  };
+  getConfiguration = () =>
+    this.state.meta.properties.reduce((acc, property) => {
+      acc[property.id] = {
+        index_: property.index_,
+        width: property.width,
+        locked: property.locked
+      };
+      return acc;
+    }, {});
+
   render() {
     const style = {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,

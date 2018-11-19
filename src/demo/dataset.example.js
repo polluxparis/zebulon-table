@@ -84,33 +84,33 @@ export class MyDataset extends Component {
   handleTotalAmount = () => {
     totalAmount.hidden = this.state.totalAmount;
     if (!totalAmount.hidden) {
-      computeAnalytic(this.table.state.data, totalAmount);
+      computeAnalytic(this.zebulonTable.state.data, totalAmount);
     }
     meta.visibleIndexes = computeMetaPositions(
       meta,
-      this.table.state.sizes.zoom
+      this.zebulonTable.state.sizes.zoom
     );
     this.setState({
       totalAmount: !this.state.totalAmount,
       status: this.state.status
     });
-    this.table.table.onMetaChange(true);
+    this.zebulonTable.table.onMetaChange(true);
   };
   handleRollingAverage = () => {
     rollingAverage.hidden = this.state.rollingAverage;
     this.setState({ rollingAverage: !this.state.rollingAverage });
     if (!rollingAverage.hidden) {
-      computeAnalytic(this.table.state.data, rollingAverage);
+      computeAnalytic(this.zebulonTable.state.data, rollingAverage);
     }
     meta.visibleIndexes = computeMetaPositions(
       meta,
-      this.table.state.sizes.zoom
+      this.zebulonTable.state.sizes.zoom
     );
     this.setState({
       rollingAverage: !this.state.rollingAverage,
       status: this.state.status
     });
-    this.table.table.onMetaChange(true);
+    this.zebulonTable.table.onMetaChange(true);
   };
   errorHandler = {
     onRowQuit: message => {
@@ -147,7 +147,7 @@ export class MyDataset extends Component {
     this.setState({ status: { loading: true } });
   };
   subscribe = () => {
-    const { meta, params } = this.table.state;
+    const { meta, params } = this.zebulonTable.state;
     const subscription = {
       observableFunction: get_subscription,
       observerFunctions: { onNext, onCompleted, onError }
@@ -159,43 +159,69 @@ export class MyDataset extends Component {
       filters: {},
       sorts: []
     };
-    this.table.subscribe(message, subscription);
+    this.zebulonTable.subscribe(message, subscription);
   };
   // radio buttons datasource
-  handleRadioDataset = e => {
-    // console.log("radio", e.target);
-    const value = e.target.value;
-    this.setState({
-      closeRequired: ok => {
-        // console.log("confirmation", ok);
-        if (ok) {
-          if (value === "get_array") {
-            this.text =
-              "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
-          } else if (value === "get_promise") {
-            this.text =
-              "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
-          } else if (value === "get_observable") {
-            this.text =
-              "A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
-          } else if (value === "get_pagination_manager") {
-            this.text =
-              "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
-          }
-          this.setState({
-            radioDataset: value,
-            status: { loading: true },
-            closeRequired: false
-          });
-        } else {
-          this.setState({
-            radioDataset: this.state.radioDataset,
-            closeRequired: false
-          });
-        }
-      }
-    });
+  onGetData = () => {
+    const value = this.state.radioDataset;
+    let text;
+    if (value === "get_array") {
+      text =
+        "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
+    } else if (value === "get_promise") {
+      text =
+        "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
+    } else if (value === "get_observable") {
+      text =
+        "A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
+    } else if (value === "get_pagination_manager") {
+      text =
+        "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
+    }
+    this.setState({ text });
   };
+  handleRadioDataset = e => {
+    this.setState({
+      config: this.config,
+      radioDataset: e.target.value,
+      status: { loading: true, loaded: false }
+    });
+    // this.previousConfig = this.config;
+    this.config = this.zebulonTable.getConfiguration();
+  };
+
+  //   const value = e.target.value;
+  //   this.setState({
+  //     closeRequired: ok => {
+  //       // console.log("confirmation", ok);
+  //       if (ok) {
+  //         if (value === "get_array") {
+  //           this.state.text =
+  //             "An array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
+  //         } else if (value === "get_promise") {
+  //           this.state.text =
+  //             "A server is simulated that returns a promise resolved as an array stored in the client.\nFilters are managed by the server.\nfunction: get_promise @ demo/datasources.";
+  //         } else if (value === "get_observable") {
+  //           this.state.text =
+  //             "A server is simulated that returns an observable.\nPages of 1000 rows are pushed by the server and loaded in background by the client .\nSorting is managed by the server to avoid visible reorders.\nfunction: get_observable @ demo/datasources.";
+  //         } else if (value === "get_pagination_manager") {
+  //           this.state.text =
+  //             "A server is simulated that returns a pagination manager function.\nA page of 100 rows including the start and the end row is returned as a promise at each call from the client.\nOnly the current page is stored by the client.\nSorting and filtering are managed by the server.\nfunction: get_pagination_manager @ demo/datasources.";
+  //         }
+  //         this.setState({
+  //           radioDataset: value,
+  //           status: { loading: true },
+  //           closeRequired: false
+  //         });
+  //       } else {
+  //         this.setState({
+  //           radioDataset: this.state.radioDataset,
+  //           closeRequired: false
+  //         });
+  //       }
+  //     }
+  //   });
+  // };
   handleUser = () => {
     let params;
     if (!this.state.userZebulon) {
@@ -257,7 +283,6 @@ export class MyDataset extends Component {
       radioDataset,
       status,
       activeTable,
-      closeRequired,
       params
     } = this.state;
     let header = null,
@@ -380,7 +405,7 @@ export class MyDataset extends Component {
               readOnly
               rows="6"
               cols="120"
-              value={this.text}
+              value={this.state.text}
               style={{
                 fontFamily: "sans-serif",
                 border: "unset",
@@ -437,11 +462,13 @@ export class MyDataset extends Component {
           onFilter={this.getLengths}
           onGetPage={this.getPageLengths}
           // contextualMenu={customMenuFunctions}
-          ref={ref => (this.table = ref)}
+          ref={ref => (this.zebulonTable = ref)}
           isActive={activeTable === "dataset"}
           onActivation={() => this.onActivation("dataset")}
-          closeRequired={closeRequired}
+          // closeRequired={closeRequired}
           getComponent={getComponent}
+          config={this.state.config}
+          onGetData={this.onGetData}
         />
         {footer}
       </div>
@@ -472,7 +499,7 @@ export class MyDataset extends Component {
 //          onFilter={this.getLengths}
 //          onGetPage={this.getPageLengths}
 //          // contextualMenu={customMenuFunctions}
-//          ref={ref => (this.table = ref)}
+//          ref={ref => (this.zebulonTable = ref)}
 //          isActive={activeTable === "dataset"}
 //          onActivation={() => this.onActivation("dataset")}
 //          closeRequired={closeRequired}

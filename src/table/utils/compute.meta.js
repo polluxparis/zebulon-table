@@ -51,39 +51,37 @@ export const computeMetaPositions = (meta, zoom) => {
   return meta.visibleIndexes;
 };
 const grantPrivilege = (meta, privileges) => {
-  if (privileges !== null) {
+  if (privileges) {
     let b = privileges && privileges.children_ && privileges.children_.actions;
     meta.table.actions.forEach(action => {
-      if (!(b && (privileges.children_.actions[action.id] || {}).checked_)) {
+      action.enable =
+        b && (privileges.children_.actions[action.id] || {}).enable;
+      action.hidden =
+        !b && !!(privileges.children_.actions[action.id] || {}).hidden;
+      if (!action.enable) {
         action.enableFunction = () => false;
-        action.enable = false;
       }
     });
     b =
       privileges &&
       privileges.children_ &&
       privileges.children_.properties &&
-      privileges.checked_;
+      privileges.editable;
     meta.properties.forEach(property => {
-      if (
-        !(
-          b &&
-          property.editable &&
-          (privileges.children_.properties[property.id] || {}).checked_
-        )
-      ) {
+      property.editable =
+        b &&
+        property.editable &&
+        (privileges.children_.properties[property.id] || {}).editable;
+      property.hidden =
+        !b && !!(privileges.children_.properties[property.id] || {}).hidden;
+      if (!property.editable) {
         property.editableFunction = () => false;
-        property.editable = false;
       }
     });
   }
 };
 export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   let position = 0;
-  // table
-  // if (!meta.functions) {
-  //   meta.functions = functions;
-  // }
   const object = meta.table.object;
   meta.promises = [];
   // functions.setVisibility(object);
@@ -180,7 +178,19 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       )
     };
   }
-
+  meta.properties.forEach((column, index) => {
+    column.index_ = index;
+    if (meta.config) {
+      column.width = meta.config[column.id].width;
+      column.locked = meta.config[column.id].locked;
+      column.index_ = meta.config[column.id].index_;
+    }
+  });
+  if (meta.config) {
+    meta.properties.sort(
+      (a, b) => (a.index_ > b.index_) - (b.index_ > a.index_)
+    );
+  }
   // properties
   meta.properties.forEach((column, index) => {
     if (column.deleted_) {
@@ -210,10 +220,10 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     if (column.dataType === "object" || column.dataType === "joined object") {
       column.hidden = true;
     }
+
     const width = zoom * (column.hidden ? 0 : column.width || 0);
     column.computedWidth = width;
     column.position = position;
-    column.index_ = index;
 
     position += width;
     if (column.locked) {
