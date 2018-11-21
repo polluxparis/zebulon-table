@@ -13,21 +13,23 @@ export class Table extends TableFilterSort {
   constructor(props) {
     super(props);
     let filteredData = this.filters(props.data, props.filters);
-    let status = props.status;
-    if (props.meta.serverPagination && status.loaded) {
-      status = { loaded: false, loading: true };
-      props.data({ startIndex: 0 }).then(filteredData => {
-        computeData(filteredData.page, props.meta, 0);
-        if (props.onGetPage) {
-          props.onGetPage(filteredData);
-        }
-        this.setState({
-          filteredData,
-          filteredDataLength: filteredData.filteredDataLength,
-          status: { loaded: true, loading: false }
-        });
-      });
-    }
+    // if (props.meta.serverPagination && props.status.loaded) {
+    //   status = {
+    //     loaded: false,
+    //     loading: true
+    //   };
+    //   props.data({ startIndex: 0 }).then(filteredData => {
+    //     computeData(filteredData.page, props.meta, 0);
+    //     if (props.onGetPage) {
+    //       props.onGetPage(filteredData);
+    //     }
+    //     this.setState({
+    //       filteredData,
+    //       filteredDataLength: filteredData.filteredDataLength,
+    //       status: { loaded: true, loading: false }
+    //     });
+    //   });
+    // }
     //  else if (this.props.callbackForeignKey && filteredData.length < 2) {
     //   this.props.callbackForeignKey(
     //     filteredData.length ? filteredData.length[0] : false
@@ -44,7 +46,7 @@ export class Table extends TableFilterSort {
       params: props.params,
       meta: props.meta,
       filters: props.filters || {},
-      status,
+      status: props.status,
       updatedRows: props.updatedRows,
       scroll: {
         rows: {
@@ -77,7 +79,7 @@ export class Table extends TableFilterSort {
     this.rowHeight = this.props.rowHeight;
     this.range = { start: {}, end: {} };
     this.onTableEnter();
-    if (status.loaded) {
+    if (status && status.loaded) {
       this.bLoaded = true;
     }
     // if (this.props.contextualMenu) {
@@ -103,22 +105,7 @@ export class Table extends TableFilterSort {
       // const filteredData = this.filters(nextProps.data, nextProps.filters);
       let filteredData = [];
       let status = nextProps.status;
-      // if (nextProps.meta.serverPagination) {
-      //   if (status.loaded && !this.props.status.loaded) {
-      //     status = { loaded: false, loading: true };
-      //     nextProps.data({ startIndex: 0 }).then(filteredData => {
-      //       computeData(filteredData.page, nextProps.meta, 0);
-      //       if (nextProps.onGetPage) {
-      //         nextProps.onGetPage(filteredData);
-      //       }
-      //       this.setState({
-      //         filteredData,
-      //         filteredDataLength: filteredData.filteredDataLength,
-      //         status: { loaded: true, loading: false }
-      //       });
-      //     });
-      //   }
-      // } else {
+
       filteredData = this.filters(
         nextProps.data,
         nextProps.filters,
@@ -155,10 +142,10 @@ export class Table extends TableFilterSort {
         //   }
         // }
       });
-      if (status.loaded && this.bLoaded === undefined) {
+      if (status && status.loaded && this.bLoaded === undefined) {
         this.bLoaded = true;
       }
-      if (status.loading) {
+      if (status && status.loading) {
         this.bLoaded = undefined;
       }
       if (
