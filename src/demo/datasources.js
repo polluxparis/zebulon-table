@@ -35,6 +35,7 @@ export const countries = [
 	{ id: 11, code: "CH", label: "Switzerland", currency_id: 6, vat: 0.1 }
 ].reduce((acc, country) => {
 	country.pk_ = country.id;
+	country.caption = country.code;
 	acc[country.id] = country;
 	return acc;
 }, {});
@@ -49,10 +50,13 @@ export const currencies = [
 	{ id: 6, code: "CHF", label: "Swiss franc", symbol: "Fr.", rate: 1.15 }
 ].reduce((acc, currency) => {
 	currency.pk_ = currency.id;
+	currency.caption = currency.code;
 	acc[currency.id] = currency;
 	return acc;
 }, {});
-export const getCurrencies = () => currencies;
+export const getCurrencies = () => {
+	return new Promise(resolve => resolve(currencies));
+};
 
 export const shapes = [
 	"square",
@@ -81,7 +85,9 @@ export const colors = [
 	"grey",
 	"black"
 ];
-export const getColors = () => colors;
+export const getColors = () => {
+	return new Promise(resolve => resolve(colors));
+};
 
 export const products = {};
 for (let i = 0; i < 200; i++) {
@@ -89,6 +95,7 @@ for (let i = 0; i < 200; i++) {
 		pk_: i,
 		id: i,
 		label: `Product ${i}`,
+		caption: `Product ${i}`,
 		shape: shapes[Math.ceil(Math.random() * (shapes.length - 1.001))],
 		size: sizes[Math.ceil(Math.random() * (sizes.length - 1.001))],
 		price: 100 * Math.random() + 50,
@@ -96,7 +103,9 @@ for (let i = 0; i < 200; i++) {
 		currency_sym: "€"
 	};
 }
-export const getProducts = () => products;
+export const getProducts = () => {
+	return new Promise(resolve => resolve(products));
+};
 
 const users = ["Margote", "Pollux", "Zébulon", "Azalée"];
 export const getMockDataset = nRow => {
@@ -123,7 +132,6 @@ export const getMockDataset = nRow => {
 			Math.round(31 * Math.random())
 		);
 		row.timestamp_ = timestamp - Math.round(1000000 * Math.random());
-		row.rowId_ = i;
 		d.push(row);
 		audits[i] = [
 			{
@@ -133,7 +141,6 @@ export const getMockDataset = nRow => {
 			}
 		];
 	}
-	data = d;
 	return {
 		data: d,
 		currencies: getCurrencies(),
@@ -144,48 +151,64 @@ export const getMockDataset = nRow => {
 		colors: getColors()
 	};
 };
-export let data;
+export let serverData;
 export let audits = {};
 export const dataPk = {};
-export const get_array = ({ params, meta, filters }) => {
-	if (!data) {
-		data = getMockDataset(25000).data;
+export const get_array = ({ params, meta, filters, noJoins }) => {
+	if (!serverData) {
+		serverData = getMockDataset(25000).data;
 		// this is necessary only because for demo, we are using the same filters and sorts functions as the client
 		// to simulate server actions
-		data.forEach((row, index) => {
+		serverData.forEach((row, index) => {
 			row.product = products[row.product_id];
 			row.country = countries[row.country_id];
 			row.currency = currencies[row.currency_id];
+			row.rowId_ = index;
 			dataPk[row.id] = index;
 		});
 	}
-	return JSON.parse(JSON.stringify(data)).filter(row => !row.deleted_);
+
+	const r = JSON.parse(
+		JSON.stringify(serverData.filter(row => !row.deleted_))
+	);
+	if (noJoins) {
+		r.forEach(row => {
+			delete row.product;
+			delete row.country;
+			delete row.currency;
+		});
+	}
+	console.log("array", r === serverData, r.length, serverData.length, r);
+	return r;
 };
 // -------------------------------------------
 // promise
 // -------------------------------------------
 export const get_promise = ({ params, meta, filters }) => {
 	return new Promise(resolve => {
-		let data = get_array({ params, filters });
+		let data_ = get_array({ params, filters });
+		console.log("promise", data_.length, serverData.length);
 		// if the filters are applied on the server data:
 		if (filters) {
-			data = data.filter(filtersFunction(filters, params, data));
+			data_ = data_
+				.filter(filtersFunction(filters, params, data_))
+				.map(row => ({ ...row }));
 		}
-		resolve(data);
+		resolve(data_);
 	});
 };
 // -------------------------------------------
 // observable
 // -------------------------------------------
 export const get_observable = ({ params, meta, filters, sorts }) => {
-	const data = get_array({ params, filters });
+	const data_ = get_array({ params, filters });
 	if (sorts) {
-		data.sort(sortsFunction(sorts));
+		data_.sort(sortsFunction(sorts));
 	}
 	const data2 = [];
 	let i = 0;
-	while (i < data.length) {
-		data2.push(data.slice(i, (i += 1000)));
+	while (i < data_.length) {
+		data2.push(data_.slice(i, (i += 1000)));
 	}
 	// console.log("observable", i);
 	return Observable.interval(20)

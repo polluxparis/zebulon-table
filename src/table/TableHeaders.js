@@ -1,9 +1,15 @@
 import React, { Component } from "react";
-import { utils, ContextualMenuClient, Input, icons } from "zebulon-controls";
+import {
+  utils,
+  ContextualMenuClient,
+  Input,
+  icons,
+  CheckBoxInput
+} from "zebulon-controls";
 // import { Input } from "./Input";
 import { computeMetaPositions } from "./utils/compute.meta";
 import { cellData } from "./utils/compute.data";
-import { getRowErrors } from "./utils/utils";
+import { getRowErrors, getRowStatus } from "./utils/utils";
 import classnames from "classnames";
 
 const filter = (
@@ -15,7 +21,7 @@ const filter = (
   onChange,
   openFilter,
   focusedId,
-  component
+  componentId
 ) => {
   const className = classnames({
     "zebulon-table-cell": true,
@@ -32,14 +38,11 @@ const filter = (
     else if (column.dataType === "date" || column.dataType === "boolean")
       textAlign = "center";
   }
-  const focused =
-    (focusedId || document.activeElement || {}.id) ===
-    String(column.index_ + 1000 * filterTo);
-  const id = `filter${filterTo ? "To" : ""}: ${component}--${column.index_}`;
+  const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
+  const focused = (document.activeElement || {}).id === id;
   let value = column.v,
     div;
   if (column.filterType === "values" && column.v) {
-    // value = "Y";
     div = (
       <div
         style={{
@@ -76,7 +79,6 @@ const filter = (
         key={id}
         className={className}
         style={{
-          // position: "absolute",
           height,
           width,
           textAlign
@@ -89,7 +91,6 @@ const filter = (
         filterTo={filterTo}
         onChange={onChange}
         onFocus={e => {
-          // console.log("filter", this);
           openFilter(e, column);
         }}
       />
@@ -107,7 +108,7 @@ const header = (
   handleDragStart,
   handleDragOver,
   handleDrop,
-  component
+  componentId
   // handleDragEnd
 ) => {
   let sort = "";
@@ -116,7 +117,7 @@ const header = (
   } else if (column.sort === "desc") {
     sort = "↓";
   }
-  const id = `header: ${component}--${column.index_}`;
+  const id = `header: ${componentId}--${column.index_}`;
   return (
     <ContextualMenuClient
       key={id}
@@ -135,7 +136,7 @@ const header = (
       }}
       column={column}
       menu="column-header-menu"
-      component={component}
+      componentId={componentId}
     >
       <div
         id={id}
@@ -163,7 +164,7 @@ const header = (
     </ContextualMenuClient>
   );
 };
-const auditCell = (row, column, status, data, params, style, component) => {
+const auditCell = (row, column, status, data, params, style, componentId) => {
   const { value } = cellData(row, column, status, data, params, false);
   let textAlign = column.alignement || "left";
   if (!column.alignement) {
@@ -183,7 +184,7 @@ const auditCell = (row, column, status, data, params, style, component) => {
     // "zebulon-table-cell-editable": editable && focused
   });
   // if (column.dataType === "boolean") value = value || false;
-  const id = `audit-cell: ${component}-${row.index_}-${column.index_}`;
+  const id = `audit-cell: ${componentId}-${row.index_}-${column.index_}`;
   return (
     <Input
       row={row}
@@ -219,7 +220,7 @@ export class Headers extends Component {
   }
   handleClick = (column, double) => {
     if (!this.props.isActive && this.props.onActivation) {
-      this.props.onActivation();
+      this.props.onActivation(this.props.componentId);
     }
     const { onSort } = this.props;
     if (!double) {
@@ -243,13 +244,11 @@ export class Headers extends Component {
     this.dragId = e.target.id;
     this.dragType = type;
     this.dragX = e.pageX;
-    // console.log("handleDragStart", this.dragId, e);
     e.dataTransfer.setData("text", this.dragId);
     e.stopPropagation();
   };
 
   handleDragOver = e => {
-    // console.log("handleDragOver", e);
     if (
       this.dragType === "move" ||
       (this.dragType === "resize" &&
@@ -303,12 +302,12 @@ export class Headers extends Component {
       height,
       onChange,
       openFilter,
-      focusedId,
+      // focusedId,
       headersLength,
       locked,
       auditedRow,
       auditStatus,
-      component,
+      componentId,
       data,
       params
     } = this.props;
@@ -345,7 +344,7 @@ export class Headers extends Component {
           this.handleDragStart,
           this.handleDragOver,
           this.handleDrop,
-          component
+          componentId
         );
         if (headersLength > 1) {
           if (auditedRow) {
@@ -365,7 +364,7 @@ export class Headers extends Component {
                 data,
                 params,
                 style,
-                component
+                componentId
               )
             );
           } else {
@@ -375,6 +374,7 @@ export class Headers extends Component {
                 utils.nullValue(column.dataType, "object")
               )
             ) {
+              //  filter (or filter from0
               div.push(
                 filter(
                   column,
@@ -384,10 +384,10 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  focusedId,
-                  component
+                  componentId
                 )
               );
+              // empty cell
             } else {
               div.push(
                 filterEmpty(
@@ -398,6 +398,7 @@ export class Headers extends Component {
                 )
               );
             }
+            // filter "to" (between)
             if (headersLength === 3) {
               if (
                 column.filterType === "between" &&
@@ -414,10 +415,10 @@ export class Headers extends Component {
                     column.filterType === "between",
                     onChange,
                     openFilter,
-                    focusedId,
-                    component
+                    componentId
                   )
                 );
+                // empty cell
               } else {
                 div.push(
                   filterEmpty(
@@ -433,7 +434,13 @@ export class Headers extends Component {
           div = (
             <div
               key={column.id || `undefined ${column.index_}`}
-              style={{ display: "block", width: columnWidth, height }}
+              style={{
+                // position: "absolute", toto
+                left: position,
+                display: "block",
+                width: columnWidth,
+                height
+              }}
             >
               {div}
             </div>
@@ -459,8 +466,9 @@ export class Headers extends Component {
         <div
           id="tutut"
           key={-2 - locked}
+          className={locked ? "zebulon-locked-headers" : ""}
           // id={type + filterTo ? "To" : ""}
-          style={{ ...this.props.style, ...style }}
+          style={{ ...this.props.style, ...style, position: "relative" }}
         >
           {cells}
         </div>
@@ -474,13 +482,13 @@ export const statusCell = (
   style,
   className,
   index,
-  row,
   status,
   onClick,
   onDoubleClick,
   handleErrors,
-  component,
+  componentId,
   checkable,
+  checked,
   onChange,
   isAudit,
   draggable,
@@ -504,29 +512,32 @@ export const statusCell = (
     glyph = (
       <input
         type="checkbox"
-        checked={status.checked_ || false}
-        onChange={() => onChange(row.index_)}
+        checked={checked || false}
+        onChange={() => onChange(status.rowUpdated.index_)}
         // style={{ height: 20 }}
       />
     );
   }
-  const id = `status: ${component}-${isAudit ? index : row.index_}-`;
+  const id = `status: ${componentId}-${index}-`;
   return (
     <ContextualMenuClient
       id={id}
       key={id}
+      index={index}
       className={className}
       style={style}
       onClick={e => onClick(index, e.shiftKey)}
       onMouseOver={e => handleErrors(e, errors)}
       onMouseOut={e => handleErrors(e, [])}
-      onDoubleClick={onDoubleClick ? e => onDoubleClick(e, row) : () => {}}
+      onDoubleClick={
+        onDoubleClick ? e => onDoubleClick(e, status.rowUpdated) : () => {}
+      }
       draggable={draggable}
       onDragStart={handleDragStart}
       status={status}
-      row={row}
+      // row={row}
       menu="row-header-menu"
-      component={component}
+      componentId={componentId}
     >
       {glyph}
     </ContextualMenuClient>
@@ -535,13 +546,13 @@ export const statusCell = (
 export class Status extends Component {
   constructor(props) {
     super(props);
-    this.state = { updatedRows: this.props.updatedRows };
+    // this.state = { updatedRows: this.props.updatedRows };
   }
-  componentWillReceiveProps(nextProps) {
-    if (this.state.updatedRows !== nextProps.updatedRows) {
-      this.setState({ updatedRows: nextProps.updatedRows });
-    }
-  }
+  // componentWillReceiveProps(nextProps) {
+  //   if (this.state.updatedRows !== nextProps.updatedRows) {
+  //     this.setState({ updatedRows: nextProps.updatedRows });
+  //   }
+  // }
   shouldComponentUpdate(nextProps) {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
@@ -563,16 +574,19 @@ export class Status extends Component {
   };
   onChange = index => {
     if (this.props.checkable) {
-      const updatedRows = this.state.updatedRows;
-      if (!updatedRows[index]) {
-        updatedRows[index] = { errors: {} };
-      }
-      updatedRows[index].checked_ = !updatedRows[index].checked_;
+      // const updatedRows = this.state.updatedRows;
+      const updatedRows = this.props.updatedRows;
+      // if (!updatedRows[index]) {
+      //   updatedRows[index] = { errors: {} };
+      // }
+      const checked = !updatedRows[index].rowUpdated.checked_;
+      // updatedRows[index].checked_ = checked;
+      updatedRows[index].rowUpdated.checked_ = checked;
       if (this.props.checkable === 2) {
-        updatedRows[index + 1 - 2 * (index % 2)].checked_ = !updatedRows[index]
-          .checked_;
+        // updatedRows[index + 1 - 2 * (index % 2)].checked_ = !checked;
+        updatedRows[index + 1 - 2 * (index % 2)].rowUpdated.checked_ = !checked;
       }
-      this.setState({ updatedRows });
+      // this.setState({ updatedRows });
     }
   };
   handleDragStart = e => {
@@ -588,13 +602,14 @@ export class Status extends Component {
       selectedIndex,
       handleErrors,
       dataLength,
-      component,
+      componentId,
       checkable,
       onDoubleClick,
       isAudit,
-      draggable
+      draggable,
+      statusChanged
     } = this.props;
-    const updatedRows = this.state.updatedRows;
+    const updatedRows = this.props.updatedRows;
     let index = 0,
       indexPage = 0,
       rows = data;
@@ -617,7 +632,19 @@ export class Status extends Component {
       };
       if (index + scroll.startIndex - indexPage < rows.length) {
         const row = rows[index + scroll.startIndex - indexPage];
-        const updatedRow = updatedRows[row.index_] || { errors: {} };
+        const status_ = getRowStatus(updatedRows, row); //updatedRows[index].checked_updatedRows[row.index_];
+
+        // if (checkable) {
+        //   if (row.checked_ !== undefined && updatedRow.checked_ === undefined) {
+        //     updatedRow.checked_ = row.checked_;
+        //   } else if (
+        //     row.checked_ === undefined &&
+        //     updatedRow.checked_ !== undefined
+        //   ) {
+        //     row.checked_ = updatedRow.checked_;
+        //   }
+        // }
+
         const className = classnames({
           "zebulon-table-status": true,
           "zebulon-table-status-selected":
@@ -629,13 +656,13 @@ export class Status extends Component {
             style,
             className,
             ix + scroll.startIndex,
-            row,
-            updatedRow,
+            status_,
             this.onClick,
             onDoubleClick,
             (e, errors) => handleErrors(e, ix, errors),
-            component,
+            componentId,
             checkable,
+            row.checked_,
             this.onChange,
             isAudit,
             draggable
@@ -647,8 +674,8 @@ export class Status extends Component {
     this.stopIndex = index + scroll.startIndex - 1;
     return (
       <div
-        key={"status: " + component}
-        id={"status: " + component}
+        key={"status: " + componentId}
+        id={"status: " + componentId}
         style={{
           width: rowHeight,
           height,

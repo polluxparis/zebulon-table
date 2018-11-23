@@ -1,11 +1,14 @@
 import React from "react";
-import { utils } from "zebulon-controls";
-
+import { utils, accessors, functions as functions_ } from "zebulon-controls";
+import { metaFunctions } from "../MetaDescriptions";
+// import { functions } from "./functions";
 // -----------------------------------------------------------
 // Error management
 // -----------------------------------------------------------
 export const rollback = (updatedRows, index) => {
-  const status = updatedRows[index];
+  rollbackStatus(updatedRows, updatedRows[index]);
+};
+export const rollbackStatus = (updatedRows, status) => {
   if (!status.new_) {
     Object.keys(status.rowUpdated).forEach(
       key => (status.rowUpdated[key] = null)
@@ -13,6 +16,8 @@ export const rollback = (updatedRows, index) => {
     Object.keys(status.row).forEach(
       key => (status.rowUpdated[key] = status.row[key])
     );
+  } else {
+    status.hidden_ = true;
   }
   const n = status.errors ? status.errors.n_ || 0 : 0;
   status.deleted_ = false;
@@ -23,6 +28,22 @@ export const rollback = (updatedRows, index) => {
     updatedRows.nErrors -= n;
   }
   // }
+};
+export const rollbackFiltered = (updatedRows, filters) => {
+  const linkFilters = Object.values(filters).filter(filter => filter.link);
+  const filtersFunction = status =>
+    linkFilters.length
+      ? linkFilters.reduce(
+          (acc, filter) =>
+            acc &&
+            (status.row || status.rowUpdated) &&
+            (status.row || status.rowUpdated)[filter.id] === filter.v,
+          true
+        )
+      : true;
+  Object.values(updatedRows)
+    .filter(filtersFunction)
+    .forEach(status => rollbackStatus(updatedRows, status));
 };
 export const rollbackAll = (updatedRows, data) => {
   getUpdatedRows(updatedRows).forEach(status => {
@@ -125,40 +146,44 @@ export const manageRowError = (
   }
 };
 export const getRowErrors = (status, rowIndex) => {
-  const errors = [];
-  if (!status.deleted_ && status.errors) {
-    Object.keys(status.errors).forEach(column => {
-      if (status.errors[column] || column !== "n_") {
-        Object.keys(status.errors[column]).forEach(type => {
-          if (type !== "n_") {
-            errors.push({
-              column,
-              type,
-              error: status.errors[column][type],
-              rowIndex
-            });
-          }
-        });
-      }
-    });
+  if (rowIndex === undefined) {
+    return [];
+  } else {
+    const errors = [];
+    if (!status.deleted_ && status.errors) {
+      Object.keys(status.errors).forEach(column => {
+        if (status.errors[column] || column !== "n_") {
+          Object.keys(status.errors[column]).forEach(type => {
+            if (type !== "n_") {
+              errors.push({
+                column,
+                type,
+                error: status.errors[column][type],
+                rowIndex
+              });
+            }
+          });
+        }
+      });
+    }
+    if (!status.deleted_ && status.errorsServer) {
+      Object.keys(status.errorsServer).forEach(column => {
+        if (status.errorsServer[column] || column !== "n_") {
+          Object.keys(status.errorsServer[column]).forEach(type => {
+            if (type !== "n_") {
+              errors.push({
+                column,
+                type,
+                error: status.errorsServer[column][type],
+                rowIndex
+              });
+            }
+          });
+        }
+      });
+    }
+    return errors;
   }
-  if (!status.deleted_ && status.errorsServer) {
-    Object.keys(status.errorsServer).forEach(column => {
-      if (status.errorsServer[column] || column !== "n_") {
-        Object.keys(status.errorsServer[column]).forEach(type => {
-          if (type !== "n_") {
-            errors.push({
-              column,
-              type,
-              error: status.errorsServer[column][type],
-              rowIndex
-            });
-          }
-        });
-      }
-    });
-  }
-  return errors;
 };
 export const getErrors = updatedRows => {
   let errors = [];
@@ -260,11 +285,11 @@ const excludeProperties = {
 // };
 export const buildObject = (item, excludes = excludeProperties) => {
   if (Array.isArray(item)) {
-    return item.map(item => buildObject(item));
+    return item.map(item => buildObject(item, excludes));
   } else if (typeof item === "object") {
     return Object.keys(item).reduce((acc, key) => {
       if (!utils.isNullOrUndefined(item[key]) && !excludes[key]) {
-        acc[key] = buildObject(item[key]);
+        acc[key] = buildObject(item[key], excludes);
       }
       return acc;
     }, {});
@@ -273,19 +298,109 @@ export const buildObject = (item, excludes = excludeProperties) => {
   }
 };
 
-export const exportFunctions = functions => {
-  const f = {};
-  functions.forEach(fct => {
-    if (!f[fct.visibility]) f[fct.visibility] = {};
-    if (!f[fct.visibility][fct.tp]) f[fct.visibility][fct.tp] = {};
-    f[fct.visibility][fct.tp][fct.id] = "~~~" + String(fct.functionJS) + "~~~";
-  });
-  return JSON.stringify(f)
-    .replace(/"~~~/g, "")
-    .replace(/~~~"/g, "")
-    .replace(/\\n/g, "")
-    .replace(/\\t/g, "")
-    .replace(/\\"/g, '"');
+export const buildFunctionsObject = (meta, functions, sources) => {
+  const excludes = {
+    serverPagination: true,
+    zoom: true,
+    indexRowId: true,
+    computedWidth: true,
+    rwd: true,
+    tp: true,
+    visibleIndexes: true,
+    statusDraggable: true,
+    visibleIndex_: true,
+    index_: true,
+    position: true
+  };
+  const meta_ = JSON.stringify(buildObject(meta, excludes));
+  const f = [];
+  const f0 = [];
+  const f1 = {};
+  // const fAcc = functions.functions([accessors]);
+  // const fMeta = functions.functions([metaFunctions]);
+  const fSources = [
+    { path: "zebulon-controls", object: accessors },
+    { path: "../MetaDescriptions", object: metaFunctions }
+  ].concat(sources || []);
+  fSources.forEach(
+    source => (source.functions = functions_.functions([source.object]))
+  );
+  fSources.reverse();
+  const imports = {};
+  // const impMeta = [];
+  const functionsObject = Object.keys(functions).reduce((acc, visibility) => {
+    // if (!acc[visibility]) {
+    //   acc[visibility] = {};
+    // }
+    acc[visibility] = Object.keys(functions[visibility]).reduce((acc, type) => {
+      // if (!acc[type]) {
+      //   acc[type] = {};
+      // }
+      acc[type] = Object.keys(
+        functions[visibility][type]
+      ).reduce((acc, name) => {
+        if (type === "analytics") {
+        } else {
+          const f_ = functions[visibility][type][name];
+          const nm = f_.f.name || name;
+          let nm2 = nm;
+          if (!f_.fText && !f0.includes(f_.f)) {
+            f1[nm] = f1[nm] === undefined ? 0 : f1[nm] + 1;
+            if (f1[nm]) {
+              nm2 = `${nm}_${f1[nm]}`;
+            }
+            const imported = fSources.reduce((acc, source) => {
+              if (acc) {
+                return true;
+              }
+              const f = source.functions.getFunction(visibility, type, name);
+              if (f) {
+                if (!imports[source.path]) {
+                  imports[source.path] = [];
+                }
+                imports[source.path].push(
+                  name !== nm2 ? name + " as " + nm2 : name
+                );
+              }
+              return !!f;
+            }, false);
+            if (!imported) {
+              f.push(`const ${nm2}=${f_.f.toString()};`);
+            }
+            f0.push(f_.f);
+          }
+          acc[name] = `~~~${f_.fText || nm2}~~~`;
+        }
+        return acc;
+      }, {});
+      return acc;
+    }, {});
+    return acc;
+  }, {});
+  // const f = {};
+  // functions.forEach(fct => {
+  //   if (!f[fct.visibility]) f[fct.visibility] = {};
+  //   if (!f[fct.visibility][fct.tp]) f[fct.visibility][fct.tp] = {};
+  //   f[fct.visibility][fct.tp][fct.id] = "~~~" + String(fct.functionJS) + "~~~";
+  // });
+  const imports_ = Object.keys(imports)
+    .map(imp => `// import {${imports[imp].join(",")}} from "${imp}";\n`)
+    .join(" ");
+  return (
+    imports_ +
+    "userMeta={meta: " +
+    meta_ +
+    ",functions : " +
+    JSON.stringify(functionsObject)
+      .replace(/"~~~/g, "")
+      .replace(/~~~"/g, "")
+      .replace(/\\"/g, '"') +
+    "};" +
+    f
+      .join(" ")
+      .replace(/\\n/g, "")
+      .replace(/\\t/g, "")
+  );
 };
 // ----------------------------------
 // common data access (row or fiels)

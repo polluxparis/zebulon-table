@@ -7,16 +7,10 @@ export class Rows extends ScrollableGrid {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   componentDidUpdate() {
-    // console.log("row", this.focused, this.props.hasFocus);
-    if (this.focused && this.focused.input && this.focused.input.ref) {
-      // && this.focused.props.dataType === "boolean"
-      this.focused.input.ref.focus();
-      // this.focused = undefined;
-      // console.log("row", this.focused);
+    if (this.focused) {
+      this.focused.focus();
+      this.focused = undefined;
     }
-    //  else if (this.focused) {
-    //   this.focused.focus();
-    // }
     this.noOver = false;
   }
   cell = (
@@ -39,7 +33,7 @@ export class Rows extends ScrollableGrid {
     onDoubleClick,
     component
   ) => {
-    const { editable, value, select } = cellData(
+    const { editable, value, select, dataType } = cellData(
       row,
       column,
       status,
@@ -52,7 +46,9 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-odd": rowIndex % 2 === 1,
       "zebulon-table-cell-selected": selected,
       "zebulon-table-cell-focused": focused,
-      "zebulon-table-cell-editable": editable && focused
+      "zebulon-table-cell-editable": editable && focused,
+      "zebulon-table-cell-select": editable && focused && select,
+      "zebulon-table-cell-checkbox": dataType === "boolean"
     });
     const id = `cell: ${component}-${row.index_}-${column.index_}`;
     return (
@@ -66,6 +62,7 @@ export class Rows extends ScrollableGrid {
         focused={focused}
         hasFocus={hasFocus}
         select={select}
+        dataType={dataType}
         id={id}
         key={id}
         onChange={onChange}
@@ -78,8 +75,8 @@ export class Rows extends ScrollableGrid {
         }
         menu="cell-menu"
         component={component}
-        ref={ref => {
-          if (focused && hasFocus) {
+        setRef={ref => {
+          if (focused && hasFocus && editable) {
             this.focused = ref;
           }
         }}
@@ -127,20 +124,23 @@ export class Rows extends ScrollableGrid {
             selectedRange.end.rows === rowIndex &&
             selectedRange.end.columns === index,
           onMouseDown = e => {
-            e.preventDefault();
+            // e.preventDefault();
             this.selectCell(
               { rows: rowIndex, columns: columnIndex },
               e.shiftKey
             );
           },
           onMouseOver = e => {
-            if ((e.buttons & 1) === 1 && !this.noOver) {
-              e.preventDefault();
+            if (
+              (e.buttons & 1) === 1 &&
+              !(this.noOver || this.props.openedFilter)
+            ) {
+              // e.preventDefault();
               this.selectCell({ rows: rowIndex, columns: columnIndex }, true);
             }
           },
           onMouseUp = e => {
-            e.preventDefault();
+            // e.preventDefault();
             this.mouseDown = false;
           };
         cells.push(
@@ -152,7 +152,7 @@ export class Rows extends ScrollableGrid {
             this.props.data,
             this.props.params,
             {
-              position: "absolute",
+              position: "absolute", //, toto
               left,
               width: Math.min(
                 false ? column.computedWidth + shift : column.computedWidth,
@@ -203,7 +203,8 @@ export class Rows extends ScrollableGrid {
       width,
       updatedRows,
       hasFocus,
-      component
+      component,
+      locked
     } = this.props;
     let i = 0,
       index = this.props.scroll.rows.startIndex,
@@ -256,7 +257,12 @@ export class Rows extends ScrollableGrid {
       height: "inherit"
     };
     return (
-      <div id="content" style={style} onWheel={this.onWheel}>
+      <div
+        id="content"
+        style={style}
+        onWheel={this.onWheel}
+        className={locked ? "zebulon-locked-columns" : ""}
+      >
         {items}
       </div>
     );

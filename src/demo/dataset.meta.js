@@ -9,7 +9,7 @@ export const rollingAverage = {
   accessor: "amt_€",
   analytic: {
     aggregation: "avg",
-    groupByAccessor: "country.id",
+    groupByAccessor: "row.country.id",
     comparisonAccessor: "row.d",
     sortAccessor: "row.d",
     windowStart: "since30d",
@@ -27,7 +27,7 @@ export const totalAmount = {
   accessor: "amt_€",
   analytic: {
     aggregation: "sum",
-    groupByAccessor: "country.id"
+    groupByAccessor: "row.country.id"
   }
 };
 export const meta = {
@@ -77,19 +77,6 @@ export const meta = {
         action: "toggleFilter",
         key: "f11"
       }
-      // ,
-      // {
-      //   type: "action",
-      //   caption: "Test",
-      //   enable: true,
-      //   hidden: true,
-      //   onTableChange: "test",
-      //   action: ({ row, column }) =>
-      //     alert(
-      //       `test row: order# ${row.id} column: ${column ? column.id : null}`
-      //     ),
-      //   doubleClick: true
-      // }
     ]
   },
   row: {
@@ -269,6 +256,13 @@ export const meta = {
       dataType: "number",
       editable: true,
       filterType: "between"
+    },
+    {
+      id: "bool",
+      caption: "Boolean",
+      width: 90,
+      dataType: "boolean",
+      editable: true
     },
     {
       id: "amt_eur",

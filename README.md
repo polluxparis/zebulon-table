@@ -139,7 +139,7 @@ ReactDOM.render(<MyEditableTable />, document.getElementById("root"));
 | isActive | boolean | Indicator that the component is active| 
 | [errorHandler](#error-handler) | object | Custom error and user interractions management|
 | [contextualMenu](#custom-contextual-menu) | object | Custom contextual menu|
-| [saveConfirmationRequired](#requiring-save-with-bconfirmation) | callback | callback to execute after save requirement|
+| [closeRequired](#requiring-save-with-bconfirmation) | callback | callback to execute after save requirement|
 | [onChange](#available-functions-and-callbacks) | table event callback | Change of cell value |
 | [onCellEnter](#available-functions-and-callbacks) | table event callback | Enter a cell|
 | [onCellQuit](#available-functions-and-callbacks) | table event callback | Quit a cell|
@@ -583,9 +583,9 @@ Actions has refresh, filter ... may require to save data before.
 * onTableChange
 ###
 If data have been updated, a confirmation modal with Yes, No and Cancel buttons is displayed. On Yes the whole saving process is executed and the action is resumed (if no intermediate cancellation occurs), on No, all updates are rolledback and action is resumed, On Cancel, the process stops. 
-* saveConfirmationRequired prop
+* closeRequired prop
 ###
-You may need to save the update before an action called from outside of the component (exit, reload...). In this case, you can pass as a prop (saveConfirmationRequired) the function to callback after the saving.
+You may need to save the update before an action called from outside of the component (exit, reload...). In this case, you can pass as a prop (closeRequired) the function to callback after the saving.
 It will fired the onTableChange event and return the callback in case of success. 
 ## Working with a Redux store
 When using a store, you can create a container mapping the actions to the meta description in the mergeProps function as in the following example:
@@ -660,7 +660,7 @@ For that you'll have to define
     rollingAvg:{
       ...
       aggregation: "avg",
-      groupByAccessor: "country.id",
+      groupByAccessor: "row.country.id",
       accessor: "amt_€",
       comparisonAccessor: "row.d",
       sortAccessor: "row.d",

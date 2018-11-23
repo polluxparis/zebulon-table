@@ -1,6 +1,6 @@
 {
 	"name": "zebulon-table",
-	"version": "1.1.11",
+	"version": "1.2.45",
 	"homepage": "http://polluxparis.github.io/zebulon-table",
 	"license": "MIT",
 	"description": "React editable table",
@@ -13,10 +13,6 @@
 	],
 	"author": "Thomas Bres <thomas.bres@pollux.paris>",
 	"main": "lib/index.js",
-	"dependencies": {
-		"babel-cli": "^6.26.0",
-		"zebulon-controls": "file:../controls/zebulon-controls-1.2.8.tgz"
-	},
 	"scripts": {
 		"start": "react-scripts start",
 		"build": "react-scripts build",
@@ -36,8 +32,13 @@
 	"devDependencies": {
 		"cross-env": "^5.1.5",
 		"gh-pages": "^1.2.0",
-		"postcss-cli": "^5.0.0",
-		"react-resizable": "^1.7.5",
-		"react-scripts": "^1.1.4"
+		"postcss-cli": "^5.0.1",
+		"react": "^16.4.2",
+		"react-dom": "^16.4.2",
+		"react-scripts": "^1.1.5"
+	},
+	"dependencies": {
+		"babel-cli": "^6.26.0",
+		"zebulon-controls": "^1.2.53"
 	}
 }

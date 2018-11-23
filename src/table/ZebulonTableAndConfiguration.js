@@ -20,6 +20,12 @@ export class ZebulonTableAndConfiguration extends Component {
 		super(props);
 		let f = props.functions;
 		f.mergeFunctionsObjects([accessors, metaFunctions]);
+		f.composeFunction(
+			"dataset",
+			"actions",
+			"exportMeta",
+			f.getFunctionsObject()
+		);
 		const meta = props.meta;
 		this.initMeta(
 			props.meta,
@@ -339,6 +345,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						errorHandler={errorHandler}
 						navigationKeyHandler={navigationKeyHandler}
 						onGetData={this.onGetData}
+						resizable={false}
 						utils={utils}
 						contextualMenu={
 							menu.dataset ? menu.dataset(this) : undefined
@@ -367,6 +374,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						ref={ref => (this.properties = ref)}
 						errorHandler={{}}
 						utils={utils}
+						resizable={false}
 						contextualMenu={
 							menu.properties ? menu.properties(this) : undefined
 						}
@@ -391,6 +399,7 @@ export class ZebulonTableAndConfiguration extends Component {
 						ref={ref => (this.functions = ref)}
 						errorHandler={{}}
 						utils={utils}
+						resizable={false}
 						contextualMenu={
 							menu.functions ? menu.functions(this) : undefined
 						}

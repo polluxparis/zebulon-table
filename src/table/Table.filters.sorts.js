@@ -32,17 +32,22 @@ export class TableFilterSort extends TableEvent {
           false,
           filteredData.length
         );
+        this.selectRange(selectedRange, undefined, filteredData[0], "enter");
+        this.setState({ scroll: { ...scroll } });
       } else if (selectedRange.end.rows > filteredData.length - 1) {
         selectedRange.end.rows = filteredData.length - 1;
         this.scrollTo(
-          selectedRange.end.rows,
-          1,
+          0,
+          -1,
           selectedRange.end.columns,
           scroll.columns.direction,
           false,
           filteredData.length
         );
-      } else {
+      } else if (
+        scroll.rows.index + this.rowsHeight / this.rowHeight >
+        filteredData.length - 1
+      ) {
         this.scrollTo(
           selectedRange.end.rows,
           scroll.rows.direction,
@@ -51,24 +56,17 @@ export class TableFilterSort extends TableEvent {
           false,
           filteredData.length
         );
+      } else {
+        this.selectRange(
+          selectedRange,
+          undefined,
+          filteredData[selectedRange.end.rows],
+          "enter"
+        );
+        this.setState({ scroll: { ...scroll } });
       }
-      // if (
-      //   // filteredData.length !== this.getFilteredDataLength() &&
-      //   rows.startIndex !== 0 &&
-      //   rows.index +
-      //     (rows.direction === 1 ? this.rowsHeight / this.rowHeight : 0) >
-      //     filteredData.length
-      // ) {
-      //   rows = {
-      //     index: 0,
-      //     direction: 1,
-      //     startIndex: 0,
-      //     shift: 0,
-      //     position: 0
-      //   };
-      //   this.setState({ scroll: { rows, columns } });
-      // }
-      return filteredData[selectedRange.end.rows];
+      this.row = filteredData[selectedRange.end.rows];
+      return this.row;
     }
   };
   filters = (data, filters, noFocus, updatedRows) => {
@@ -97,53 +95,57 @@ export class TableFilterSort extends TableEvent {
   //
   getFilterItems = (filter, column) => {
     const { meta, data, updatedRows } = this.state;
-    if (!meta.serverPagination) {
-      if (!filter || !filter.items) {
-        const items = {};
-        this.props.data.forEach(row => {
-          const id = (column.accessorFunction ||
-            (({ row }) => row[column.id]))({
+    // if (!meta.serverPagination) {
+    if (!filter || !filter.items) {
+      const items = {};
+      this.props.data.forEach(row => {
+        let id = (column.accessorFunction || (({ row }) => row[column.id]))({
             row,
             column,
             status: updatedRows[row.index_],
             params: this.props.params,
             data: data
-          }); // a voir status
-          const label =
-            column.selectItems &&
-            !column.reference &&
-            !Array.isArray(column.selectItems) &&
-            typeof column.selectItems === "object"
-              ? (column.selectItems[id] || {}).caption
-              : id;
-          items[id] = {
-            id,
-            label:
-              (column.formatFunction ||
-                (({ value }) =>
-                  utils.formatValue(value, null, column.decimals)))({
-                value: label,
-                column,
-                row,
-                params: this.props.params,
-                status: updatedRows[row.index_],
-                data: data
-              }) || id
-          };
-        });
-        column.items = Object.values(items);
-        column.items.sort((itemA, itemB) => {
-          return utils.isNullValue(itemA.label)
-            ? -1
-            : (itemA.label > itemB.label) - (itemA.label < itemB.label);
-        });
-        filter = column;
-      }
-    } else {
-      column.items = [];
+          }),
+          label = id,
+          sort = id,
+          nvl = ""; // a voir status
+        if (typeof (id || undefined) === "object") {
+          label = id.caption;
+          sort = id.caption;
+          id = id.value;
+        } else {
+          label = (column.formatFunction ||
+            (({ value }) => utils.formatValue(value, null, column.decimals)))({
+            value: label,
+            column,
+            row,
+            params: this.props.params,
+            status: updatedRows[row.index_],
+            data: data
+          });
+        }
+        if (column.dataType === "date") {
+          nvl = new Date(null);
+        } else if (column.dataType === "number") {
+          nvl = -Infinity;
+        }
+        items[id] = {
+          id,
+          label,
+          sort: sort || nvl
+        };
+      });
+      column.items = Object.values(items);
+      column.items.sort((itemA, itemB) => {
+        return (itemA.sort > itemB.sort) - (itemA.sort < itemB.sort);
+      });
       filter = column;
-      // ????
+      // }
     }
+    // else {
+    //   column.items = [];
+    //   filter = column;
+    // }
     return filter;
   };
   openFilter = (e, column) => {
@@ -155,8 +157,14 @@ export class TableFilterSort extends TableEvent {
     e.persist();
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
-    filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
-    filter.left = e.target.offsetLeft;
+    // filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
+    const rect = e.target.getBoundingClientRect();
+    const rectTable = document
+      .getElementById(`table-${this.props.id}`)
+      .getBoundingClientRect();
+    filter.top = rect.y - rectTable.y;
+    filter.left = rect.x - rectTable.x; //+ window.scrollX;
+    // filter.left = e.target.offsetLeft;
     const ok = this.canQuit("rowQuit", ok => {
       if (ok) {
         return this.openFilter_(e, column, filter);
@@ -180,22 +188,22 @@ export class TableFilterSort extends TableEvent {
       filters: { ...this.state.filters, [column.id]: filter }
     });
   };
-  onChangeFilter = (e, row, column, filterTo) => {
+  onChangeFilter = ({ value, row, column, filterTo }) => {
     const ok = this.props.onTableChange("filter", ok => {
       if (ok) {
-        this.onChangeFilter_(e, row, column, filterTo);
+        this.onChangeFilter_(value.value, row, column, filterTo);
       }
     });
     if (ok) {
-      this.onChangeFilter_(e, row, column, filterTo);
+      this.onChangeFilter_(value.value, row, column, filterTo);
     }
   };
-  onChangeFilter_ = (e, row, column, filterTo) => {
+  onChangeFilter_ = (value, row, column, filterTo) => {
     const { selectedRange, filters, meta, data, updatedRows } = this.state;
     // const ok = this.selectRange(selectedRange, undefined, this.row, "quit");
     // return false;
     this.closeOpenedWindows();
-    const v = e;
+    const v = value;
     if (v === undefined) {
       return;
     }
@@ -207,7 +215,7 @@ export class TableFilterSort extends TableEvent {
         column.v = v;
       }
       filters[column.id] = column;
-      this.changingFilter = true;
+      // this.changingFilter = true;
       const filteredData = this.filters(data, filters, true, updatedRows);
       // if (!meta.serverPagination) {
       this.sorts(filteredData, meta.properties);

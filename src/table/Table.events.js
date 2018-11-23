@@ -1,16 +1,16 @@
 import React from "react";
-import { TableMenu } from "./Table.menu";
 import { utils, constants } from "zebulon-controls";
 import { computeData } from "./utils/compute.data";
-import { hasParent, getUpdatedRows } from "./utils/utils";
 import { buildPasteArray, getSelection } from "./utils/copy.paste";
 import {
+  hasParent,
+  getUpdatedRows,
   manageRowError,
   rollback,
   getRowStatus,
   setStatus
 } from "./utils/utils";
-
+import { TableMenu } from "./Table.menu";
 export class TableEvent extends TableMenu {
   // ------------------------------------
   // Navigation
@@ -34,8 +34,8 @@ export class TableEvent extends TableMenu {
     if (!keepSearch && this.state.search !== undefined) {
       this.setState({ search: undefined });
     }
-    if (this.contextualMenu) {
-      this.contextualMenu.close();
+    if (this.props.contextualMenu) {
+      this.props.contextualMenu.close();
     }
   };
   fKeyMap = {
@@ -91,6 +91,21 @@ export class TableEvent extends TableMenu {
     if (70 === (e.which || e.keyCode) && e.ctrlKey) {
       this.hasFocus = false;
       this.handleSearch(e);
+    } else if (
+      // can't garantee that the focus in on the selected cell
+      key === "Space" &&
+      this.hasFocus &&
+      this.column.dataType === "boolean" &&
+      document.activeElement.id !==
+        `cell: zebulon-table-${this.props.id}-${this.row.index_}-${this.column
+          .index_}`
+    ) {
+      e.preventDefault();
+      this.onChange({
+        row: this.row,
+        column: this.column,
+        value: { value: !this.row[this.column.id] }
+      });
     } else if (utils.isNavigationKey(e)) {
       if (openedFilter) {
         if (key === "Enter") {
@@ -178,6 +193,9 @@ export class TableEvent extends TableMenu {
     } else if (this.doubleClickAction) {
       this.handleAction(this.doubleClickAction, e, row, column);
     }
+  };
+  onFocus = (e, row, column) => {
+    this.closeOpenedWindows(true, column);
   };
   handleAction = (action, e, row, column) => {
     if (action.statusEnable === false || action.enable === false) {
@@ -526,7 +544,7 @@ export class TableEvent extends TableMenu {
   };
   selectRange_ = (range, callback, row, type, noFocus, scrollOnClick) => {
     if (!this.props.isActive && this.props.onActivation) {
-      this.props.onActivation();
+      this.props.onActivation(this.props.componentId || this.props.id);
     }
     let { selectedRange, scroll } = this.state;
     const meta = this.state.meta;
@@ -609,14 +627,19 @@ export class TableEvent extends TableMenu {
   // -------------------------------
   //  Cell events
   //  -------------------------------
-  onChange = (value, row, column) => {
+  onChange = ({ value, row, column }) => {
     this.updated = true;
     this.rowUpdated = true;
     this.tableUpdated = true;
     const { updatedRows, data, meta, dataStrings } = this.state;
     delete dataStrings[row.index_];
     const status = getRowStatus(updatedRows, row);
-    setStatus(status, "updated_");
+    if (!status.updated_) {
+      setStatus(status, "updated_");
+      this.setState({ statusChanged: !this.state.statusChanged });
+    }
+    console.log("change", status);
+    column.items = undefined;
     const message = {
       value,
       previousValue: this.previousValue,
@@ -632,9 +655,12 @@ export class TableEvent extends TableMenu {
     );
   };
   onChange_ = message => {
+    const { row, column, value } = message;
+    row[column.id] = value.value;
     if (
-      message.column.onChangeFunction &&
-      message.column.onChangeFunction(message) === false
+      !column.foreignObjectFunction &&
+      column.onChangeFunction &&
+      column.onChangeFunction(message) === false
     ) {
       return false;
     }
@@ -659,26 +685,39 @@ export class TableEvent extends TableMenu {
     };
     const foreignObjectQuit = ok_ => {
       const { column, row } = message;
+      const id = this.props.id;
       const value = row[column.id];
-      if (!(column.reference && column.foreignObjectFunction)) {
+      if (!column.foreignObjectFunction) {
         return cellQuit(ok_);
       }
       if (utils.isNullValue(value)) {
-        row[column.reference] = undefined;
+        if (column.onChangeFunction) {
+          column.onChangeFunction({ value: { id: null, cd: null }, row });
+        }
         return cellQuit(ok_);
       }
       let element = document.activeElement;
-      let col = column.accessor.replace("row.", "");
-      col = col.replace(column.reference + ".", "");
+      // let col = column.accessor.replace("row.", "");
+      // col = col.replace(column.reference + ".", "");
+      const col = column.foreignColumn || "cd";
       const filters = {
-        [col]: { id: col, filterType: "starts", v: value }
+        [col]: {
+          id: col,
+          filterType: "starts",
+          v: value
+        }
       };
       const callback = (ok, data) => {
         if (!ok) {
           this.noUpdate = true;
           element = document.getElementById(
-            `cell: ${this.props.id}-${row.index_}-${column.index_}`
-          ).children[0];
+            `cell: zebulon-table-${id}-${row.index_}-${column.index_}`
+          );
+          if (element) {
+            element = element.children[0];
+          }
+        } else if (column.onChangeFunction) {
+          column.onChangeFunction({ value: data, row });
         } else {
           row[column.reference] = data;
         }
@@ -774,7 +813,7 @@ export class TableEvent extends TableMenu {
   onRowEnter = row => {
     const message = {
       row,
-      status: this.state.updatedRows[row.index_],
+      status: getRowStatus(this.state.updatedRows, row),
       meta: this.state.meta,
       data: this.state.data,
       params: this.props.params

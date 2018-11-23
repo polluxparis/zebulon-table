@@ -6,7 +6,7 @@ export const getSizes = (meta, rowHeight) => {
     !meta.table.noFilter *
       (1 +
         (meta.properties.findIndex(
-          column => column.filterType === "between"
+          column => column.filterType === "between" && !column.hidden
         ) !==
           -1));
   const headersHeight =
@@ -50,54 +50,45 @@ export const computeMetaPositions = (meta, zoom) => {
   });
   return meta.visibleIndexes;
 };
-const grantPrivilege = (object, subObject, target, privileges, type) => {
-  if (privileges && privileges[object] && privileges[object][type]) {
-    let priv = privileges[object][type];
-    if (type !== "table") {
-      priv = priv[subObject];
-    }
-    if (priv) {
-      if (type === "actions") {
-        if (priv === "enable") {
-          target.enable = true;
-          target.hidden = false;
-        } else if (priv === "disable") {
-          target.enable = false;
-          target.hidden = false;
-        } else if (priv === "hidden") {
-          target.hidden = true;
-          target.enable = false;
-        } else {
-          target.enable = priv;
-        }
-      } else if (type === "properties") {
-        if (priv === "editable") {
-          target.editable = true;
-          target.hidden = false;
-        } else if (priv === "visible") {
-          target.editable = false;
-          target.enable = false;
-        } else if (priv === "hidden") {
-          target.editable = false;
-          target.hidden = true;
-        } else {
-          target.editable = priv;
-        }
+const grantPrivilege = (meta, privileges) => {
+  if (privileges) {
+    let b = privileges && privileges.children_ && privileges.children_.actions;
+    meta.table.actions.forEach(action => {
+      action.enable =
+        b &&
+        (privileges.children_.actions[action.id] || { enable: false }).enable;
+      action.hidden =
+        !b ||
+        !!(privileges.children_.actions[action.id] || { hidden: true }).hidden;
+      if (!action.enable) {
+        action.enableFunction = () => false;
       }
-    }
+    });
+    b = privileges && privileges.children_ && privileges.children_.properties;
+    meta.properties.forEach(property => {
+      property.editable =
+        b &&
+        privileges.editable &&
+        property.editable &&
+        (privileges.children_.properties[property.id] || { editable: false })
+          .editable;
+      property.hidden =
+        !b ||
+        !!(privileges.children_.properties[property.id] || { hidden: true })
+          .hidden;
+      if (!property.editable) {
+        property.editableFunction = () => false;
+      }
+    });
   }
 };
 export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   let position = 0;
-  // table
-  // if (!meta.functions) {
-  //   meta.functions = functions;
-  // }
   const object = meta.table.object;
+  meta.promises = [];
   // functions.setVisibility(object);
   meta.visibleIndexes = [];
   meta.table.editable = meta.table.editable && !meta.table.checkable;
-  grantPrivilege(object, null, meta.table, privileges, "table");
   meta.zoom = zoom;
   meta.table.selectFunction = functions.getAccessorFunction(
     object,
@@ -151,17 +142,11 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
   );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
-      grantPrivilege(
-        action.id || action.caption,
-        action,
-        privileges,
-        "actions"
-      );
       if (action.action) {
         action.actionFunction =
           typeof action.action === "function"
             ? action.action
-            : functions.getAccessorFunction(object, "action", action.action);
+            : functions.getAccessorFunction(object, "actions", action.action);
       }
       action.enableFunction = functions.getAccessorFunction(
         object,
@@ -195,21 +180,25 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       )
     };
   }
-
+  meta.properties.forEach((column, index) => {
+    column.index_ = index;
+    if (meta.config) {
+      column.width = meta.config[column.id].width;
+      column.locked = meta.config[column.id].locked;
+      column.index_ = meta.config[column.id].index_;
+    }
+  });
+  if (meta.config) {
+    meta.properties.sort(
+      (a, b) => (a.index_ > b.index_) - (b.index_ > a.index_)
+    );
+  }
   // properties
   meta.properties.forEach((column, index) => {
     if (column.deleted_) {
       column.hidden = true;
       column.mandatory = false;
     }
-    grantPrivilege(
-      meta.table.object,
-      column.id,
-      column,
-      privileges,
-      "properties"
-    );
-
     if (column.id === "index_" && column.hidden === undefined) {
       column.hidden = true;
     }
@@ -233,10 +222,10 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     if (column.dataType === "object" || column.dataType === "joined object") {
       column.hidden = true;
     }
+
     const width = zoom * (column.hidden ? 0 : column.width || 0);
     column.computedWidth = width;
     column.position = position;
-    column.index_ = index;
 
     position += width;
     if (column.locked) {
@@ -262,6 +251,10 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       "formats",
       column.format
     );
+    // a voir bricole avec les joined objects
+    if (column.select === " ") {
+      column.select = undefined;
+    }
     column.selectFunction = functions.getAccessorFunction(
       object,
       "selects",
@@ -276,29 +269,31 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     // - an array
     // - an object {id:caption...}
     // - an object {items:[select items],filter:[function to filter items with parameters as row,data...
-    if (Array.isArray(column.select)) {
-      column.selectItems = column.select;
-    }
-    // column.selectItems = select || [""];
-
+    // if (Array.isArray(column.select)) {
     column.accessorFunction = functions.getAccessorFunction(
       object,
       "accessors",
       column.accessor
     );
+    column.selectItems = column.select;
+    if (column.selectFunction) {
+      if (typeof column.selectFunction === "function") {
+        column.selectItems = column.selectFunction({ meta });
+      } else {
+        column.selectItems = column.selectFunction;
+      }
+      //  promises must be resolved before compute data
+      if (utils.isPromise(column.selectItems)) {
+        column.selectItems.then(data => {
+          column.selectItems = data;
+          return data;
+        });
+        meta.promises.push(column.selectItems);
+      }
+    }
     if (column.dataType === "joined object" && column.select) {
       column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
-      // column.primaryKeyAccessorFunction=({row})=>
-      if (
-        column.selectFunction &&
-        typeof column.selectFunction === "function"
-      ) {
-        column.selectItems = column.selectFunction();
-      } else if (column.selectFunction) {
-        column.selectItems = column.selectFunction;
-      } else {
-        column.selectItems = column.select;
-      }
+
       const f = column.accessorFunction;
       column.setForeignKeyAccessorFunction = message => {
         const { value, row } = message;
@@ -309,6 +304,11 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         return column.selectItems[v];
       };
     }
+    column.onChangeFunction = functions.getAccessorFunction(
+      object,
+      "validators",
+      column.onChange
+    );
     // reference to an object
     if (column.accessor && typeof column.accessor === "string") {
       let accessor = column.accessor;
@@ -337,8 +337,24 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
             column.editable
           ) {
             column.select = " ";
-            column.selectItems = referencedColumn.selectItems;
+            if (utils.isPromise(referencedColumn.selectItems)) {
+              referencedColumn.selectItems.then(data => {
+                column.selectItems = data;
+                referencedColumn.selectItems = data;
+                return data;
+              });
+              meta.promises.push(referencedColumn.selectItems);
+            } else {
+              column.selectItems = referencedColumn.selectItems;
+            }
             column.mandatory = column.mandatory || referencedColumn.mandatory;
+            const f = column.onChangeFunction || (x => true);
+            column.onChangeFunction = ({ value, row, column }) => {
+              row[column.reference] = column.selectItems[value.value];
+              row[column.id] = column.accessorFunction({ column, row });
+              column.setForeignKeyAccessorFunction({ value: value.value, row });
+              return f({ value, row, column });
+            };
           }
         }
       }
@@ -353,11 +369,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       "defaults",
       column.default
     );
-    column.onChangeFunction = functions.getAccessorFunction(
-      object,
-      "validators",
-      column.onChange
-    );
+
     column.onQuitFunction = functions.getAccessorFunction(
       object,
       "validators",
@@ -430,10 +442,16 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
         );
       }
     }
-    if (column.accessor && !column.reference && !column.onQuit) {
+    if (
+      column.accessor &&
+      !column.reference &&
+      !column.onQuit &&
+      !column.onChange
+    ) {
       column.editable = false;
     }
   });
+  grantPrivilege(meta, privileges);
 };
 // return meta;
 // };
