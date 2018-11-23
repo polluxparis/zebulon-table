@@ -52,6 +52,9 @@ export class ZebulonTable extends ZebulonTableMenu {
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
     this.config = props.config;
+    if (this.config && this.config.sizes) {
+      this.state.sizes = { ...this.state.sizes, ...this.config.sizes };
+    }
     this.state.data = props.data;
     this.getData(props);
     this.saveConfirmationAnswer = ok => ok;
@@ -139,7 +142,7 @@ export class ZebulonTable extends ZebulonTableMenu {
   };
   initData = (data, meta, zoom, functions, startIndex, filters) => {
     if (Array.isArray(data)) {
-      meta.config = this.config;
+      meta.config = this.config ? this.config.properties : undefined;
       computeMetaFromData(
         data,
         meta,
@@ -903,45 +906,53 @@ export class ZebulonTable extends ZebulonTableMenu {
     });
   };
 
-  getConfiguration_ = (configuration, layout) => {
-    const {
-      height,
-      width,
-      display,
-      tabs,
-      ratioHeight,
-      ratioWidth,
-      layouts,
-      content,
-      caption
-    } = layout;
+  // getConfiguration_ = (configuration, layout) => {
+  //   const {
+  //     height,
+  //     width,
+  //     display,
+  //     tabs,
+  //     ratioHeight,
+  //     ratioWidth,
+  //     layouts,
+  //     content,
+  //     caption
+  //   } = layout;
 
-    configuration.height = height;
-    configuration.width = width;
-    configuration.display = display;
-    configuration.tabs = tabs;
-    configuration.ratioHeight = ratioHeight;
-    configuration.ratioWidth = ratioWidth;
-    configuration.content = content;
-    configuration.caption = caption;
-    if (layouts && layouts.length) {
-      configuration.layouts = [];
-      layouts.forEach((layout, index) => {
-        configuration.layouts.push({});
-        this.getConfiguration_(configuration.layouts[index], layout);
-      });
-    }
-  };
-  getConfiguration = () =>
-    this.state.meta.properties.reduce((acc, property) => {
+  //   configuration.height = height;
+  //   configuration.width = width;
+  //   configuration.display = display;
+  //   configuration.tabs = tabs;
+  //   configuration.ratioHeight = ratioHeight;
+  //   configuration.ratioWidth = ratioWidth;
+  //   configuration.content = content;
+  //   configuration.caption = caption;
+  //   if (layouts && layouts.length) {
+  //     configuration.layouts = [];
+  //     layouts.forEach((layout, index) => {
+  //       configuration.layouts.push({});
+  //       this.getConfiguration_(configuration.layouts[index], layout);
+  //     });
+  //   }
+  // };
+  getConfiguration = () => ({
+    sizes: {
+      ...this.state.sizes,
+      auto: false,
+      minHeight: null,
+      maxHeight: null,
+      minWidth: null,
+      maxWidth: null
+    },
+    properties: this.state.meta.properties.reduce((acc, property) => {
       acc[property.id] = {
         index_: property.index_,
         width: property.width,
         locked: property.locked
       };
       return acc;
-    }, {});
-
+    }, {})
+  });
   render() {
     const style = {
       fontSize: `${(this.props.isModal ? 1 : this.state.sizes.zoom) * 100}%`,

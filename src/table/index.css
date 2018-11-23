@@ -109,6 +109,7 @@
 }
 .zebulon-table-corner {
   /*position: relative;*/
+  padding: 0.2em;
   outline: none;
   background-color: #eef8fb;
   height: inherit;

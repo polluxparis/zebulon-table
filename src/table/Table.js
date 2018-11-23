@@ -230,7 +230,7 @@ export class Table extends TableFilterSort {
   onCheckAll = () => {
     const checked_ = !this.state.checkAll;
 
-    this.state.filteredData.forEach(row => (row.checked_ = true));
+    this.state.filteredData.forEach(row => (row.checked_ = checked_));
     this.setState({ checkAll: checked_, updatedRows: this.state.updatedRows });
   };
   render() {

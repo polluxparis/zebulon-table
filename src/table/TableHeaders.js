@@ -1,5 +1,11 @@
 import React, { Component } from "react";
-import { utils, ContextualMenuClient, Input, icons } from "zebulon-controls";
+import {
+  utils,
+  ContextualMenuClient,
+  Input,
+  icons,
+  CheckBoxInput
+} from "zebulon-controls";
 // import { Input } from "./Input";
 import { computeMetaPositions } from "./utils/compute.meta";
 import { cellData } from "./utils/compute.data";
