@@ -225,7 +225,13 @@ export class TableEvent extends TableMenu {
         if (action.type === "detail" && action.content) {
           this.setState({ detail: action });
         } else if (action.action) {
-          const { selectedRange, updatedRows, data, meta } = this.state;
+          const {
+            selectedRange,
+            updatedRows,
+            data,
+            meta,
+            filters
+          } = this.state;
           const f = () =>
             action.actionFunction(
               {
@@ -233,6 +239,7 @@ export class TableEvent extends TableMenu {
                 column,
                 selectedRange,
                 updatedRows,
+                filters,
                 data,
                 meta,
                 params: this.props.params,

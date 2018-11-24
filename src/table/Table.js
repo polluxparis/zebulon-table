@@ -79,7 +79,7 @@ export class Table extends TableFilterSort {
     this.rowHeight = this.props.rowHeight;
     this.range = { start: {}, end: {} };
     this.onTableEnter();
-    if (status && status.loaded) {
+    if (props.status && props.status.loaded) {
       this.bLoaded = true;
     }
     // if (this.props.contextualMenu) {

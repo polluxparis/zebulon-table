@@ -169,7 +169,7 @@ export class ZebulonTable extends ZebulonTableMenu {
         );
       }
       if (this.props.onGetData) {
-        this.props.onGetData({ data, meta, status });
+        this.props.onGetData({ data, meta });
       }
 
       this.initSizes(meta, data, this.state.sizes);
@@ -240,8 +240,7 @@ export class ZebulonTable extends ZebulonTableMenu {
         if (this.observable) {
           this.setState({
             data: this.state.data.concat(x),
-            meta: this.state.meta,
-            status
+            meta: this.state.meta
           });
         }
       },
