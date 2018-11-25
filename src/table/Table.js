@@ -177,7 +177,7 @@ export class Table extends TableFilterSort {
     return this.onTableClose();
   }
   onLoad = () => {
-    if (this.bLoaded && this.state.filteredData.length) {
+    if (this.bLoaded) {
       this.updated = false;
       this.rowUpdated = false;
       this.tableUpdated = false;

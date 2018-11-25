@@ -20,7 +20,7 @@ const filter = (
   filterTo,
   onChange,
   openFilter,
-  focusedId,
+  // focusedId,
   componentId
 ) => {
   const className = classnames({
@@ -75,7 +75,7 @@ const filter = (
     div = (
       <Input
         column={column}
-        id={id}
+        id={id + "-"}
         key={id}
         className={className}
         style={{
@@ -308,6 +308,7 @@ export class Headers extends Component {
       auditedRow,
       auditStatus,
       componentId,
+      id,
       data,
       params
     } = this.props;
@@ -344,7 +345,7 @@ export class Headers extends Component {
           this.handleDragStart,
           this.handleDragOver,
           this.handleDrop,
-          componentId
+          componentId || id
         );
         if (headersLength > 1) {
           if (auditedRow) {
@@ -364,7 +365,7 @@ export class Headers extends Component {
                 data,
                 params,
                 style,
-                componentId
+                componentId || id
               )
             );
           } else {
@@ -384,7 +385,7 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  componentId
+                  componentId || id
                 )
               );
               // empty cell

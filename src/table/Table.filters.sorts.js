@@ -13,12 +13,20 @@ export class TableFilterSort extends TableEvent {
   adjustScrollRows = filteredData => {
     if (this.state) {
       const { selectedRange, scroll, meta } = this.state;
+      const { componentId, id } = this.props;
       // let { rows, columns } = scroll;
       if (!filteredData.length) {
         selectedRange.end = {};
         selectedRange.start = {};
         this.hasFocus = false;
         this.bLoaded = undefined;
+        const column = meta.properties[(meta.visibleIndexes || [0])[0]];
+        const element = document.getElementById(
+          `filter: ${componentId || id}--${column.index_}-`
+        );
+        if (element && element.children[0]) {
+          element.children[0].focus();
+        }
       } else if (selectedRange.end.rows === undefined) {
         const columns = (meta.visibleIndexes || [0])[0];
         selectedRange.end = { rows: 0, columns };

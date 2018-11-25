@@ -97,8 +97,8 @@ export class TableEvent extends TableMenu {
       this.hasFocus &&
       this.column.dataType === "boolean" &&
       document.activeElement.id !==
-        `cell: zebulon-table-${this.props.id}-${this.row.index_}-${this.column
-          .index_}`
+        `cell: ${this.props.componentId || this.props.id}-${this.row
+          .index_}-${this.column.index_}`
     ) {
       e.preventDefault();
       this.onChange({
@@ -692,7 +692,7 @@ export class TableEvent extends TableMenu {
     };
     const foreignObjectQuit = ok_ => {
       const { column, row } = message;
-      const id = this.props.id;
+      const id = this.props.componentId || this.props.id;
       const value = row[column.id];
       if (!column.foreignObjectFunction) {
         return cellQuit(ok_);
@@ -718,7 +718,7 @@ export class TableEvent extends TableMenu {
         if (!ok) {
           this.noUpdate = true;
           element = document.getElementById(
-            `cell: zebulon-table-${id}-${row.index_}-${column.index_}`
+            `cell: ${id}-${row.index_}-${column.index_}`
           );
           if (element) {
             element = element.children[0];
