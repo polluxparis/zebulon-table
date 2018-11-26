@@ -78,7 +78,7 @@ export const metaFunctions = {
 					// 	.slice(1, functions.length - 1)
 					// 	.replace(/\\"/g, '"') +
 					// ";";
-					console.log(meta, r);
+					// console.log(meta, r);
 					utils.exportFile(r, "meta.txt", "text");
 					return r;
 				};

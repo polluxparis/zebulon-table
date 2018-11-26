@@ -31,7 +31,10 @@ export const cellData = (row, column, status, data, params, focused) => {
       ? column.accessorFunction({ column, row, params, status, data })
       : row[column.id];
 
-  if (dataType === "date" && typeof value === "string") {
+  if (
+    ["date", "month", "year"].includes(dataType) &&
+    typeof value === "string"
+  ) {
     value = new Date(value);
   }
   //  map the data
@@ -65,7 +68,7 @@ export const cellData = (row, column, status, data, params, focused) => {
       };
     }
   }
-  return { editable, select, value ,dataType};
+  return { editable, select, value, dataType };
 };
 export const computeRows = (data, meta, startIndex = 0, noDataMutation) => {
   let foreignObjects = [];

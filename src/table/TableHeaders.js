@@ -35,7 +35,12 @@ const filter = (
   let textAlign = column.alignement || "left";
   if (!column.alignement) {
     if (column.dataType === "number") textAlign = "right";
-    else if (column.dataType === "date" || column.dataType === "boolean")
+    else if (
+      column.dataType === "date" ||
+      column.dataType === "month" ||
+      column.dataType === "year" ||
+      column.dataType === "boolean"
+    )
       textAlign = "center";
   }
   const id = `filter${filterTo ? "To" : ""}: ${componentId}--${column.index_}`;
@@ -170,7 +175,12 @@ const auditCell = (row, column, status, data, params, style, componentId) => {
   if (!column.alignement) {
     if (column.dataType === "number") {
       textAlign = "right";
-    } else if (column.dataType === "date" || column.dataType === "boolean") {
+    } else if (
+      column.dataType === "date" ||
+      column.dataType === "month" ||
+      column.dataType === "year" ||
+      column.dataType === "boolean"
+    ) {
       textAlign = "center";
     }
   }
@@ -385,7 +395,7 @@ export class Headers extends Component {
                   false,
                   onChange,
                   openFilter,
-                  componentId || id
+                  componentId
                 )
               );
               // empty cell

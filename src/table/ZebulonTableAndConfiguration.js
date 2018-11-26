@@ -195,7 +195,7 @@ export class ZebulonTableAndConfiguration extends Component {
 		}
 	};
 	onRowDelete = ({ row, status }) => {
-		console.log(row, status);
+		// console.log(row, status);
 		row.deleted_ = status.deleted_;
 		this.changedProperties = true;
 	};

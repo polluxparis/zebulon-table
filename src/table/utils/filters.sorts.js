@@ -17,7 +17,11 @@ export const filterFunction = (column, params, data, updatedRows) => {
     }
 
     if (!f) {
-      if (column.dataType === "date") {
+      if (
+        column.dataType === "date" ||
+        column.dataType === "month" ||
+        column.dataType === "year"
+      ) {
         f = ({ row, column }) => new Date(row[column.id]);
       } else {
         f = ({ row, column }) => row[column.id];
@@ -35,8 +39,14 @@ export const filterFunction = (column, params, data, updatedRows) => {
     }
     return v;
   };
-  if (column.dataType === "date") {
-    column.v = new Date(column.v);
+  if (
+    column.dataType === "date" ||
+    column.dataType === "month" ||
+    column.dataType === "year"
+  ) {
+    if (!utils.isNullOrUndefined(column.v)) {
+      column.v = new Date(column.v);
+    }
     if (!utils.isNullOrUndefined(column.vTo)) {
       column.vTo = new Date(column.vTo);
     }

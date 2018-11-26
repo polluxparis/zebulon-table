@@ -246,11 +246,13 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       "editables",
       column.editable
     );
-    column.formatFunction = functions.getAccessorFunction(
-      object,
-      "formats",
-      column.format
-    );
+    if (column.format) {
+      column.formatFunction = functions.getAccessorFunction(
+        object,
+        "formats",
+        column.format
+      );
+    }
     // a voir bricole avec les joined objects
     if (column.select === " ") {
       column.select = undefined;
@@ -490,7 +492,11 @@ export const computeMetaFromData = (
       } else if (dataType === "number") {
         alignement = "right";
         filterType = "between";
-      } else if (dataType === "date") {
+      } else if (
+        dataType === "date" ||
+        dataType === "month" ||
+        dataType === "year"
+      ) {
         alignement = "center";
         filterType = "between";
       }

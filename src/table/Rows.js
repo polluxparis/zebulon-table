@@ -8,7 +8,9 @@ export class Rows extends ScrollableGrid {
   }
   componentDidUpdate() {
     if (this.focused) {
-      this.focused.focus();
+      // console.log("focus", this.focused);
+      document.getElementById(this.focused).focus();
+      // document.getElementById(this.focused).children[0].focus();
       this.focused = undefined;
     }
     this.noOver = false;
@@ -51,6 +53,9 @@ export class Rows extends ScrollableGrid {
       "zebulon-table-cell-checkbox": dataType === "boolean"
     });
     const id = `cell: ${componentId}-${row.index_}-${column.index_}`;
+    if (focused && hasFocus && editable) {
+      this.focused = id;
+    }
     return (
       <Input
         row={row}
@@ -75,11 +80,6 @@ export class Rows extends ScrollableGrid {
         }
         menu="cell-menu"
         component={componentId}
-        setRef={ref => {
-          if (focused && hasFocus && editable) {
-            this.focused = ref;
-          }
-        }}
       />
     );
   };
@@ -94,7 +94,7 @@ export class Rows extends ScrollableGrid {
     rowHeight,
     rowIndex,
     hasFocus,
-    component
+    componentId
   ) => {
     const cells = [];
     let left = shift,
@@ -109,6 +109,8 @@ export class Rows extends ScrollableGrid {
             textAlign = "right";
           } else if (
             column.dataType === "date" ||
+            column.dataType === "month" ||
+            column.dataType === "year" ||
             column.dataType === "boolean"
           ) {
             textAlign = "center";
@@ -171,7 +173,7 @@ export class Rows extends ScrollableGrid {
             this.props.onFocus,
             rowIndex,
             this.props.onDoubleClick,
-            component
+            componentId
           )
         );
         left += column.computedWidth;
@@ -203,9 +205,10 @@ export class Rows extends ScrollableGrid {
       width,
       updatedRows,
       hasFocus,
-      component,
+      componentId,
       locked
     } = this.props;
+    console.log("render rows", hasFocus, this.selectedRange(), meta);
     let i = 0,
       index = this.props.scroll.rows.startIndex,
       indexPage = 0,
@@ -244,7 +247,7 @@ export class Rows extends ScrollableGrid {
           rowHeight,
           index,
           hasFocus,
-          component
+          componentId
         )
       );
       index++;

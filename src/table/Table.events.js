@@ -15,7 +15,8 @@ export class TableEvent extends TableMenu {
   // ------------------------------------
   // Navigation
   // ------------------------------------
-  closeOpenedWindows = (keepSearch, column) => {
+  closeOpenedWindows = (keepSearch, column, row) => {
+    console.log("close", row, column);
     if (this.state.openedFilter) {
       this.setState({ openedFilter: undefined });
     }
@@ -195,6 +196,7 @@ export class TableEvent extends TableMenu {
     }
   };
   onFocus = (e, row, column) => {
+    console.log(row, column);
     this.closeOpenedWindows(true, column);
   };
   handleAction = (action, e, row, column) => {
@@ -626,7 +628,10 @@ export class TableEvent extends TableMenu {
         return enter(ok);
       }
     };
-    if (type === "enter") {
+    if (!endChanged) {
+      return true;
+    }
+    if (type === "enter" || !endChanged) {
       return enter(true);
     }
     return quit();
@@ -645,7 +650,7 @@ export class TableEvent extends TableMenu {
       setStatus(status, "updated_");
       this.setState({ statusChanged: !this.state.statusChanged });
     }
-    console.log("change", status);
+    // console.log("change", status);
     column.items = undefined;
     const message = {
       value,
@@ -692,7 +697,7 @@ export class TableEvent extends TableMenu {
     };
     const foreignObjectQuit = ok_ => {
       const { column, row } = message;
-      const id = this.props.componentId || this.props.id;
+      const id = this.props.componentId;
       const value = row[column.id];
       if (!column.foreignObjectFunction) {
         return cellQuit(ok_);
@@ -720,9 +725,9 @@ export class TableEvent extends TableMenu {
           element = document.getElementById(
             `cell: ${id}-${row.index_}-${column.index_}`
           );
-          if (element) {
-            element = element.children[0];
-          }
+          // if (element) {
+          //   element = element.children[0];
+          // }
         } else if (column.onChangeFunction) {
           column.onChangeFunction({ value: data, row });
         } else {
@@ -800,12 +805,16 @@ export class TableEvent extends TableMenu {
       // duplicate key
       const pk = meta.table.pk;
       const lk = meta.table.lk;
-      if (pk && !pk.hidden) {
-        this.checkUnicity("indexPk", pk, message);
-      }
-      if (lk && !lk.hidden) {
-        this.checkUnicity("indexLk", lk, message);
-      }
+
+      //  A voir
+      //
+      //
+      // if (pk && !pk.hidden) {
+      //   this.checkUnicity("indexPk", pk, message);
+      // }
+      // if (lk && !lk.hidden) {
+      //   this.checkUnicity("indexLk", lk, message);
+      // }
       const onRowQuit = this.props.onRowQuit || meta.row.onQuitFunction;
       let ok = onRowQuit ? onRowQuit(message) : true;
       ok = ok && this.props.errorHandler(message, "onRowQuit", callback);
@@ -930,7 +939,8 @@ export class TableEvent extends TableMenu {
         }
         message.callback(ok);
       };
-      const ok = ok_ && this.onRowQuit_(message, callback);
+      const ok =
+        ok_ && (!this.rowUpdated || this.onRowQuit_(message, callback));
       if (ok !== undefined) {
         return callback(ok);
       }
@@ -945,7 +955,7 @@ export class TableEvent extends TableMenu {
         return (action === "cellQuit" ? message.callback : rowQuit)(ok);
       };
       // if (!utils.isNullValue(this.range.end.rows)) {
-      ok = ok_ && this.onCellQuit_(message, callback);
+      ok = ok_ && (!this.updated || this.onCellQuit_(message, callback));
       if (ok !== undefined) {
         return callback(ok);
       }

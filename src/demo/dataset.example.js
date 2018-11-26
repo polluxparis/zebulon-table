@@ -288,7 +288,7 @@ export class MyDataset extends Component {
     let header = null,
       footer = null;
     const sizes = { ...this.props.sizes };
-    console.log("ex render", this.props, this.state);
+    // console.log("ex render", this.props, this.state);
     meta.serverPagination = radioDataset === "get_pagination_manager";
     meta.table.select = radioDataset;
     this.previousState = this.state;
@@ -456,7 +456,7 @@ export class MyDataset extends Component {
           status={status}
           sizes={this.state.sizes}
           functions={functions}
-          keyEvent={keyEvent}
+          // keyEvent={null}
           errorHandler={errorHandler}
           // navigationKeyHandler={navigationKeyHandler}
           onFilter={this.getLengths}

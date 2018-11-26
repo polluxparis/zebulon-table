@@ -90,7 +90,7 @@ export const meta = {
       id: "d",
       caption: "Date",
       width: 100,
-      dataType: "date",
+      dataType: "year",
       editable: true,
       mandatory: true,
       filterType: "between"

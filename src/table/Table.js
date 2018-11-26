@@ -170,9 +170,9 @@ export class Table extends TableFilterSort {
     }
   }
 
-  shouldComponentUpdate(nextProps, nextState) {
-    return !nextProps.modal;
-  }
+  // shouldComponentUpdate(nextProps, nextState) {
+  //   return !nextProps.modal;
+  // }
   componentWillUnmount() {
     return this.onTableClose();
   }
@@ -595,7 +595,7 @@ export class Table extends TableFilterSort {
         selectedRange={selectedRange}
         selectRange={selectRange}
         onChange={this.onChange}
-        onFocus={this.onFocus}
+        onFocus={(e, row, column) => this.closeOpenedWindows(true, column, row)}
         hasFocus={this.hasFocus && this.props.isActive !== false}
         updatedRows={updatedRows}
         params={params}

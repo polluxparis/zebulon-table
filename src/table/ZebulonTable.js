@@ -46,8 +46,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       filters: props.filters,
       status: { loaded: false, loading: true }
     };
-    props.sizes.zoom = props.sizes.zoom || 1;
-    this.keyEvent = false;
+    this.state.sizes.zoom = this.state.sizes.zoom || 1;
+    this.state.sizes.rowHeight = this.state.sizes.rowHeight || 25;
     this.state.functions = props.functions || functions.functions([]);
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
     this.sorts = this.state.sorts;
@@ -169,7 +169,11 @@ export class ZebulonTable extends ZebulonTableMenu {
         );
       }
       if (this.props.onGetData) {
-        this.props.onGetData({ data, meta });
+        this.props.onGetData({
+          data,
+          meta,
+          updatedRows: this.state.updatedRows
+        });
       }
 
       this.initSizes(meta, data, this.state.sizes);
@@ -404,11 +408,20 @@ export class ZebulonTable extends ZebulonTableMenu {
     // }
   }
   handleKeyEvent = e => {
-    if (this.confirmationModal) {
-      this.setState({ keyEvent: e });
+    if (this.state.confirmationModal && this.modal) {
+      if ((e.which || e.keyCode) === 27) {
+        // escape
+        e.preventDefault();
+        this.modal.onEscape();
+      }
+      if ((e.which || e.keyCode) === 13) {
+        // enter
+        e.preventDefault();
+        this.modal.onEnter();
+      } else if (this.modal.component && this.modal.component.handleKeyDown) {
+        this.modal.component.handleKeyDown(e);
+      }
       return;
-    } else if (this.state.keyEvent) {
-      this.setState({ keyEvent: null });
     }
     const zoom = utils.isZoom(e);
     if (zoom && (this.props.isActive === undefined || this.props.isActive)) {
@@ -418,9 +431,6 @@ export class ZebulonTable extends ZebulonTableMenu {
       computeMetaPositions(this.state.meta, sizes.zoom);
       this.setState({ sizes: { ...sizes } });
       return;
-    }
-    if (this.props.keyEvent) {
-      this.keyEvent = true;
     }
     if (!this.table) {
       return;
@@ -495,7 +505,6 @@ export class ZebulonTable extends ZebulonTableMenu {
       message.conflicts = null;
       if (ok === false) {
         if (body) {
-          this.confirmationModal = true;
           this.setState({
             confirmationModal: true,
             modal: { body, type: "Ok" }
@@ -503,7 +512,6 @@ export class ZebulonTable extends ZebulonTableMenu {
         }
         return false;
       } else if (body) {
-        this.confirmationModal = true;
         const type = action === "onTableChange" ? "YesNoCancel" : "YesNo";
         this.setState({
           confirmationModal: true,
@@ -542,7 +550,7 @@ export class ZebulonTable extends ZebulonTableMenu {
             : this.props.linkedObjects.find(
                 object => object.state.meta.table.object === conflicts.object
               );
-        zebulonTable.confirmationModal = true;
+        // zebulonTable.confirmationModal = true;
         zebulonTable.setState({
           confirmationModal: true,
           modal: {
@@ -802,15 +810,14 @@ export class ZebulonTable extends ZebulonTableMenu {
     this.setState({
       modalCancel: false,
       modal: null,
-      confirmationModal: false,
-      keyEvent: null
+      confirmationModal: false
     });
-    this.confirmationModal = false;
+    // this.confirmationModal = false;
   };
   // foreign key modal
   onForeignKey = (ForeignObject, filters, callback) => {
     const { rowHeight, zoom, height, width } = this.state.sizes;
-    const element = (
+    const body = (
       <ForeignObject
         sizes={{
           minHeight: 200,
@@ -820,16 +827,17 @@ export class ZebulonTable extends ZebulonTableMenu {
           rowHeight: rowHeight * zoom
         }}
         filters={filters}
-        keyEvent={this.state.keyEvent}
         functions={this.props.functions}
       />
     );
-    this.confirmationModal = true;
+    // this.confirmationModal = true;
+    const state = this.state;
+    state.confirmationModal = true;
+    state.modal = { body, type: "foreignKey", callback };
     this.setState({
       confirmationModal: true,
-      modal: { body: element, type: "foreignKey", callback }
+      modal: { body, type: "foreignKey", callback }
     });
-    this.keyEvent = false;
   };
   onConflict = conflicts => {
     const properties = [{ id: "From", width: 55 }];
@@ -1050,12 +1058,16 @@ export class ZebulonTable extends ZebulonTableMenu {
         show={this.state.confirmationModal}
         detail={this.state.modal}
         onConfirm={this.onConfirm}
-        keyEvent={this.state.keyEvent}
+        // keyEvent={this.state.keyEvent}
         ref={ref => (this.modal = ref)}
         id={`modal-${this.props.id}`}
         key={`modal-${this.props.id}`}
       />
     ) : null;
+    // if (modal) {
+    console.log("render zt", meta, modal);
+
+    // const modal = null;
     let div = (
       <EventHandler
         id={componentId}
@@ -1128,8 +1140,8 @@ export class ZebulonTable extends ZebulonTableMenu {
     if (this.props.resizable || this.props.resizable === undefined) {
       div = (
         <ResizableBox
-          width={sizes.width}
-          height={sizes.height}
+          width={sizes.width || 100}
+          height={sizes.height || 30}
           onResize={this.onResize}
         >
           {div}
