@@ -40,7 +40,6 @@ export class TableFilterSort extends TableEvent {
           false,
           filteredData.length
         );
-        this.selectRange(selectedRange, undefined, filteredData[0], "enter");
         this.setState({ scroll: { ...scroll } });
       } else if (selectedRange.end.rows > filteredData.length - 1) {
         selectedRange.end.rows = filteredData.length - 1;
@@ -65,14 +64,14 @@ export class TableFilterSort extends TableEvent {
           filteredData.length
         );
       } else {
-        this.selectRange(
-          selectedRange,
-          undefined,
-          filteredData[selectedRange.end.rows],
-          "enter"
-        );
         this.setState({ scroll: { ...scroll } });
       }
+      this.selectRange(
+        selectedRange,
+        undefined,
+        filteredData[selectedRange.end.rows],
+        "enter"
+      );
       this.row = filteredData[selectedRange.end.rows];
       return this.row;
     }
@@ -263,7 +262,8 @@ export class TableFilterSort extends TableEvent {
       this.range,
       undefined,
       this.adjustScrollRows(filteredData),
-      "enter"
+      "enter",
+      true
     );
     // }
   };
@@ -277,7 +277,13 @@ export class TableFilterSort extends TableEvent {
         return this.pagination({
           sorts,
           callbackAfter: () => {
-            this.selectRange_(this.range, undefined, undefined, "enter");
+            this.selectRange_(
+              this.range,
+              undefined,
+              undefined,
+              "enter",
+              this.hasFocus
+            );
           }
         });
       }
@@ -310,7 +316,15 @@ export class TableFilterSort extends TableEvent {
   onSort_ = (column, doubleClick) => {
     const { filteredData, meta } = this.state;
     this.closeOpenedWindows();
-    if (this.selectRange(this.range, undefined, this.row, "quit") === false) {
+    if (
+      this.selectRange(
+        this.range,
+        undefined,
+        this.row,
+        "quit",
+        this.hasFocus
+      ) === false
+    ) {
       return false;
     }
     const columns = meta.properties;
@@ -343,7 +357,13 @@ export class TableFilterSort extends TableEvent {
     sorts.forEach((col, index) => (columns[col.index].sortOrder = index));
     this.sorts(filteredData, columns);
     if (!meta.serverPagination) {
-      this.selectRange(this.range, undefined, undefined, "enter");
+      this.selectRange(
+        this.range,
+        undefined,
+        undefined,
+        "enter",
+        this.hasFocus
+      );
       this.setState({ filteredData: filteredData });
     }
   };

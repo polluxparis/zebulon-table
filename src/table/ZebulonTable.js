@@ -99,7 +99,8 @@ export class ZebulonTable extends ZebulonTableMenu {
       meta,
       filters: getFilters(meta.properties, filters || {}),
       sorts: sorts ? Object.values(sorts) : getSorts(meta.properties),
-      props
+      props,
+      state: this.state
     };
     if (typeof data === "function") {
       data = data(message);
@@ -1053,19 +1054,6 @@ export class ZebulonTable extends ZebulonTableMenu {
     }
     const componentId =
       this.props.componentId || `zebulon-table-${this.props.id}`;
-    const modal = this.state.confirmationModal ? (
-      <ConfirmationModal
-        show={this.state.confirmationModal}
-        detail={this.state.modal}
-        onConfirm={this.onConfirm}
-        // keyEvent={this.state.keyEvent}
-        ref={ref => (this.modal = ref)}
-        id={`modal-${this.props.id}`}
-        key={`modal-${this.props.id}`}
-      />
-    ) : null;
-    // if (modal) {
-    console.log("render zt", meta, modal);
 
     // const modal = null;
     let div = (
@@ -1134,7 +1122,6 @@ export class ZebulonTable extends ZebulonTableMenu {
           isModal={this.props.isModal}
           modal={this.state.confirmationModal || this.state.modalCancel}
         />
-        {modal}
       </EventHandler>
     );
     if (this.props.resizable || this.props.resizable === undefined) {
@@ -1148,7 +1135,21 @@ export class ZebulonTable extends ZebulonTableMenu {
         </ResizableBox>
       );
     }
-    return div;
+    return (
+      // confirmation modal must be outside of previous elements
+      // else it doesnt render in some cases???
+      <div>
+        {div}
+        <ConfirmationModal
+          show={this.state.confirmationModal}
+          detail={this.state.modal}
+          onConfirm={this.onConfirm}
+          ref={ref => (this.modal = ref)}
+          id={`modal-${this.props.id}`}
+          key={`modal-${this.props.id}`}
+        />
+      </div>
+    );
   }
 }
 ZebulonTable.prototype["getState"] = function() {

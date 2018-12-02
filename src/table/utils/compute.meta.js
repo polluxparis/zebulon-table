@@ -140,6 +140,11 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     "accessors",
     meta.row.audit
   );
+  meta.row.editableFunction = functions.getAccessorFunction(
+    object,
+    "editable",
+    meta.row.editable
+  );
   if (meta.table.actions) {
     meta.table.actions.forEach(action => {
       if (action.action) {

@@ -579,7 +579,7 @@ export class Status extends Component {
       undefined,
       undefined,
       undefined,
-      undefined,
+      false,
       index === scroll.startIndex || index === this.stopIndex
     );
   };

@@ -349,7 +349,7 @@ export class TableEvent extends TableMenu {
       const columnDirection = Math.sign(
         range.end.columns - scroll.columns.startIndex
       );
-      this.selectRange(range, undefined, row, "enter");
+      this.selectRange(range, undefined, row, "enter", false);
       this.rowUpdated = true;
       this.scrollTo(
         range.end.rows,
@@ -552,7 +552,14 @@ export class TableEvent extends TableMenu {
     }
   };
   selectRange_ = (range, callback, row, type, noFocus, scrollOnClick) => {
-    if (!this.props.isActive && this.props.onActivation) {
+    if (noFocus !== undefined) {
+      this.hasFocus = !noFocus;
+    }
+    if (
+      !this.props.isActive &&
+      this.props.onActivation &&
+      noFocus !== undefined
+    ) {
       this.props.onActivation(this.props.componentId || this.props.id);
     }
     let { selectedRange, scroll } = this.state;
@@ -562,7 +569,7 @@ export class TableEvent extends TableMenu {
     //   scroll = this.state.scrollAudit;
     // }
     // this.hasFocus = !noFocus && !search;
-    this.hasFocus = !noFocus;
+
     const prevEnd = selectedRange.end;
     const prevStart = selectedRange.start;
     const endChanged =
@@ -628,9 +635,6 @@ export class TableEvent extends TableMenu {
         return enter(ok);
       }
     };
-    if (!endChanged) {
-      return true;
-    }
     if (type === "enter" || !endChanged) {
       return enter(true);
     }
@@ -827,13 +831,24 @@ export class TableEvent extends TableMenu {
     return true;
   };
   onRowEnter = row => {
+    const { meta, data, updatedRows } = this.state;
+    const status = getRowStatus(updatedRows, row);
+    const params = this.props.params;
     const message = {
       row,
-      status: getRowStatus(this.state.updatedRows, row),
-      meta: this.state.meta,
-      data: this.state.data,
-      params: this.props.params
+      status,
+      meta,
+      data,
+      params
     };
+    row.editable_ = meta.row.editableFunction
+      ? meta.row.editableFunction({
+          row,
+          status,
+          data,
+          params
+        })
+      : meta.row.editable === undefined ? true : meta.row.editable;
     if (this.props.onRowEnter) {
       this.props.onRowEnter(message);
     }

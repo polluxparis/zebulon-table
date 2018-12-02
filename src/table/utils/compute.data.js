@@ -6,6 +6,7 @@ export const cellData = (row, column, status, data, params, focused) => {
   const editable =
     // focused &&
     !(status || {}).deleted_ &&
+    row.editable_ &&
     (column.editableFunction
       ? column.editableFunction({
           column,

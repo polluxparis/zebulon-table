@@ -68,6 +68,7 @@ export class Rows extends ScrollableGrid {
         hasFocus={hasFocus}
         select={select}
         dataType={dataType}
+        inputType="cell"
         id={id}
         key={id}
         onChange={onChange}
@@ -129,7 +130,8 @@ export class Rows extends ScrollableGrid {
             // e.preventDefault();
             this.selectCell(
               { rows: rowIndex, columns: columnIndex },
-              e.shiftKey
+              e.shiftKey,
+              false
             );
           },
           onMouseOver = e => {
@@ -138,7 +140,7 @@ export class Rows extends ScrollableGrid {
               !(this.noOver || this.props.openedFilter)
             ) {
               // e.preventDefault();
-              this.selectCell({ rows: rowIndex, columns: columnIndex }, true);
+              this.selectCell({ rows: rowIndex, columns: columnIndex }, false);
             }
           },
           onMouseUp = e => {

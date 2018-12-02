@@ -82,6 +82,7 @@ export class Table extends TableFilterSort {
     if (props.status && props.status.loaded) {
       this.bLoaded = true;
     }
+    this.hasFocus = true;
     // if (this.props.contextualMenu) {
     //   if (typeof this.props.contextualMenu === "function") {
     //     this.customContextualMenu = this.props.contextualMenu(
@@ -142,7 +143,10 @@ export class Table extends TableFilterSort {
         //   }
         // }
       });
-      if (status && status.loaded && this.bLoaded === undefined) {
+      if (
+        (status && status.loaded && this.bLoaded === undefined) ||
+        nextProps.filters != this.state.filters
+      ) {
         this.bLoaded = true;
       }
       if (status && status.loading) {
@@ -167,6 +171,7 @@ export class Table extends TableFilterSort {
     // }
     if (!nextProps.isActive && this.props.isActive) {
       this.closeOpenedWindows();
+      // this.hasFocus = false;
     }
   }
 
@@ -216,7 +221,7 @@ export class Table extends TableFilterSort {
       //   true
       // );
 
-      this.hasFocus = true;
+      // this.hasFocus = true;
       this.bLoaded = null;
     }
   };
