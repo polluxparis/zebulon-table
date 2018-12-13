@@ -253,6 +253,10 @@ export class Table extends TableFilterSort {
       } = this.state,
       filteredData,
       filteredDataLength;
+    const caption =
+      this.props.caption === ""
+        ? null
+        : this.props.caption || meta.table.caption;
     let { selectRange, onScroll } = this;
     let headersLength =
       1 +
@@ -426,7 +430,7 @@ export class Table extends TableFilterSort {
     }
     this.rowsHeight =
       height -
-      (meta.table.caption ? 30 : 0) -
+      (caption ? 30 : 0) -
       headersLength * this.rowHeight -
       (actions.length ? 30 : 0);
     // ------------------------
@@ -755,10 +759,6 @@ export class Table extends TableFilterSort {
     //   title
     // -----------------------------
     let title = null;
-    const caption =
-      this.props.caption === ""
-        ? null
-        : this.props.caption || meta.table.caption;
     if (caption) {
       key = `title-${id}`;
       title = (

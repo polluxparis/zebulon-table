@@ -137,7 +137,7 @@ export const buildPasteArray = (
       const row = filteredData[cell.rows];
       const column = columns[cell.columns];
       // can change value
-      if (!onChange(cell.value, row, column)) {
+      if (!onChange({ value: { value: cell.value }, row, column })) {
         return false;
       }
       row[cell.columnId] = cell.value;

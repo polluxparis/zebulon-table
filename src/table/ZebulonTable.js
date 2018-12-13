@@ -43,14 +43,14 @@ export class ZebulonTable extends ZebulonTableMenu {
       confirmationModal: false,
       params: props.params || {},
       sorts: props.sorts || {},
-      filters: props.filters,
+      filters: props.filters || {},
       status: { loaded: false, loading: true }
     };
     this.state.sizes.zoom = this.state.sizes.zoom || 1;
     this.state.sizes.rowHeight = this.state.sizes.rowHeight || 25;
     this.state.functions = props.functions || functions.functions([]);
     this.state.functions.mergeFunctionsObjects([accessors, metaFunctions]);
-    this.sorts = this.state.sorts;
+    // this.sorts = this.state.sorts;
     this.config = props.config;
     if (this.config && this.config.sizes) {
       this.state.sizes = { ...this.state.sizes, ...this.config.sizes };
@@ -91,8 +91,13 @@ export class ZebulonTable extends ZebulonTableMenu {
   refresh = () => this.setState(this.getData(this.props));
   getData = props => {
     this.observable = null;
-    let { data, meta, params, filters, filteredData } = props;
-    const sorts = this.state.sorts;
+    let { data, meta, params, filteredData } = props;
+    const { sorts, filters } = this.state;
+    if (props.filters) {
+      Object.values(props.filters)
+        .filter(filter => filter.link)
+        .forEach(filter => (filters[filter.id] = filter));
+    }
     const message = {
       dataObject: meta.table.object,
       params,
@@ -184,7 +189,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       // sorts are applied only the first time
       if (this.state.sorts && meta.properties.length !== 0) {
         this.setSorts(this.state.sorts, meta.properties);
-        this.sorts = null;
+        // this.sorts = null;
       }
       if (this._isMounted) {
         this.setState({
@@ -201,9 +206,9 @@ export class ZebulonTable extends ZebulonTableMenu {
   };
   resolvePromise = (data, message) => {
     data.then(data => {
-      const { meta, functions, filters, sizes } = this.state;
+      const { meta, functions, sizes } = this.state;
       // if (!meta.serverPagination) {
-      this.initData(data, meta, sizes.zoom, functions, 0, filters);
+      this.initData(data, meta, sizes.zoom, functions, 0, message.filters);
       // } else if (meta.properties.length === 0) {
       //   data({ startIndex: 0 }).then(page => {
       //     this.initData(
@@ -356,7 +361,11 @@ export class ZebulonTable extends ZebulonTableMenu {
       // if (!closeRequired && !this.props.closeRequired) {
       ok = this.onTableChange("refresh", ok => {
         if (ok) {
-          this.sorts = this.state.sorts;
+          // this.sorts = this.state.sorts;
+          if (this.props.filters !== filters && meta.table.filteredByServer) {
+            const state = this.state;
+            state.filters = filters;
+          }
           this.getData(nextProps);
           if (this.props.linkedObjects) {
             this.props.linkedObjects.forEach(object => object.refresh());
@@ -458,6 +467,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       this.table.handleCopy &&
       (this.props.isActive === undefined || this.props.isActive)
     ) {
+      e.preventDefault();
       this.table.handleCopy(e);
     }
   };
@@ -467,6 +477,7 @@ export class ZebulonTable extends ZebulonTableMenu {
       this.table.handlePaste &&
       (this.props.isActive === undefined || this.props.isActive)
     ) {
+      e.preventDefault();
       this.table.handlePaste(e);
     }
   };
@@ -656,15 +667,22 @@ export class ZebulonTable extends ZebulonTableMenu {
       table: this.table
     };
     if (this.props.linkedObjects) {
-      this.props.linkedObjects.forEach(object =>
-        message.messages.push({
-          updatedRows: object.state.updatedRows,
-          meta: object.state.meta,
-          data: object.state.data,
-          params: this.props.params,
-          table: object.table
-        })
-      );
+      this.props.linkedObjects.forEach(object => {
+        const { meta, data } = object.state;
+        if (
+          meta &&
+          meta.table.object &&
+          (meta.table.onSaveFunction || this.props.onSave)
+        ) {
+          message.messages.push({
+            updatedRows: object.state.updatedRows,
+            meta,
+            data,
+            params: this.props.params,
+            table: object.table
+          });
+        }
+      });
     }
     if (this.onSave_(message, callback)) {
       return true;
@@ -672,6 +690,8 @@ export class ZebulonTable extends ZebulonTableMenu {
     return false;
   };
   onSave_ = (message, callback) => {
+    // in layouts save can be done without "data" as  data to update may be not anymore in the grid
+    // in this case, refresh is required as we can't recompute data
     const end = ok_ => {
       if (ok_) {
         message.messages.forEach(message => {
@@ -693,12 +713,13 @@ export class ZebulonTable extends ZebulonTableMenu {
             serverData.forEach(row => {
               if (row.status_ === "deleted") {
                 deleteds.push(row.index_);
+                if (!data) {
+                  updatedRows[row.index_].hidden_ = true;
+                }
               } else {
                 delete row.status_;
-
-                Object.keys(row).forEach(
-                  key => (data[row.index_][key] = row[key])
-                );
+                const rowUpdated = updatedRows[row.index_].rowUpdated;
+                Object.keys(row).forEach(key => (rowUpdated[key] = row[key]));
               }
             });
           } else {
@@ -708,7 +729,7 @@ export class ZebulonTable extends ZebulonTableMenu {
                 deleteds.push(status.rowUpdated.index_);
               });
           }
-          if (deleteds.length) {
+          if (deleteds.length && data) {
             deleteds.sort((x, y) => (x > y) - (y > x));
             deleteds.forEach((index_, index) => data.splice(index_ - index, 1));
           }
@@ -735,7 +756,9 @@ export class ZebulonTable extends ZebulonTableMenu {
             }
             message.table.setState({ filteredDataLength: filteredData.length });
           }
-          computeData(data, meta, 0);
+          if (data) {
+            computeData(data, meta, 0);
+          }
         });
       }
       if (this.props.onSaveOk) {
@@ -1113,6 +1136,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           onGetData={this.props.onGetData}
           onGetPage={this.props.onGetPage}
           onSave={this.onSave}
+          onAction={this.props.onAction}
           callbacks={this.props.callbacks}
           errorHandler={this.errorHandler}
           navigationKeyHandler={this.props.navigationKeyHandler}

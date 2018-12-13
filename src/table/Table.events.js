@@ -226,7 +226,10 @@ export class TableEvent extends TableMenu {
       } else {
         if (action.type === "detail" && action.content) {
           this.setState({ detail: action });
-        } else if (action.action) {
+        } else if (
+          action.action ||
+          (action.type === "action" && this.props.onAction)
+        ) {
           const {
             selectedRange,
             updatedRows,
@@ -235,8 +238,9 @@ export class TableEvent extends TableMenu {
             filters
           } = this.state;
           const f = () =>
-            action.actionFunction(
+            (this.props.onAction || action.actionFunction || (() => {}))(
               {
+                action,
                 row: row || this.row,
                 column,
                 selectedRange,
@@ -854,8 +858,10 @@ export class TableEvent extends TableMenu {
     }
   };
   onRowNew = row => {
+    const status = getRowStatus(this.state.updatedRows, row);
     const message = {
       row,
+      status,
       meta: this.state.meta,
       data: this.state.data,
       filteredData: this.state.filteredData,
