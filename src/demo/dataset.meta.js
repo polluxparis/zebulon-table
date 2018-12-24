@@ -31,6 +31,7 @@ export const totalAmount = {
   }
 };
 export const meta = {
+  noCache: false,
   table: {
     object: "dataset",
     editable: true,
@@ -40,6 +41,7 @@ export const meta = {
     onSaveAfter: "onSaveAfter",
     onSaveBefore: "onSaveBefore",
     onTableChange: "onTableChange",
+    filteredByServer: true,
     statusDraggable: true,
     noFilter: false,
     noStatus: false,
@@ -127,7 +129,7 @@ export const meta = {
       width: 120,
       dataType: "string",
       editable: true,
-      filterType: "values",
+      filterType: "values:row.product.id",
       accessor: "row.product.label",
       sortAccessor: "product.id",
       locked: true

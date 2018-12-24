@@ -13,7 +13,7 @@ export const rollbackStatus = (updatedRows, status) => {
     Object.keys(status.rowUpdated).forEach(
       key => (status.rowUpdated[key] = null)
     );
-    Object.keys(status.row).forEach(
+    Object.keys(status.rowUpdated).forEach(
       key => (status.rowUpdated[key] = status.row[key])
     );
   } else {

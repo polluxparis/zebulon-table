@@ -9,8 +9,8 @@ export class Rows extends ScrollableGrid {
   componentDidUpdate() {
     if (this.focused) {
       // console.log("focus", this.focused);
-      document.getElementById(this.focused).focus();
-      // document.getElementById(this.focused).children[0].focus();
+      // document.getElementById(this.focused).focus();
+      document.getElementById(this.focused).children[0].focus();
       this.focused = undefined;
     }
     this.noOver = false;

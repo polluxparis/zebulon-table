@@ -226,6 +226,7 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     }
     if (column.dataType === "object" || column.dataType === "joined object") {
       column.hidden = true;
+      column.referencingColumns = [];
     }
 
     const width = zoom * (column.hidden ? 0 : column.width || 0);
@@ -293,6 +294,8 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       if (utils.isPromise(column.selectItems)) {
         column.selectItems.then(data => {
           column.selectItems = data;
+          (column.referencingColumns || [])
+            .forEach(column => (column.selectItems = data));
           return data;
         });
         meta.promises.push(column.selectItems);
@@ -300,7 +303,6 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
     }
     if (column.dataType === "joined object" && column.select) {
       column.primaryKeyAccessorFunction = ({ row }) => row.pk_;
-
       const f = column.accessorFunction;
       column.setForeignKeyAccessorFunction = message => {
         const { value, row } = message;
@@ -308,7 +310,9 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
       };
       column.accessorFunction = ({ row }) => {
         const v = f({ row });
-        return column.selectItems[v];
+        return utils.isMap(column.selectItems)
+          ? column.selectItems.get(v)
+          : column.selectItems[v];
       };
     }
     column.onChangeFunction = functions.getAccessorFunction(
@@ -339,29 +343,32 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
           column.setForeignKeyAccessorFunction = ({ value, row }) => {
             row[referencedColumn.accessor.slice(4)] = value;
           };
-          if (
-            referencedColumn.dataType === "joined object" &&
-            column.editable
-          ) {
+          if (referencedColumn.dataType === "joined object") {
             column.select = " ";
-            if (utils.isPromise(referencedColumn.selectItems)) {
-              referencedColumn.selectItems.then(data => {
-                column.selectItems = data;
-                referencedColumn.selectItems = data;
-                return data;
-              });
-              meta.promises.push(referencedColumn.selectItems);
-            } else {
-              column.selectItems = referencedColumn.selectItems;
+            // if (utils.isPromise(referencedColumn.selectItems)) {
+            //   referencedColumn.selectItems.then(data => {
+            //     column.selectItems = data;
+            //     referencedColumn.selectItems = data;
+            //     return data;
+            //   });
+            //   meta.promises.push(referencedColumn.selectItems);
+            // } else {
+            referencedColumn.referencingColumns.push(column);
+            column.selectItems = referencedColumn.selectItems;
+            // }
+            if (column.editable) {
+              column.mandatory = column.mandatory || referencedColumn.mandatory;
+              const f = column.onChangeFunction || (x => true);
+              column.onChangeFunction = ({ value, row, column }) => {
+                row[column.reference] = column.selectItems[value.value];
+                row[column.id] = column.accessorFunction({ column, row });
+                column.setForeignKeyAccessorFunction({
+                  value: value.value,
+                  row
+                });
+                return f({ value, row, column });
+              };
             }
-            column.mandatory = column.mandatory || referencedColumn.mandatory;
-            const f = column.onChangeFunction || (x => true);
-            column.onChangeFunction = ({ value, row, column }) => {
-              row[column.reference] = column.selectItems[value.value];
-              row[column.id] = column.accessorFunction({ column, row });
-              column.setForeignKeyAccessorFunction({ value: value.value, row });
-              return f({ value, row, column });
-            };
           }
         }
       }
@@ -448,6 +455,14 @@ export const computeMeta = (meta, zoom = 1, functions, privileges) => {
           analytic.windowEnd
         );
       }
+    }
+    if (column.filterType && column.filterType.startsWith("values:")) {
+      column.foreignKeyAccessorFunction = functions.getAccessorFunction(
+        meta.table.object,
+        "accessors",
+        column.filterType.slice(7)
+      );
+      column.filterType = "values";
     }
     if (
       column.accessor &&

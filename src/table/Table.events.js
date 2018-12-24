@@ -318,6 +318,12 @@ export class TableEvent extends TableMenu {
       rowUpdated: row,
       timeStamp: new Date().getTime()
     };
+    if (this.state.meta.table.rowId) {
+      row[this.state.meta.table.rowId] = undefined;
+    }
+    if (this.state.meta.table.primaryKey) {
+      row[this.state.meta.table.primaryKey] = null;
+    }
     let rows = filteredData,
       ix = index;
     updatedRows[this.getDataLength()] = status;
@@ -379,12 +385,6 @@ export class TableEvent extends TableMenu {
   handleDuplicate = index => {
     if (this.row) {
       const row = { ...this.row, index_: this.getDataLength() };
-      if (this.state.meta.table.rowId) {
-        row[this.state.meta.table.rowId] = undefined;
-      }
-      if (this.state.meta.table.primaryKey) {
-        row[this.state.meta.table.primaryKey] = null;
-      }
       this.newRow(row, index);
     }
   };

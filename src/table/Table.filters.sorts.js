@@ -101,19 +101,40 @@ export class TableFilterSort extends TableEvent {
   // a voir si pagination server ???
   //
   getFilterItems = (filter, column) => {
-    const { meta, data, updatedRows } = this.state;
+    const { meta, updatedRows } = this.state;
+    let data = this.props.data;
     // if (!meta.serverPagination) {
     if (!filter || !filter.items) {
+      if (meta.table.filteredByServer && column.selectItems) {
+        if (utils.isMap(column.selectItems)) {
+          data = Array.from(column.selectItems).map(row => row[1]);
+        } else if (utils.isObject(column.selectItems)) {
+          data = Object.values(column.selectItems);
+        } else {
+          data = column.selectItems;
+        }
+        if (column.reference) {
+          data = data.map(row => ({ [column.reference]: row }));
+        }
+      }
       const items = {};
-      this.props.data.forEach(row => {
-        let id = (column.accessorFunction || (({ row }) => row[column.id]))({
+      data.forEach(row => {
+        let id = (column.foreignKeyAccessorFunction ||
+            column.accessorFunction ||
+            (({ row }) => row[column.id]))({
             row,
             column,
             status: updatedRows[row.index_],
             params: this.props.params,
             data: data
           }),
-          label = id,
+          label = (column.accessorFunction || (({ row }) => row[column.id]))({
+            row,
+            column,
+            status: updatedRows[row.index_],
+            params: this.props.params,
+            data: data
+          }),
           sort = id,
           nvl = ""; // a voir status
         if (typeof (id || undefined) === "object") {

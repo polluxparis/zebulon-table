@@ -5,7 +5,7 @@ import { getFunction } from "./compute.meta";
 //  ---------------------------
 export const filterFunction = (column, params, data, updatedRows) => {
   const facc = row => {
-    let f = column.accessorFunction;
+    let f = column.foreignKeyAccessorFunction || column.accessorFunction;
     if (column.id === "status_") {
       const status = (updatedRows || {})[row.index_] || {};
       return (
@@ -34,7 +34,12 @@ export const filterFunction = (column, params, data, updatedRows) => {
       status: (updatedRows || {})[row.index_],
       data
     });
-    if (column.select && typeof v === "object" && !utils.isDate(v)) {
+    if (
+      column.select &&
+      v !== null &&
+      typeof v === "object" &&
+      !utils.isDate(v)
+    ) {
       return v.value;
     }
     return v;
