@@ -7,12 +7,12 @@ export class Rows extends ScrollableGrid {
     return !nextProps.status.loadingPage && !nextProps.noUpdate;
   }
   componentDidUpdate() {
-    if (this.focused) {
-      // console.log("focus", this.focused);
-      // document.getElementById(this.focused).focus();
-      document.getElementById(this.focused).children[0].focus();
-      this.focused = undefined;
-    }
+    // if (this.focused) {
+    //   // console.log("focus", this.focused, this.props.hasFocus);
+    //   // document.getElementById(this.focused).focus();
+    //   // document.getElementById(this.focused).children[0].focus();
+    //   this.focused = undefined;
+    // }
     this.noOver = false;
   }
   cell = (
@@ -197,7 +197,7 @@ export class Rows extends ScrollableGrid {
   };
 
   getContent = () => {
-    this.noOver = true;
+    // this.noOver = true;
     const items = [];
     const {
       data,
@@ -210,7 +210,7 @@ export class Rows extends ScrollableGrid {
       componentId,
       locked
     } = this.props;
-    console.log("render rows", hasFocus, this.selectedRange(), meta);
+    // console.log("render rows", locked, this.selectedRange(), meta);
     let i = 0,
       index = this.props.scroll.rows.startIndex,
       indexPage = 0,
@@ -261,6 +261,7 @@ export class Rows extends ScrollableGrid {
       position: "inherit",
       height: "inherit"
     };
+    console.log("render row");
     return (
       <div
         id="content"

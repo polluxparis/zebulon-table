@@ -180,9 +180,7 @@ export class TableFilterSort extends TableEvent {
     if (this.isOpening) {
       return;
     }
-    e.preventDefault();
-    e.stopPropagation();
-    e.persist();
+
     let filter = this.state.filters[column.id];
     filter = this.getFilterItems(filter, column);
     // filter.top = this.rowHeight + (this.state.meta.table.caption ? 30 : 0); // e.target.offsetParent.offsetTop; //this.nFilterRows * this.rowHeight;
@@ -204,10 +202,13 @@ export class TableFilterSort extends TableEvent {
   };
   openFilter_ = (e, column, filter) => {
     if (column.filterType !== "values") {
-      e.target.focus();
+      // e.target.focus();
       this.hasFocus = false;
       return this.closeOpenedWindows();
     }
+    e.preventDefault();
+    e.stopPropagation();
+    e.persist();
     // column.position + this.rowHeight - this.state.scroll.columns.position;
     // console.log("filtersort", this.hasFocus);
     this.hasFocus = false;
@@ -217,13 +218,15 @@ export class TableFilterSort extends TableEvent {
     });
   };
   onChangeFilter = ({ value, row, column, filterTo }) => {
-    const ok = this.props.onTableChange("filter", ok => {
+    if (this.state.status.loaded) {
+      const ok = this.props.onTableChange("filter", ok => {
+        if (ok) {
+          this.onChangeFilter_(value, row, column, filterTo);
+        }
+      });
       if (ok) {
-        this.onChangeFilter_(value.value, row, column, filterTo);
+        this.onChangeFilter_(value, row, column, filterTo);
       }
-    });
-    if (ok) {
-      this.onChangeFilter_(value.value, row, column, filterTo);
     }
   };
   onChangeFilter_ = (value, row, column, filterTo) => {
@@ -232,7 +235,7 @@ export class TableFilterSort extends TableEvent {
     // return false;
     this.closeOpenedWindows();
     const v = value;
-    if (v === undefined) {
+    if (v.value === undefined) {
       return;
     }
     if ((v !== column.v && !filterTo) || (v !== column.vTo && filterTo)) {

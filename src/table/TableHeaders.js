@@ -29,8 +29,7 @@ const filter = (
     "zebulon-table-filter": true,
     "zebulon-table-filter-checkbox": column.dataType === "boolean",
     "zebulon-table-filter-checkbox-undefined":
-      (column.v === undefined || column.v === null) &&
-      column.dataType === "boolean"
+      column.dataType === "boolean" && (!column.v || column.v.value === null)
   });
   let textAlign = column.alignement || "left";
   if (!column.alignement) {
@@ -92,7 +91,7 @@ const filter = (
         focused={focused}
         inputType="filter"
         tabIndex={column.index_ * 2 + (filterTo || 0) + 100}
-        value={value}
+        value={value === undefined ? null : value}
         filterTo={filterTo}
         onChange={onChange}
         onFocus={e => {

@@ -69,7 +69,12 @@ export const cellData = (row, column, status, data, params, focused) => {
       };
     }
   }
-  return { editable, select, value, dataType };
+  return {
+    editable,
+    select,
+    value: value === undefined ? null : value,
+    dataType
+  };
 };
 export const computeRows = (data, meta, startIndex = 0, noDataMutation) => {
   let foreignObjects = [];

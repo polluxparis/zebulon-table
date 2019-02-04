@@ -3,7 +3,7 @@ import "zebulon-controls/lib/index.css";
 import "../table/index.css";
 // import { functions } from "../table/MetaDescriptions";
 import { functions, utils } from "zebulon-controls";
-import * as toto from "zebulon-controls";
+import { Input } from "zebulon-controls";
 
 import { MyDataset } from "./dataset.example";
 import { datasetFunctions } from "./dataset.functions";
@@ -35,7 +35,6 @@ class ZebulonTableDemo extends Component {
       loadedDataLength: 0
     };
     this.state.functions.setVisibility("dataset");
-    // this.state.meta = metaDataset;
     this.text =
       "\nAn array is build locally and used as dataset.\nfunction: get_array @ demo/datasources.";
   }
@@ -43,13 +42,11 @@ class ZebulonTableDemo extends Component {
     document.addEventListener("copy", this.handleKeyEvent);
     document.addEventListener("paste", this.handleKeyEvent);
     document.addEventListener("keydown", this.handleKeyEvent);
-    // window.addEventListener("beforeunload", this.handleKeyEvent);
   }
   componentWillUnmount() {
     document.removeEventListener("copy", this.handleKeyEvent);
     document.removeEventListener("paste", this.handleKeyEvent);
     document.removeEventListener("keydown", this.handleKeyEvent);
-    // window.removeEventListener("beforeunload", this.handleKeyEvent);
   }
 
   handleKeyEvent = e => {
@@ -138,12 +135,35 @@ class ZebulonTableDemo extends Component {
             </div>
           ))}
         </div>
+        <div>{this.getTabContent(this.state.selectedTab)}</div>
         <div
-        // style={{
-        //   height: this.state.sizes.height - 30 * zoomValue
-        // }}
+          style={{
+            height: 55,
+            width: 200,
+            border: "solid",
+            position: "relative",
+            overflow: "hidden"
+          }}
+          onScroll={e => console.log("scroll", e)}
         >
-          {this.getTabContent(this.state.selectedTab)}
+          <input type="text" />
+          <input type="text" />
+          <Input
+            id={-12345}
+            style={{
+              width: 100,
+              height: 25,
+              boxSizing: "border-box",
+              // height: "inherit",
+              textAlign: "center"
+            }}
+            dataType="date"
+            value={new Date()}
+            editable={true}
+            onScroll={e => console.log(e)}
+            // onChange={this.props.onChange}
+            hasFocus="true"
+          />
         </div>
       </div>
     );

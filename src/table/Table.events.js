@@ -16,7 +16,7 @@ export class TableEvent extends TableMenu {
   // Navigation
   // ------------------------------------
   closeOpenedWindows = (keepSearch, column, row) => {
-    console.log("close", row, column);
+    // console.log("close", row, column);
     if (this.state.openedFilter) {
       this.setState({ openedFilter: undefined });
     }
@@ -78,6 +78,25 @@ export class TableEvent extends TableMenu {
       this.hasFocus = false;
       return false;
     }
+    if (
+      key === "Enter" &&
+      this.column &&
+      this.row &&
+      this.column.foreignObjectFunction
+    ) {
+      this.foreignObject("none", {
+        row: this.row,
+        column: this.column,
+        value:
+          this.row[this.column.id] !== undefined
+            ? this.row[this.column.id]
+            : this.column.accessorFunction({ row: this.row }),
+        id: this.props.componentId
+      });
+      // const { id, value, column, row, cellQuit } = message;
+      e.preventDefault();
+      return false;
+    }
     //function Keys
     if (keyCode > 112 && keyCode < 124) {
       const action = this.state.meta.table.actions.find(
@@ -98,8 +117,9 @@ export class TableEvent extends TableMenu {
       this.hasFocus &&
       this.column.dataType === "boolean" &&
       document.activeElement.id !==
-        `cell: ${this.props.componentId || this.props.id}-${this.row
-          .index_}-${this.column.index_}`
+        `cell: ${this.props.componentId || this.props.id}-${this.row.index_}-${
+          this.column.index_
+        }`
     ) {
       e.preventDefault();
       this.onChange({
@@ -122,9 +142,34 @@ export class TableEvent extends TableMenu {
         return this.rows.handleNavigationKeys(e);
       }
     }
+    console.log("te", key, e.defaultPrevented, this.state.meta);
+  };
+  copy = function copy(text) {
+    try {
+      // var bodyElement = document.getElementsByTagName("body")[0];
+      // var clipboardTextArea = document.createElement("textarea");
+      // clipboardTextArea.style.position = "absolute";
+      // // clipboardTextArea.style.left = "-10000px";
+      // bodyElement.appendChild(clipboardTextArea);
+      // clipboardTextArea.innerHTML = text;
+      // clipboardTextArea.select();
+      // document.execCommand("copy");
+      navigator.clipboard.writeText(text).then(x => console.log(x));
+      // window.setTimeout(function() {
+      //   bodyElement.removeChild(clipboardTextArea);
+      // }, 0);
+    } catch (error) {
+      /* eslint-disable no-console */
+      console.error("error during copy", error);
+      /* eslint-enable */
+    }
   };
   handleCopy = e => {
-    utils.copy(
+    if (e.target.selectionStart !== e.target.selectionEnd) {
+      return;
+    }
+    e.preventDefault();
+    this.copy(
       getSelection(
         "xls",
         this.state.selectedRange,
@@ -137,25 +182,16 @@ export class TableEvent extends TableMenu {
     );
   };
   handlePaste = e => {
-    return buildPasteArray(
-      "xls",
-      e.clipboardData.getData("text"),
-      this.state.meta.properties,
-      this.state.selectedRange.end,
-      cell =>
-        this.selectRange_(
-          { start: cell, end: cell },
-          x => x,
-          undefined,
-          "enter"
-        ),
-      this.onChange,
-      this.canQuit,
-      this.state.filteredData,
-      this.state.updatedRows,
-      this.state.data,
-      this.props.params
+    const clipboard = e.clipboardData.getData("text");
+    // existing carriage return ->cells copy else default behaviour
+    if (!clipboard.includes("\r")) {
+      return;
+    }
+    e.preventDefault();
+    const cells = buildPasteArray("xls", clipboard, this, cell =>
+      this.selectRange_({ start: cell, end: cell }, x => x, undefined, "enter")
     );
+    return cells;
   };
   handleSearch = e => {
     e.preventDefault();
@@ -196,7 +232,7 @@ export class TableEvent extends TableMenu {
     }
   };
   onFocus = (e, row, column) => {
-    console.log(row, column);
+    // console.log(row, column);
     this.closeOpenedWindows(true, column);
   };
   handleAction = (action, e, row, column) => {
@@ -372,14 +408,16 @@ export class TableEvent extends TableMenu {
   handleNew = index => {
     const row = { index_: this.getDataLength() };
     //  default values
-    this.state.meta.properties.filter(column => column.defaultFunction).forEach(
-      column =>
-        (row[column.id] = column.defaultFunction({
-          column,
-          row,
-          params: this.props.params
-        }))
-    );
+    this.state.meta.properties
+      .filter(column => column.defaultFunction)
+      .forEach(
+        column =>
+          (row[column.id] = column.defaultFunction({
+            column,
+            row,
+            params: this.props.params
+          }))
+      );
     this.newRow(row, index);
   };
   handleDuplicate = index => {
@@ -692,6 +730,46 @@ export class TableEvent extends TableMenu {
     return true;
   };
   onCellQuit = message => this.onCellQuit_(message, message.callback);
+  foreignObject = (select, message) => {
+    const { id, value, column, row, cellQuit } = message;
+    let element = document.activeElement;
+    const col = column.foreignColumn || "cd";
+    const filters = {
+      [col]: {
+        id: col,
+        filterType: "starts",
+        v: value
+      }
+    };
+    const callback = (ok, data) => {
+      if (!ok) {
+        this.noUpdate = true;
+        element = document.getElementById(
+          `cell: ${id}-${row.index_}-${column.index_}`
+        );
+        // if (element) {
+        //   element = element.children[0];
+        // }
+      } else if (column.onChangeFunction) {
+        column.onChangeFunction({ value: data, row });
+      } else {
+        row[column.reference] = data;
+      }
+      if (element) {
+        this.isOpening = true;
+        element.focus();
+        this.isOpening = false;
+      }
+      return cellQuit ? cellQuit(ok) : null;
+    };
+    this.props.onForeignKey(
+      column.foreignObjectFunction,
+      filters,
+      select,
+      callback
+    );
+    return;
+  };
   onCellQuit_ = (message, callback) => {
     const cellQuit = ok_ => {
       message.status = this.state.updatedRows[message.row.index_];
@@ -716,39 +794,44 @@ export class TableEvent extends TableMenu {
         }
         return cellQuit(ok_);
       }
-      let element = document.activeElement;
-      // let col = column.accessor.replace("row.", "");
-      // col = col.replace(column.reference + ".", "");
-      const col = column.foreignColumn || "cd";
-      const filters = {
-        [col]: {
-          id: col,
-          filterType: "starts",
-          v: value
-        }
-      };
-      const callback = (ok, data) => {
-        if (!ok) {
-          this.noUpdate = true;
-          element = document.getElementById(
-            `cell: ${id}-${row.index_}-${column.index_}`
-          );
-          // if (element) {
-          //   element = element.children[0];
-          // }
-        } else if (column.onChangeFunction) {
-          column.onChangeFunction({ value: data, row });
-        } else {
-          row[column.reference] = data;
-        }
-        if (element) {
-          this.isOpening = true;
-          element.focus();
-          this.isOpening = false;
-        }
-        return cellQuit(ok);
-      };
-      this.props.onForeignKey(column.foreignObjectFunction, filters, callback);
+      this.foreignObject(this.isPasting ? "match" : "quit", {
+        id,
+        value,
+        column,
+        row,
+        cellQuit
+      });
+      // let element = document.activeElement;
+      // const col = column.foreignColumn || "cd";
+      // const filters = {
+      //   [col]: {
+      //     id: col,
+      //     filterType: "starts",
+      //     v: value
+      //   }
+      // };
+      // const callback = (ok, data) => {
+      //   if (!ok) {
+      //     this.noUpdate = true;
+      //     element = document.getElementById(
+      //       `cell: ${id}-${row.index_}-${column.index_}`
+      //     );
+      //     // if (element) {
+      //     //   element = element.children[0];
+      //     // }
+      //   } else if (column.onChangeFunction) {
+      //     column.onChangeFunction({ value: data, row });
+      //   } else {
+      //     row[column.reference] = data;
+      //   }
+      //   if (element) {
+      //     this.isOpening = true;
+      //     element.focus();
+      //     this.isOpening = false;
+      //   }
+      //   return cellQuit(ok);
+      // };
+      // this.props.onForeignKey(column.foreignObjectFunction, filters, callback);
       return;
     };
     if (!message.row || !message.updated) {
@@ -852,7 +935,9 @@ export class TableEvent extends TableMenu {
           data,
           params
         })
-      : meta.row.editable === undefined ? true : meta.row.editable;
+      : meta.row.editable === undefined
+      ? true
+      : meta.row.editable;
     if (this.props.onRowEnter) {
       this.props.onRowEnter(message);
     }

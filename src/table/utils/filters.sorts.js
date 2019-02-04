@@ -50,10 +50,10 @@ export const filterFunction = (column, params, data, updatedRows) => {
     column.dataType === "year"
   ) {
     if (!utils.isNullOrUndefined(column.v)) {
-      column.v = new Date(column.v);
+      column.v.value = new Date(column.v.value);
     }
     if (!utils.isNullOrUndefined(column.vTo)) {
-      column.vTo = new Date(column.vTo);
+      column.vTo.value = new Date(column.vTo.value);
     }
   }
   if (column.id === "status_") {
@@ -64,31 +64,35 @@ export const filterFunction = (column, params, data, updatedRows) => {
   } else if (column.filterType === "values") {
     column.f = row => column.v[facc(row)] !== undefined;
   } else if (column.dataType === "boolean") {
-    column.f = row => (facc(row) || false) === column.v;
+    column.f = row => (facc(row) || false) === column.v.value;
   } else if (column.filterType === "=") {
-    column.f = row => facc(row) === column.v;
+    column.f = row => facc(row) === column.v.value;
   } else if (column.filterType === ">=") {
-    column.f = row => facc(row) >= column.v;
+    column.f = row => facc(row) >= column.v.value;
   } else if (column.filterType === "between") {
     column.f = row => {
       return (
         (!utils.isNullOrUndefined(column.vTo)
-          ? facc(row) <= column.vTo
+          ? facc(row) <= column.vTo.value
           : true) &&
-        (!utils.isNullOrUndefined(column.v) ? facc(row) >= column.v : true)
+        (!utils.isNullOrUndefined(column.v)
+          ? facc(row) >= column.v.value
+          : true)
       );
     };
   } else if (column.filterType === "<=") {
-    column.f = row => facc(row) <= column.v;
+    column.f = row => facc(row) <= column.v.value;
   } else if (column.filterType === "starts (case sensitive)") {
     column.f = row =>
-      String(facc(row) || "").startsWith(String(column.v || ""));
+      String(facc(row) || "").startsWith(String(column.v.value || ""));
   } else if (column.filterType === "contains") {
     column.f = row => {
-      return String(facc(row) || "").indexOf(String(column.v || "")) !== -1;
+      return (
+        String(facc(row) || "").indexOf(String(column.v.value || "")) !== -1
+      );
     };
   } else if (column.filterType === "starts") {
-    const v = String(column.v).toUpperCase() || "";
+    const v = String(column.v.value).toUpperCase() || "";
     column.f = row =>
       String(facc(row) || "")
         .toUpperCase()
@@ -103,6 +107,9 @@ export const filtersFunction = (filters, params, data, updatedRows) => {
   const f = Object.values(filters)
     .concat((params || {}).filter_ || [])
     .filter(filter => {
+      if (filter.dataType === "boolean" && filter.v.value === null) {
+        return false;
+      }
       return (
         !utils.isNullOrUndefined(filter.v) ||
         (filter.filterType === "between" &&
@@ -128,31 +135,34 @@ export const getFilters = (columns, filters) => {
   if (!columns.length) {
     return filters;
   }
-  return columns.reduce((acc, column) => {
-    let v = column.v,
-      vTo = column.vTo,
-      filterType = column.filterType;
-    if (filters[column.id]) {
-      v = filters[column.id].v;
-      vTo = filters[column.id].vTo;
-      filterType = filters[column.id].filterType;
-    }
-    if (
-      !utils.isNullOrUndefined(v) ||
-      (column.filterType === "between" && !utils.isNullOrUndefined(column.vTo))
-    ) {
-      acc[column.id] = {
-        id: column.id,
-        dataType: column.dataType,
-        filterType,
-        v,
-        vTo,
-        accessor: column.accessor,
-        accessorFunction: column.accessorFunction
-      };
-    }
-    return acc;
-  }, {});
+  return columns
+    .filter(column => column.v)
+    .reduce((acc, column) => {
+      let v = column.v.value,
+        vTo = column.vTo.value,
+        filterType = column.filterType;
+      if (filters[column.id]) {
+        v = filters[column.id].v.value;
+        vTo = filters[column.id].vTo.value;
+        filterType = filters[column.id].filterType;
+      }
+      if (
+        !utils.isNullOrUndefined(v) ||
+        (column.filterType === "between" &&
+          !utils.isNullOrUndefined(column.vTo.value))
+      ) {
+        acc[column.id] = {
+          id: column.id,
+          dataType: column.dataType,
+          filterType,
+          v,
+          vTo,
+          accessor: column.accessor,
+          accessorFunction: column.accessorFunction
+        };
+      }
+      return acc;
+    }, {});
 };
 // ----------------------------
 //  sorts

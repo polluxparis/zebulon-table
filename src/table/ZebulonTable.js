@@ -344,9 +344,9 @@ export class ZebulonTable extends ZebulonTableMenu {
     }
     if (
       this.props.data !== data ||
-      this.props.status !== status ||
+      (this.props.status !== status && status.loaded) ||
       (this.props.filters !== filters && meta.table.filteredByServer) ||
-      this.props.refresh !== refresh
+      (this.props.refresh !== refresh && refresh !== undefined)
     ) {
       let ok = true;
       // if (!closeRequired && !this.props.closeRequired) {
@@ -446,6 +446,7 @@ export class ZebulonTable extends ZebulonTableMenu {
   handleKeyDown = e => {
     if (
       !e.defaultPrevented &&
+      this.table &&
       this.table.handleKeyDown &&
       (this.props.isActive === undefined || this.props.isActive)
     ) {
@@ -455,20 +456,22 @@ export class ZebulonTable extends ZebulonTableMenu {
   handleCopy = e => {
     if (
       !e.defaultPrevented &&
+      this.table &&
       this.table.handleCopy &&
       (this.props.isActive === undefined || this.props.isActive)
     ) {
-      e.preventDefault();
+      // e.preventDefault();
       this.table.handleCopy(e);
     }
   };
   handlePaste = e => {
     if (
       !e.defaultPrevented &&
+      this.table &&
       this.table.handlePaste &&
       (this.props.isActive === undefined || this.props.isActive)
     ) {
-      e.preventDefault();
+      // e.preventDefault();
       this.table.handlePaste(e);
     }
   };
@@ -520,16 +523,6 @@ export class ZebulonTable extends ZebulonTableMenu {
           confirmationModal: true,
           modal: { body, type, callback }
         });
-        // ReactDOM.render(
-        //   <ConfirmationModal
-        //     show={true}
-        //     detail={{ body, type, callback }}
-        //     onConfirm={this.onConfirm}
-        //     keyEvent={this.state.keyEvent}
-        //     ref={ref => (this.modal = ref)}
-        //   />,
-        //   document.getElementById("root")
-        // );
         return;
       } else if (conflicts) {
         const resolveConflicts = updatedRows => (ok, data) => {
@@ -830,7 +823,7 @@ export class ZebulonTable extends ZebulonTableMenu {
     // this.confirmationModal = false;
   };
   // foreign key modal
-  onForeignKey = (ForeignObject, filters, callback) => {
+  onForeignKey = (ForeignObject, filters, selection, callback) => {
     const { rowHeight, zoom, height, width } = this.state.sizes;
     const body = (
       <ForeignObject
@@ -848,10 +841,10 @@ export class ZebulonTable extends ZebulonTableMenu {
     // this.confirmationModal = true;
     const state = this.state;
     state.confirmationModal = true;
-    state.modal = { body, type: "foreignKey", callback };
+    state.modal = { body, type: "foreignKey", selection, callback };
     this.setState({
       confirmationModal: true,
-      modal: { body, type: "foreignKey", callback }
+      modal: { body, type: "foreignKey", selection, callback }
     });
   };
   onConflict = conflicts => {
@@ -999,10 +992,11 @@ export class ZebulonTable extends ZebulonTableMenu {
           editable: false,
           noOrder: true,
           actions: [],
-          caption: `${meta.table.caption || meta.table.object} (audit :${meta
-            .row.descriptorFunction
-            ? meta.row.descriptorFunction({ row: auditedRow })
-            : auditedRow.index_})`
+          caption: `${meta.table.caption || meta.table.object} (audit :${
+            meta.row.descriptorFunction
+              ? meta.row.descriptorFunction({ row: auditedRow })
+              : auditedRow.index_
+          })`
         }
       };
       // linked object
@@ -1057,7 +1051,9 @@ export class ZebulonTable extends ZebulonTableMenu {
             ...rowAudited.rowUpdated,
             status_: rowAudited.deleted_
               ? "deleted"
-              : rowAudited.new_ ? "inserted" : "updated"
+              : rowAudited.new_
+              ? "inserted"
+              : "updated"
           };
           data = [rowAudited].concat(data);
         }
@@ -1136,6 +1132,7 @@ export class ZebulonTable extends ZebulonTableMenu {
           onForeignKey={this.onForeignKey}
           isModal={this.props.isModal}
           modal={this.state.confirmationModal || this.state.modalCancel}
+          selection={this.props.selection}
         />
       </EventHandler>
     );
@@ -1150,6 +1147,7 @@ export class ZebulonTable extends ZebulonTableMenu {
         </ResizableBox>
       );
     }
+    console.log("render zt", meta.table, this.state.modal);
     return (
       // confirmation modal must be outside of previous elements
       // else it doesnt render in some cases???

@@ -113,6 +113,33 @@ export class Table extends TableFilterSort {
         undefined,
         nextProps.updatedRows
       );
+      if (
+        nextProps.status.loaded &&
+        nextProps.isModal &&
+        this.props.onDoubleClick &&
+        this.props.onRowEnter
+      ) {
+        let filteredData_ = filteredData,
+          filter_ = Object.values(nextProps.filters)[0];
+        if (
+          filteredData_.length === 1 &&
+          ["quit", "match"].includes(nextProps.selection)
+        ) {
+          this.props.onRowEnter({ row: filteredData_[0] });
+          this.props.onDoubleClick();
+        } else if (
+          filteredData_.length >= 1 &&
+          nextProps.selection === "match"
+        ) {
+          filteredData_ = filteredData_.filter(
+            row => row[filter_.id] === filter_.v
+          );
+          if (filteredData_.length === 1) {
+            this.props.onRowEnter({ row: filteredData_[0] });
+            this.props.onDoubleClick();
+          }
+        }
+      }
       this.sorts(filteredData, nextProps.meta.properties);
       // }
 
@@ -145,7 +172,7 @@ export class Table extends TableFilterSort {
       });
       if (
         (status && status.loaded && this.bLoaded === undefined) ||
-        nextProps.filters != this.state.filters
+        nextProps.filters !== this.state.filters
       ) {
         this.bLoaded = true;
       }
@@ -175,9 +202,9 @@ export class Table extends TableFilterSort {
     }
   }
 
-  // shouldComponentUpdate(nextProps, nextState) {
-  //   return !nextProps.modal;
-  // }
+  shouldComponentUpdate(nextProps, nextState) {
+    return !this.isPasting;
+  }
   componentWillUnmount() {
     return this.onTableClose();
   }
@@ -187,41 +214,6 @@ export class Table extends TableFilterSort {
       this.rowUpdated = false;
       this.tableUpdated = false;
       this.adjustScrollRows(this.state.filteredData);
-      // const { selectedRange, scroll } = this.state;
-      // if (selectedRange.end.rows <= this.state.filteredData.length) {
-      //   const rowDirection = Math.sign(
-      //     selectedRange.end.rows - (scroll.rows.startIndex || 0)
-      //   );
-      //   const columnDirection = Math.sign(
-      //     selectedRange.end.columns - scroll.columns.startIndex
-      //   );
-      //   this.selectRange(
-      //     selectedRange,
-      //     undefined,
-      //     this.state.filteredData[selectedRange.end.rows],
-      //     "enter"
-      //   );
-      //   this.rowUpdated = true;
-      //   this.scrollTo(
-      //     selectedRange.end.rows,
-      //     rowDirection,
-      //     selectedRange.end.columns,
-      //     columnDirection
-      //   );
-      // } else {
-      // const columns = (this.state.meta.visibleIndexes || [0])[0];
-      // this.selectRange(
-      //   {
-      //     start: { rows: 0, columns },
-      //     end: { rows: 0, columns }
-      //   },
-      //   undefined,
-      //   this.state.filteredData[0],
-      //   "enter",
-      //   true
-      // );
-
-      // this.hasFocus = true;
       this.bLoaded = null;
     }
   };
@@ -230,6 +222,7 @@ export class Table extends TableFilterSort {
   }
   componentDidUpdate() {
     this.onLoad();
+    console.log("tableUpdated");
     this.changingFilter = false;
   }
   onCheckAll = () => {
@@ -301,7 +294,7 @@ export class Table extends TableFilterSort {
     // -----------------------------------
     const { openedFilter, filters } = this.state;
     this.openedFilter = null;
-    if (openedFilter !== undefined) {
+    if (openedFilter !== undefined && filters[openedFilter]) {
       const { top, left, items, v, caption, computedWidth } = filters[
         openedFilter
       ];
@@ -582,7 +575,7 @@ export class Table extends TableFilterSort {
     // -----------------------------
     // let style = {};
     const locked =
-      !utils.isNullOrUndefined(meta.lockedIndex) && meta.lockedWidth;
+      !utils.isNullOrUndefined(meta.lockedIndex) && !!meta.lockedWidth;
     key = `rows-${id}`;
     const rows = (
       <Rows

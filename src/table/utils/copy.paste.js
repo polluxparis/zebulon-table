@@ -46,6 +46,8 @@ export const getSelection = (
           value = "";
         } else if (column.dataType === "date" && value !== null) {
           value = utils.dateToString(value, undefined || "dd/mm/yyyy");
+        } else if (utils.isObject(value)) {
+          value = value.caption;
         }
         output += columnSeparator + JSON.stringify(value);
       }
@@ -54,21 +56,16 @@ export const getSelection = (
   }
   return outputs.join("\n");
 };
-export const buildPasteArray = (
-  type = "xls",
-  clipboard,
-  columns,
-  selectedCell,
-  selectCell,
-  onChange,
-  canQuit,
-  filteredData,
-  updatedRows,
-  data,
-  params
-) => {
-  const columnSeparator = type === "csv" ? "," : "\t";
-
+export const buildPasteArray = (type = "xls", clipboard, this_, selectCell) => {
+  const columns = this_.state.meta.properties,
+    selectedCell = this_.state.selectedRange.end,
+    onChange = this_.onChange,
+    canQuit = this_.canQuit,
+    filteredData = this_.state.filteredData,
+    updatedRows = this_.state.updatedRows,
+    data = this_.state.data,
+    params = this_.props.params;
+  const columnSeparator = type === "csv" ? "," : "\t"; // a voir detection du separateur
   const lines = clipboard.replace(/\r/g, "").split("\n");
   lines.pop();
   const cells = lines.map(line => line.split(columnSeparator));
@@ -120,13 +117,16 @@ export const buildPasteArray = (
   cellsValue.reverse();
   const cellValue = (ok_, previousRow) => {
     if (!ok_ || cellsValue.length === 0) {
+      this_.isPasting = false;
+      this_.forceUpdate();
       return;
     }
     let ok = ok_;
     const cell = cellsValue.pop();
+    this_.isPasting = true;
     const cellV = ok_ => {
       const endCell = ok_ => {
-        if (ok_ && cellsValue.length) {
+        if (ok_) {
           cellValue(ok_, cell.rows);
         }
       };
@@ -177,5 +177,7 @@ export const buildPasteArray = (
     }
   };
   cellValue(true, undefined);
+  this_.isPasting = false;
+
   return cells;
 };

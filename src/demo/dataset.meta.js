@@ -92,7 +92,8 @@ export const meta = {
       id: "d",
       caption: "Date",
       width: 100,
-      dataType: "year",
+      // dataType: "year",
+      dataType: "date",
       editable: true,
       mandatory: true,
       filterType: "between"
