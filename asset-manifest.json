@@ -1,6 +1,15 @@
 {
-  "main.css": "static/css/main.6daedde9.css",
-  "main.css.map": "static/css/main.6daedde9.css.map",
-  "main.js": "static/js/main.94131138.js",
-  "main.js.map": "static/js/main.94131138.js.map"
+  "main.css": "/zebulon-table/static/css/main.19be9d75.chunk.css",
+  "main.js": "/zebulon-table/static/js/main.fdf69439.chunk.js",
+  "main.js.map": "/zebulon-table/static/js/main.fdf69439.chunk.js.map",
+  "static/css/1.1b8a1487.chunk.css": "/zebulon-table/static/css/1.1b8a1487.chunk.css",
+  "static/js/1.31055cb7.chunk.js": "/zebulon-table/static/js/1.31055cb7.chunk.js",
+  "static/js/1.31055cb7.chunk.js.map": "/zebulon-table/static/js/1.31055cb7.chunk.js.map",
+  "runtime~main.js": "/zebulon-table/static/js/runtime~main.460ea53b.js",
+  "runtime~main.js.map": "/zebulon-table/static/js/runtime~main.460ea53b.js.map",
+  "static/css/main.19be9d75.chunk.css.map": "/zebulon-table/static/css/main.19be9d75.chunk.css.map",
+  "static/css/1.1b8a1487.chunk.css.map": "/zebulon-table/static/css/1.1b8a1487.chunk.css.map",
+  "index.html": "/zebulon-table/index.html",
+  "precache-manifest.8ced2cc76292c3e282aa273eb9a2536c.js": "/zebulon-table/precache-manifest.8ced2cc76292c3e282aa273eb9a2536c.js",
+  "service-worker.js": "/zebulon-table/service-worker.js"
 }
